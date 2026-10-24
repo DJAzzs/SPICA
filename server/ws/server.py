@@ -162,6 +162,8 @@ def create_app(boot) -> FastAPI:
                     "farewell": bool(fw)}, ensure_ascii=False))
             elif t == "text_input":
                 await sem.on_text_input(str(data.get("text", "")))
+            elif t == "manual_listen":
+                await sem.manual_listen(float(data.get("seconds", 20)))
             elif t == "enroll_start":
                 await sem.enroll_start(int(data.get("n", 3)))
             elif t == "enroll_abort":

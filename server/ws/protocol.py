@@ -37,6 +37,7 @@ CLIENT_TYPES = {
     "mic",            # {on: bool, device_id?}
     "audio_meta",     # {sample_rate, channels}
     "text_input",     # {text} 键盘输入（与语音同管线分发）
+    "manual_listen",  # {} 手动开启语音输入（唤醒词不可用时的兜底入口）
     "settings_patch", # {…} 设置更新
     "enroll_start", "enroll_add", "enroll_finish",  # 声纹注册流程
     "voice_preview",  # {text?} 音色试听

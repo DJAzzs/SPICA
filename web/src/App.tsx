@@ -27,6 +27,12 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
     setInput("");
   };
 
+  /** 麦克风按钮：唤醒词不可用时手动进入聆听（说话即可，无需唤醒词） */
+  const micClick = () => {
+    if (kbdOnly) { onEnableVoice(); return; }
+    if (connected) send({ t: "manual_listen" });
+  };
+
   return (
     <div className="chat">
       <div className="chat-scroll" ref={scrollRef}>
@@ -57,6 +63,9 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         <Wave />
       )}
       <div className="chat-input">
+        <button className={`mic-btn ${st === "listen" ? "live" : ""}`}
+          onClick={micClick} title="点击直接说话（无需唤醒词）"
+          disabled={!connected && !kbdOnly}>🎤</button>
         <input
           type="text"
           value={input}

@@ -256,6 +256,33 @@ def test_enroll_period_no_tts_instructions(tmp_path, monkeypatch):
     assert any("声纹注册完成" in t for _, t in narrator.said)
 
 
+# ---------------------------------------------------------------- 手动聆听
+def test_manual_listen_enters_listen(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.manual_listen())
+    assert sem.state == "listen"
+    ack = next(e for e in events if e.get("t") == "wake_ack")
+    assert ack.get("manual") is True
+    assert sem.pipeline.arm_called == 1
+
+
+def test_manual_listen_blocked_in_confirm(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.state = "confirm_shutdown"
+    run(sem.manual_listen())
+    assert sem.state == "confirm_shutdown"   # 不被覆盖
+    assert sem.pipeline.arm_called == 0
+
+
+def test_manual_listen_blocked_in_enroll(tmp_path, monkeypatch):
+    import numpy as np
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.speaker = FakeSpeaker()
+    run(sem.enroll_start(3))
+    run(sem.manual_listen())
+    assert sem.pipeline.arm_called == 1      # 只有 enroll_start 那一次
+
+
 # ---------------------------------------------------------------- 键盘输入
 def test_text_input_dispatches_without_rewrite(tmp_path, monkeypatch):
     """键盘输入：跳过改写、直接路由执行（FakeRewriter 不该被调用）。"""

@@ -129,6 +129,18 @@ class Semantics:
             return  # 注册模式只收音频
         await self._dispatch(text)
 
+    # ================================================== 手动语音输入
+    async def manual_listen(self, seconds: float = 20.0) -> None:
+        """唤醒词不可用时的兜底：直接进入聆听（跳过唤醒词与声纹——
+        用户主动点击即明确意图）。执行中点击=语音插话（入队）。"""
+        if self.enroll_mode or self.state in ("confirm_shutdown", "shutdown"):
+            return
+        self.pipeline.arm_listening(seconds)
+        await self._set_state("listen")
+        await self.broadcast({"t": "wake_ack", "accepted": True,
+                              "speaker_ok": True, "score": -1.0,
+                              "manual": True})
+
     # ================================================== 键盘输入（与语音同管线）
     async def on_text_input(self, text: str) -> None:
         """文本输入：已是指令，跳过改写，仍做难度路由。"""
