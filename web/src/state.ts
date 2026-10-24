@@ -23,11 +23,14 @@ export interface State {
   diag: any;
   micOn: boolean;
   micError: string;
-  msgs: { role: string; text: string; ts: number }[];
+  msgs: { role: string; text: string; ts: number; tid?: number;
+          seconds?: number; thinking?: boolean }[];
   localListen: boolean;   // 手动聆听本地态（不等服务器往返）
   toast: string;          // 顶部轻提示
   sessions: any[];
   currentSession: any | null;
+  turns: Record<number, { collapsed: boolean }>;   // tid → 折叠态
+  execSince: number;      // 当前 turn 开始时间戳（计时）
 }
 
 const initial: State = {
@@ -36,7 +39,7 @@ const initial: State = {
   route: null, steps: [], taskDone: "", ttsSpeaking: false, ttsText: "",
   rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
   micOn: false, micError: "", msgs: [], localListen: false, toast: "",
-  sessions: [], currentSession: null,
+  sessions: [], currentSession: null, turns: {}, execSince: 0,
 };
 
 let state: State = initial;
@@ -94,12 +97,22 @@ export function connectWS() {
 }
 
 let stepSeq = 0;
-function pushMsg(role: string, text: string) {
+function pushMsg(role: string, text: string, extra: object = {}) {
   // 相邻去重：同角色同文本不重复入列（终稿/总结常同文）
   const last = state.msgs[state.msgs.length - 1];
   if (last && last.role === role && last.text === text) return;
-  const msg = { role, text, ts: Date.now() };
+  const msg = { role, text, ts: Date.now(), ...extra };
   set({ msgs: [...state.msgs.slice(-199), msg] });
+}
+export function toggleTurn(tid: number) {
+  const t = state.turns[tid] || { collapsed: false };
+  set({ turns: { ...state.turns, [tid]: { collapsed: !t.collapsed } } });
+}
+function closeThinking() {
+  const cur = state.msgs[state.msgs.length - 1];
+  if (cur && cur.thinking) {
+    set({ msgs: [...state.msgs.slice(0, -1), { ...cur, thinking: false }] });
+  }
 }
 function handle(e: SpicaEvent) {
   switch (e.t) {
@@ -122,7 +135,33 @@ function handle(e: SpicaEvent) {
         pushMsg("system", `改写 → ${e.text}`);
       }
       break;
-    case "msg": pushMsg(e.role, e.text); break;
+    case "msg":
+      pushMsg(e.role, e.text, { tid: e.tid });
+      if (e.role === "assistant") closeThinking();
+      break;
+    case "thinking": {
+      // 思考流：合并进当前 turn 的 thinking 块（实时增长）
+      const cur = state.msgs[state.msgs.length - 1];
+      if (cur && cur.role === "thinking" && cur.tid === e.tid && cur.thinking) {
+        set({ msgs: [...state.msgs.slice(0, -1),
+          { ...cur, text: cur.text + e.text }] });
+      } else {
+        pushMsg("thinking", e.text, { tid: e.tid, thinking: true });
+      }
+      break;
+    }
+    case "thinking_end": closeThinking(); break;
+    case "turn_start":
+      set({ turns: { ...state.turns, [e.tid]: { collapsed: false } },
+            execSince: Date.now() });
+      break;
+    case "turn_done": {
+      closeThinking();
+      set({ turns: { ...state.turns, [e.tid]: { collapsed: true } } });
+      pushMsg("turn-done", e.summary || "", { tid: e.tid, seconds: e.seconds });
+      set({ taskDone: e.summary });
+      break;
+    }
     case "route": set({ route: e }); break;
     case "step":
       stepSeq += 1;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState, set, toast as toastMsg } from "./state";
+import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState, set, toast as toastMsg, toggleTurn } from "./state";
 import { SpicaScene, SceneState } from "./scene";
 import Wave from "./Wave";
 import Markdown from "./Markdown";
@@ -15,11 +15,30 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   connected: boolean; onEnableVoice: () => void;
 }) {
   const msgs = useSpica((s) => s.msgs);
+  const turns = useSpica((s) => s.turns);
+  const execSince = useSpica((s) => s.execSince);
   const toast = useSpica((s) => s.toast);
   const localListen = useSpica((s) => s.localListen);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
   const [dragOn, setDragOn] = useState(false);
+  const [openThinking, setOpenThinking] = useState<Record<number, boolean>>({});
+  const [now, setNow] = useState(Date.now());
+
+  // 执行中每秒跳动（运行计时）
+  useEffect(() => {
+    if (st !== "exec") return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [st]);
+
+  const fmtDur = (sec: number) => sec >= 60
+    ? `${Math.floor(sec / 60)}分${Math.round(sec % 60)}秒`
+    : `${Math.round(sec)}秒`;
+  const currentTid = msgs.length ? msgs[msgs.length - 1].tid : undefined;
+  const runningTid = st === "exec" ? currentTid : undefined;
+  const elapsed = execSince ? (now - execSince) / 1000 : 0;
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -104,12 +123,52 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
             </div>
           </div>
         )}
-        {msgs.map((m, i) => (
-          <div key={i} className={`chat-msg ${m.role}`}>
-            <div className="chat-role">{ROLE_LABEL[m.role] || m.role}</div>
-            <div className="chat-text"><Markdown text={m.text} /></div>
-          </div>
-        ))}
+        {msgs.map((m, i) => {
+          const tid = m.tid;
+          const isCollapsed = tid !== undefined
+            && turns[tid]?.collapsed && m.role !== "turn-done";
+          const showRunning = runningTid !== undefined && tid === runningTid
+            && !msgs.slice(0, i).some((x) => x.tid === tid);
+          return (
+            <div key={i}>
+              {showRunning && (
+                <div className="turn-running">
+                  <span className="pulse-dot" />
+                  运行中 · 已用时 {fmtDur(elapsed)}
+                </div>
+              )}
+              {m.role === "turn-done" ? (
+                <div className="turn-head" onClick={() => toggleTurn(m.tid!)}>
+                  <span className="turn-caret">
+                    {turns[m.tid!]?.collapsed ? "▸" : "▾"}</span>
+                  <span className="turn-label">已完成</span>
+                  <span className="turn-dur">用时 {fmtDur(m.seconds || 0)}</span>
+                  <span className="turn-sum">{m.text.slice(0, 60)}</span>
+                </div>
+              ) : !isCollapsed && (
+                m.role === "thinking" ? (
+                  <div className={`chat-msg thinking ${m.thinking ? "live" : ""}`}>
+                    <div className="chat-role think-toggle"
+                      onClick={() => setOpenThinking(
+                        { ...openThinking, [i]: !openThinking[i] })}>
+                      {m.thinking ? "思考中" : `思考 · ${m.text.length} 字`}
+                      <span className="turn-caret">
+                        {openThinking[i] ? "▾" : "▸"}</span>
+                    </div>
+                    {openThinking[i] && (
+                      <div className="think-body">{m.text}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className={`chat-msg ${m.role}`}>
+                    <div className="chat-role">{ROLE_LABEL[m.role] || m.role}</div>
+                    <div className="chat-text"><Markdown text={m.text} /></div>
+                  </div>
+                )
+              )}
+            </div>
+          );
+        })}
         {st === "listen" || localListen ? (
           <div className="chat-msg user ghost">
             <div className="chat-role">正在听…</div>

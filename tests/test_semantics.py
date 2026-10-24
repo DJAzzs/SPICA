@@ -182,7 +182,9 @@ def test_turn_done_back_to_idle_and_summary(tmp_path, monkeypatch):
         "event": {"type": "turn/end", "data": {"reason": {"kind": "completed"}}}}))
     run(asyncio.sleep(0.05))
     assert sem.state == "idle"
-    assert any(e.get("t") == "task_done" for e in events)
+    done = [e for e in events if e.get("t") == "turn_done"]
+    assert done and done[0].get("tid") >= 1
+    assert isinstance(done[0].get("seconds"), (int, float))
     # 结束语不含总结正文（同内容双播已修）
     assert any("任务完成" in t for _, t in narrator.said)
     assert not any("已经完成了三件事" in t for _, t in narrator.said)

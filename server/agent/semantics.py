@@ -56,6 +56,9 @@ class Semantics:
         self.session: dict = {}
         self._plan_mode = False
         self.compact_summary: str = ""
+        # turn 跟踪（前端分组折叠 + 计时）
+        self.turn_seq: int = 0
+        self.turn_started_at: float = 0.0
         # 长期目标 {active, text, round, max_rounds}
         self.goal: dict = {"active": False, "text": "", "round": 0,
                            "max_rounds": 0}
@@ -82,7 +85,7 @@ class Semantics:
                             await self.broadcast({"t": "error",
                                                   "message": f"{type(e).__name__}: {e}"})
                             await self.broadcast({"t": "msg", "role": "system",
-                                                  "text": f"出错了：{e}"})
+                                                  "text": f"出错了：{e}", "tid": self.turn_seq})
                             if self.state not in ("idle", "shutdown"):
                                 await self._set_state("idle")
                         except Exception:
@@ -138,7 +141,8 @@ class Semantics:
         self.transcript.append({"role": "user", "text": text,
                                 "ts": time.time()})
         await self.broadcast({"t": "final", "text": text})
-        await self.broadcast({"t": "msg", "role": "user", "text": text})
+        await self.broadcast({"t": "msg", "role": "user", "text": text,
+                                  "tid": self.turn_seq})
         self._log("user", text)
         if self.enroll_mode:
             return  # 注册模式只收音频
@@ -215,11 +219,11 @@ class Semantics:
         if cmd == "plan":
             if not arg:
                 await self.broadcast({"t": "msg", "role": "system",
-                                      "text": "用法：/plan <目标> —— 只规划不修改。"})
+                                      "text": "用法：/plan <目标> —— 只规划不修改。", "tid": self.turn_seq})
                 return
             self._plan_mode = True
             await self.broadcast({"t": "msg", "role": "system",
-                                  "text": "进入计划模式（只读规划，本轮生效）。"})
+                                  "text": "进入计划模式（只读规划，本轮生效）。", "tid": self.turn_seq})
             self.narrator.confirm("计划模式，只规划不修改。")
             self._log("system", "计划模式开启")
             await self.on_text_input(arg)
@@ -234,10 +238,10 @@ class Semantics:
                 await self._goal_start(arg)
             else:
                 await self.broadcast({"t": "msg", "role": "system",
-                                      "text": "用法：/goal <长期目标> · /goal stop 停止"})
+                                      "text": "用法：/goal <长期目标> · /goal stop 停止", "tid": self.turn_seq})
         else:
             await self.broadcast({"t": "msg", "role": "system",
-                                  "text": f"未知命令 /{cmd}。可用：/plan /compact /export /goal"})
+                                  "text": f"未知命令 /{cmd}。可用：/plan /compact /export /goal", "tid": self.turn_seq})
 
     async def _do_export(self) -> None:
         await self.broadcast({"t": "trigger_export"})
@@ -250,7 +254,7 @@ class Semantics:
         self.goal = {"active": True, "text": text, "round": 0,
                      "max_rounds": int(s.get("goal_max_rounds", 12))}
         await self.broadcast({"t": "msg", "role": "system",
-                              "text": f"长期目标已设定（最多 {self.goal['max_rounds']} 轮）：{text}"})
+                              "text": f"长期目标已设定（最多 {self.goal['max_rounds']} 轮）：{text}", "tid": self.turn_seq})
         self._log("system", f"目标设定：{text}")
         self.narrator.confirm(f"目标已设定，开始多轮推进：{text[:30]}。")
         if self.state == "exec":
@@ -278,7 +282,7 @@ class Semantics:
             f"目标状态：已达成 或 目标状态：进行中"
         )
         await self.broadcast({"t": "msg", "role": "system",
-                              "text": f"目标第 {r} 轮开始。"})
+                              "text": f"目标第 {r} 轮开始。", "tid": self.turn_seq})
         self.narrator.confirm(f"目标第 {r} 轮，推进中。")
         await self._start_task(prompt)
 
@@ -295,7 +299,7 @@ class Semantics:
         """压缩上下文：LLM 总结 → 新 DSH 会话（本地记录保留）。"""
         if not self.transcript:
             await self.broadcast({"t": "msg", "role": "system",
-                                  "text": "会话还没有内容，无需压缩。"})
+                                  "text": "会话还没有内容，无需压缩。", "tid": self.turn_seq})
             return
         await self.broadcast({"t": "msg", "role": "system", "text": "正在压缩上下文…"})
         text = "\n".join(f"{e.get('role')}: {(e.get('text') or '')[:200]}"
@@ -432,6 +436,17 @@ class Semantics:
                 pass
         await self.session_update(self.session["id"], {"title": title})
 
+    def _msg(self, role: str, text: str, extra: dict | None = None) -> None:
+        """带 tid 的消息广播（前端按 turn 分组折叠）。"""
+        ev = {"t": "msg", "role": role, "text": text, "tid": self.turn_seq}
+        if extra:
+            ev.update(extra)
+
+        async def _send():
+            await self.broadcast(ev)
+        asyncio.create_task(_send())
+        self._log(role, text)
+
     def _log(self, role: str, text: str) -> None:
         if self.session.get("id") and text:
             # 相邻去重：assistant 终稿与 task 总结常为同文
@@ -482,14 +497,16 @@ class Semantics:
             return
         if self._goal_pending:
             self._goal_pending = False
-            await self.broadcast({"t": "msg", "role": "user", "text": text})
+            await self.broadcast({"t": "msg", "role": "user", "text": text,
+                                  "tid": self.turn_seq})
             await self._goal_start(text)
             return
         if await self._try_voice_command(text):
             return
         self.transcript.append({"role": "user", "text": text, "ts": time.time()})
         await self.broadcast({"t": "final", "text": text})
-        await self.broadcast({"t": "msg", "role": "user", "text": text})
+        await self.broadcast({"t": "msg", "role": "user", "text": text,
+                                  "tid": self.turn_seq})
         await self._after_rewrite(text)
 
     # ================================================== 任务分发
@@ -534,7 +551,7 @@ class Semantics:
         # 自动模式才播报路由；手动选定时模型是用户决定的，不再报
         if not override:
             await self.broadcast({"t": "msg", "role": "system",
-                                  "text": f"路由：{route.get('model')} · {difficulty}"})
+                                  "text": f"路由：{route.get('model')} · {difficulty}", "tid": self.turn_seq})
             self._log("system", f"路由：{route.get('model')} · {difficulty}")
 
         if self.state == "exec":
@@ -562,7 +579,7 @@ class Semantics:
                 except Exception:
                     # 工作区已变更等原因导致历史不可续接：新开 DSH 会话
                     await self.broadcast({"t": "msg", "role": "system",
-                                          "text": "历史会话无法在此工作区续接，已开启新对话上下文。"})
+                                          "text": "历史会话无法在此工作区续接，已开启新对话上下文。", "tid": self.turn_seq})
                     self.sdk.reset_identity("")
                     await self.sdk.start(route["model"],
                                          route.get("reasoning_effort"),
@@ -582,6 +599,9 @@ class Semantics:
             await self.broadcast({"t": "state", "s": "exec"})
         self.state = "exec"
         self.current_brief = prompt[:40]
+        self.turn_seq += 1
+        self.turn_started_at = time.time()
+        await self.broadcast({"t": "turn_start", "tid": self.turn_seq})
         self.narrator.speak("收到，开始。", prio=1, kind="confirm")
         self.transcript.append({"role": "task", "text": prompt,
                                 "ts": time.time()})
@@ -603,6 +623,8 @@ class Semantics:
         self._plan_mode = False   # 计划模式单轮：prompt 已带约束，发起即复位
 
     # ================================================== SDK 通知
+    REASONING_BLOCKS = ("reasoning", "thinking")
+
     async def on_sdk_notification(self, method: str, params: dict) -> None:
         if method == "session.status":
             return
@@ -614,32 +636,48 @@ class Semantics:
         if typ == "assistant/message":
             msg = data.get("message", {})
             for block in msg.get("content", []):
-                if block.get("type") == "text" and block.get("text", "").strip():
+                btype = block.get("type", "")
+                if btype in self.REASONING_BLOCKS:
+                    piece = (block.get("text") or block.get("thinking")
+                             or block.get("content") or "")
+                    if piece:
+                        await self.broadcast({"t": "thinking", "text": piece,
+                                              "tid": self.turn_seq})
+                elif btype == "text" and block.get("text", "").strip():
                     text = block["text"].strip()
                     self.last_assistant_text = text
+                    await self.broadcast({"t": "thinking_end"})
                     await self.broadcast({"t": "msg", "role": "assistant",
-                                          "text": text})
+                                          "text": text, "tid": self.turn_seq})
                     self._log("assistant", text)
-                elif block.get("type") in ("tool_call", "tool_use"):
+                elif btype in ("tool_call", "tool_use"):
                     summary = self.narrator.tool_summary(
                         block.get("name", "tool"),
                         block.get("arguments") or block.get("input") or "")
                     await self.broadcast({"t": "msg", "role": "tool",
-                                          "text": summary})
+                                          "text": summary,
+                                          "tid": self.turn_seq})
                     self._log("tool", summary)
+        elif "reasoning" in typ or "thinking" in typ:
+            piece = (data.get("text") or data.get("delta")
+                     or data.get("content") or "")
+            if piece:
+                await self.broadcast({"t": "thinking", "text": piece,
+                                      "tid": self.turn_seq})
         elif typ in ("tool/call", "tool/use"):
             summary = self.narrator.tool_summary(
                 data.get("name") or data.get("tool") or "tool",
                 data.get("arguments") or data.get("input")
                 or data.get("args") or data.get("command") or "")
             await self.broadcast({"t": "msg", "role": "tool",
-                                  "text": summary})
+                                  "text": summary, "tid": self.turn_seq})
             self._log("tool", summary)
         elif typ == "tool/result":
             out = (data.get("result") or data.get("output") or "")
             if isinstance(out, str) and out.strip():
                 await self.broadcast({"t": "msg", "role": "tool",
-                                      "text": f"结果：{out.strip()[:120]}"})
+                                      "text": f"结果：{out.strip()[:120]}",
+                                      "tid": self.turn_seq})
         await self.broadcast({"t": "step", "type": typ})
         self.narrator.on_agent_event(ev)
         if typ == "turn/end":
@@ -648,9 +686,11 @@ class Semantics:
     async def _turn_done(self) -> None:
         self._plan_mode = False   # 计划模式仅单轮生效
         summary = self.last_assistant_text[:200] or "任务执行完毕。"
+        seconds = max(0, time.time() - self.turn_started_at)
         self.transcript.append({"role": "assistant", "text": summary,
                                 "ts": time.time()})
-        await self.broadcast({"t": "task_done", "summary": summary})
+        await self.broadcast({"t": "turn_done", "tid": self.turn_seq,
+                              "summary": summary, "seconds": round(seconds)})
         self._log("assistant", summary)
         # 注意：最后一条 assistant 消息已由步骤播报（含压缩）呈现过，
         # 这里只播结束语——避免同内容双播双列（两个声音的根因）。

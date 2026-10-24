@@ -19,7 +19,11 @@ EVENT_TYPES = {
     "rewrite",        # {stage: draft|final, text, difficulty}
     "route",          # {model, reasoning_effort, difficulty} DSH 初始化选择
     "step",           # {i, summary, status: start|ok|fail}（场景动画用，瘦）
-    "msg",            # {role: user|assistant|tool|system, text} 对话流富消息
+    "msg",            # {role: user|assistant|tool|system, text, tid} 对话流富消息
+    "thinking",       # {text, tid} 思考流增量（思考模型 reasoning）
+    "thinking_end",   # {} 当前思考结束（输出正文开始）
+    "turn_start",     # {tid} 一轮任务开始（计时/分组）
+    "turn_done",      # {tid, summary, seconds} 一轮结束（自动折叠）
     "tts",            # {speaking: bool, text} 播报开始/结束
     "task_done",      # {summary} 任务完成（完成呼吸动画+喊人）
     "paused", "resumed",
