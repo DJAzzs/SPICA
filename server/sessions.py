@@ -79,7 +79,8 @@ class SessionStore:
         meta = self.get(sid)
         if not meta:
             return None
-        for k in ("title", "cwd", "perm", "model", "dsh_session_id"):
+        for k in ("title", "cwd", "perm", "model", "model_override",
+                  "dsh_session_id"):
             if k in patch and patch[k]:
                 meta[k] = patch[k]
         return self.upsert(meta)

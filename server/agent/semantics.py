@@ -54,6 +54,8 @@ class Semantics:
         self._need_resume = False            # 打开历史会话后首个任务先 resume
         # 当前会话
         self.session: dict = {}
+        self._plan_mode = False
+        self.compact_summary: str = ""
         # 声纹注册
         self.enroll_mode = False
         self.enroll_target = 3
@@ -137,6 +139,72 @@ class Semantics:
         if self.enroll_mode:
             return  # 注册模式只收音频
         await self._dispatch(text)
+
+    # ================================================== 斜杠命令
+    PLAN_SUFFIX = (
+        "\n\n（计划模式：本次任务只做分析与规划——不要创建、修改或删除任何文件，"
+        "不要执行任何变更性命令；输出一份结构清晰、可执行的分步计划。）"
+    )
+
+    async def slash(self, cmd: str, arg: str) -> None:
+        cmd = (cmd or "").strip().lstrip("/").lower()
+        arg = (arg or "").strip()
+        if cmd == "plan":
+            if not arg:
+                await self.broadcast({"t": "msg", "role": "system",
+                                      "text": "用法：/plan <目标> —— 只规划不修改。"})
+                return
+            self._plan_mode = True
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": "进入计划模式（只读规划，本轮生效）。"})
+            self._log("system", "计划模式开启")
+            await self.on_text_input(arg)
+        elif cmd == "compact":
+            await self._do_compact()
+        elif cmd == "export":
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": "请在浏览器地址栏或页面操作触发导出：/api/session/export"})
+        else:
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": f"未知命令 /{cmd}。可用：/plan /compact /export"})
+
+    async def _do_compact(self) -> None:
+        """压缩上下文：LLM 总结 → 新 DSH 会话（本地记录保留）。"""
+        if not self.transcript:
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": "会话还没有内容，无需压缩。"})
+            return
+        await self.broadcast({"t": "msg", "role": "system", "text": "正在压缩上下文…"})
+        text = "\n".join(f"{e.get('role')}: {(e.get('text') or '')[:200]}"
+                         for e in self.transcript[-60:])
+        summary = ""
+        if self.llm is not None:
+            try:
+                summary = await self.llm.chat(
+                    [{"role": "system",
+                      "content": "把这段 Agent 会话记录压缩成不超过 150 字的摘要，"
+                                 "保留目标、关键决定与未完成事项。只输出摘要。"},
+                     {"role": "user", "content": text}],
+                    max_tokens=300, temperature=0.2,
+                    thinking="disabled", timeout=15.0)
+                summary = (summary or "").strip()
+            except Exception:
+                summary = ""
+        self.compact_summary = summary
+        try:
+            await self.sdk.stop()
+        except Exception:
+            pass
+        self.sdk.reset_identity("")
+        self._need_resume = False
+        if self.session.get("id"):
+            self.session["dsh_session_id"] = ""
+            self.store.update(self.session["id"], {"dsh_session_id": ""})
+        note = f"上下文已压缩（历史保留在本地）。摘要：{summary or '（生成失败，直接清空）'}"
+        await self.broadcast({"t": "msg", "role": "system", "text": note})
+        self._log("system", note)
+        self.narrator.confirm("上下文已压缩。")
+        await self._set_state("idle")
 
     # ================================================== 会话管理
     async def broadcast_sessions(self) -> None:
@@ -311,6 +379,10 @@ class Semantics:
         # 现读磁盘设置：改模型不用重启服务
         route = self.router.route(difficulty)
         self.settings = load_settings()
+        # 会话级模型覆盖（UI 下拉选择）
+        override = (self.session or {}).get("model_override")
+        if override:
+            route = {**route, "model": override}
         self.route_info = route
         await self.broadcast({"t": "route", **route})
         await self.broadcast({"t": "msg", "role": "system",
@@ -330,9 +402,12 @@ class Semantics:
             self.session = self.store.create()
         route = self.route_info or self.router.route("normal")
         if not self.sdk.proc:
+            perm = self.session.get("perm")
+            if self._plan_mode:
+                perm = "read-only"   # 计划模式：硬约束只读
             await self.sdk.start(route["model"], route.get("reasoning_effort"),
                                  cwd=self.session.get("cwd"),
-                                 permission=self.session.get("perm"))
+                                 permission=perm)
             if self._need_resume:
                 try:
                     await self.sdk.resume(self.sdk.session_id)
@@ -367,7 +442,13 @@ class Semantics:
         suffix = ""
         if s.get("use_task_policy", True) and s.get("task_policy_suffix"):
             suffix = s["task_policy_suffix"]
-        await self.sdk.prompt(prompt + suffix)
+        if self._plan_mode:
+            suffix = self.PLAN_SUFFIX
+        prompt_out = prompt
+        if self.compact_summary:
+            prompt_out = f"（前情摘要：{self.compact_summary}）\n\n{prompt}"
+        await self.sdk.prompt(prompt_out + suffix)
+        self._plan_mode = False   # 计划模式单轮：prompt 已带约束，发起即复位
 
     # ================================================== SDK 通知
     async def on_sdk_notification(self, method: str, params: dict) -> None:
@@ -413,6 +494,7 @@ class Semantics:
             self._turn_task = asyncio.create_task(self._turn_done())
 
     async def _turn_done(self) -> None:
+        self._plan_mode = False   # 计划模式仅单轮生效
         summary = self.last_assistant_text[:200] or "任务执行完毕。"
         self.transcript.append({"role": "assistant", "text": summary,
                                 "ts": time.time()})

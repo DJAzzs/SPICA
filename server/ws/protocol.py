@@ -43,6 +43,7 @@ CLIENT_TYPES = {
     "manual_listen",  # {} 手动开启语音输入（唤醒词不可用时的兜底入口）
     "cancel_listen",  # {} 取消聆听（再次按麦克风按钮）
     "command",        # {name: pause|resume|confirm|cancel} 手动触发语义命令
+    "slash",          # {cmd, arg} 斜杠命令：plan/compact
     "session_new", "session_open", "session_delete", "session_update",
     "settings_patch", # {…} 设置更新
     "enroll_start", "enroll_add", "enroll_finish",  # 声纹注册流程

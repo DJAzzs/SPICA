@@ -18,6 +18,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const localListen = useSpica((s) => s.localListen);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
+  const [dragOn, setDragOn] = useState(false);
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -26,8 +27,42 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const submit = () => {
     const text = input.trim();
     if (!text || !connected) return;   // 断连静默丢弃 = 假死，必须挡住
-    send({ t: "text_input", text });
     setInput("");
+    // 斜杠命令：/plan /compact /export
+    const m = text.match(/^\/(\w+)\s*([\s\S]*)$/);
+    if (m) {
+      const cmd = m[1].toLowerCase();
+      if (cmd === "export") {
+        toastMsg("正在导出会话 zip…");
+        const a = document.createElement("a");
+        a.href = "/api/session/export";
+        a.download = "";
+        a.click();
+        return;
+      }
+      if (cmd === "plan" || cmd === "compact") {
+        send({ t: "slash", cmd, arg: m[2].trim() });
+        return;
+      }
+      toastMsg(`未知命令 /${cmd}，可用：/plan /compact /export`);
+      return;
+    }
+    send({ t: "text_input", text });
+  };
+
+  /** 文件上传（按钮 + 拖拽共用） */
+  const upload = async (files: FileList | File[] | null) => {
+    if (!files || !(files as any).length) return;
+    const fd = new FormData();
+    Array.from(files).forEach((f) => fd.append("files", f));
+    try {
+      const r = await fetch("/api/files/upload", { method: "POST", body: fd });
+      const j = await r.json();
+      if (j.error) toastMsg(`上传失败：${j.error}`);
+      else toastMsg(`已上传 ${j.saved.length} 个文件`);
+    } catch (e: any) {
+      toastMsg(`上传失败：${e?.message || e}`);
+    }
   };
 
   /** 麦克风按钮：聆听中=取消；否则手动进入聆听（说话即可，无需唤醒词） */
@@ -54,7 +89,11 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   };
 
   return (
-    <div className="chat">
+    <div className="chat"
+      onDragOver={(e) => { e.preventDefault(); setDragOn(true); }}
+      onDragLeave={() => setDragOn(false)}
+      onDrop={(e) => { e.preventDefault(); setDragOn(false); upload(e.dataTransfer.files); }}>
+      {dragOn && <div className="drop-hint">松开以上传到工作区 uploads/</div>}
       {toast && <div className="chat-toast">{toast}</div>}
       <div className="chat-scroll" ref={scrollRef}>
         {msgs.length === 0 && (
@@ -84,8 +123,13 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         <Wave />
       )}
       <div className="chat-input">
+        <label className="mic-btn" title="上传文件到工作区（也可直接拖拽）">
+          ＋
+          <input type="file" multiple style={{ display: "none" }}
+            onChange={(e) => { upload(e.target.files); e.currentTarget.value = ""; }} />
+        </label>
         <button className={`mic-btn ${st === "listen" || localListen ? "live" : ""}`}
-          onClick={micClick} title="点击直接说话（无需唤醒词）"
+          onClick={micClick} title="点击直接说话（聆听中点击取消）"
           disabled={!connected && !kbdOnly}>🎤</button>
         <input
           type="text"
@@ -256,6 +300,16 @@ export default function App() {
         </div>
         {!demo && (
           <div className="tools">
+            <select className="model-select"
+              value={currentSession?.model_override || ""}
+              onChange={(e) => send({ t: "session_update",
+                id: currentSession?.id, patch: { model_override: e.target.value } })}
+              title="会话模型（自动=按难度路由）">
+              <option value="">模型：自动</option>
+              <option value="glm-5.3-flash">glm-5.3-flash</option>
+              <option value="glm-5.3">glm-5.3</option>
+              <option value="glm-4.6">glm-4.6</option>
+            </select>
             {(st === "exec" || st === "paused") && (
               <button className="btn"
                 onClick={() => send({ t: "command",

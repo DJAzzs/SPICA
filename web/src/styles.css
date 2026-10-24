@@ -119,7 +119,23 @@ html[data-demo="1"] body { cursor: none; }
 .md strong { font-weight: 500; color: var(--ink); }
 .chat-text .md { white-space: normal; }
 
-/* 声纹可视化 + 输入行 */
+/* 模型选择器 */
+.model-select { background: none; border: 1px solid var(--bg3); color: var(--ink-dim);
+  font: inherit; font-size: 12px; letter-spacing: 0.05em; padding: 6px 10px;
+  border-radius: 3px; outline: none; cursor: pointer;
+  transition: border-color 600ms var(--ease), color 600ms var(--ease); }
+.model-select:hover { border-color: var(--sand); color: var(--ink); }
+.model-select option { background: var(--bg); color: var(--ink); }
+
+/* 拖拽上传提示 */
+.drop-hint { position: absolute; inset: 12px; z-index: 5;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--sand); border-radius: 4px;
+  color: var(--sand); font-size: 14px; letter-spacing: 0.15em;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  pointer-events: none; animation: enter 400ms var(--ease); }
+
+.chat { position: relative; }
 .chat > canvas { display: block; width: 100%; height: 56px; flex: none; }
 .kbd-hint { flex: none; height: 56px; display: flex; align-items: center;
   font-size: 13px; color: var(--ink-dim); letter-spacing: 0.1em; cursor: pointer;

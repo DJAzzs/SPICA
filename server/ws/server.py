@@ -165,6 +165,66 @@ def create_app(boot) -> FastAPI:
             content = f.read_text("utf-8", errors="replace")
         return {"path": path, "content": content}
 
+    # ---------------- 上传 / 导出 ----------------
+    from fastapi import File, UploadFile
+
+    @app.post("/api/files/upload")
+    async def files_upload(files: list[UploadFile] = File(...)):
+        sem = state["sem"]
+        if not sem or not sem.session.get("cwd"):
+            return JSONResponse({"error": "无会话工作区"}, status_code=400)
+        import re as _re
+        updir = Path(sem.session["cwd"]) / "uploads"
+        updir.mkdir(parents=True, exist_ok=True)
+        saved = []
+        for f in files:
+            name = _re.sub(r"[^\w.\-\u4e00-\u9fff]+", "_", f.filename or "file")
+            data = await f.read()
+            (updir / name).write_bytes(data)
+            saved.append(name)
+        if saved:
+            await hub.broadcast({"t": "msg", "role": "system",
+                                 "text": f"已上传 {len(saved)} 个文件到 uploads/："
+                                         f"{'、'.join(saved)}（可直接让 Agent 处理）"})
+            sem._log("system", f"上传文件：{'、'.join(saved)}")
+        return {"saved": saved}
+
+    @app.get("/api/session/export")
+    async def session_export():
+        import io
+        import zipfile as _zip
+        sem = state["sem"]
+        if not sem or not sem.session.get("id"):
+            return JSONResponse({"error": "无会话"}, status_code=400)
+        sid = sem.session["id"]
+        meta = sem.session
+        events = sem.store.events(sid)
+        buf = io.BytesIO()
+        with _zip.ZipFile(buf, "w", _zip.ZIP_DEFLATED) as z:
+            z.writestr("session.json",
+                       json.dumps(meta, ensure_ascii=False, indent=2))
+            z.writestr("events.jsonl", "\n".join(
+                json.dumps(e, ensure_ascii=False) for e in events))
+            role_label = {"user": "用户", "assistant": "SPICA",
+                          "tool": "执行", "system": "系统", "rewrite": "改写"}
+            md = ["# SPICA 会话导出", "",
+                  f"- 标题：{meta.get('title') or '未命名'}",
+                  f"- 工作区：{meta.get('cwd')}",
+                  f"- 导出时间：{__import__('datetime').datetime.now().isoformat()}",
+                  "", "---", ""]
+            for e in events:
+                md.append(f"**{role_label.get(e.get('role'), e.get('role'))}**：\n\n"
+                          f"{e.get('text', '')}\n")
+            z.writestr("session.md", "\n".join(md))
+        buf.seek(0)
+        safe = __import__("re").sub(r"[^\w\u4e00-\u9fff-]+", "_",
+                                     meta.get("title") or sid)
+        from fastapi.responses import Response
+        return Response(
+            content=buf.getvalue(), media_type="application/zip",
+            headers={"Content-Disposition":
+                     f"attachment; filename*=UTF-8''spica-{safe}.zip"})
+
     @app.websocket("/ws")
     async def ws_endpoint(ws: WebSocket):
         await ws.accept()
@@ -230,6 +290,9 @@ def create_app(boot) -> FastAPI:
                 await sem.cancel_listen()
             elif t == "command":
                 await sem._command(str(data.get("name", "")), "手动")
+            elif t == "slash":
+                await sem.slash(str(data.get("cmd", "")),
+                                str(data.get("arg", "")))
             elif t == "session_new":
                 await sem.session_new()
             elif t == "session_open":

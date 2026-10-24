@@ -300,6 +300,43 @@ def test_manual_listen_blocked_in_enroll(tmp_path, monkeypatch):
     assert sem.pipeline.arm_called == 1      # 只有 enroll_start 那一次
 
 
+# ---------------------------------------------------------------- 斜杠命令
+class FakeSlashLLM:
+    async def chat(self, messages, **kw):
+        return "压缩后的会话摘要"
+
+
+def test_slash_compact_resets_dsh(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.llm = FakeSlashLLM()
+    run(sem.session_new())
+    run(sem.on_text_input("做个东西"))
+    run(sem.slash("compact", ""))
+    assert sdk.stopped                       # DSH 上下文清零
+    assert sem.compact_summary == "压缩后的会话摘要"
+    assert any("上下文已压缩" in e.get("text", "") for e in events
+               if e.get("t") == "msg")
+    # 下个任务带前情摘要
+    run(sem.on_text_input("继续"))
+    assert sdk.prompts[-1].startswith("（前情摘要：压缩后的会话摘要）")
+
+
+def test_slash_plan_sets_readonly_and_suffix(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.state = "idle"
+    run(sem.slash("plan", "重构登录模块"))
+    assert sem._plan_mode is False           # _start_task 已消费（单轮）
+    assert sdk.prompts and "计划模式" in sdk.prompts[-1]
+    assert "重构登录模块" in sdk.prompts[-1]
+
+
+def test_slash_unknown(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.slash("whatever", ""))
+    assert any("未知命令" in e.get("text", "") for e in events
+               if e.get("t") == "msg")
+
+
 # ---------------------------------------------------------------- 键盘输入
 def test_text_input_dispatches_without_rewrite(tmp_path, monkeypatch):
     """键盘输入：跳过改写、直接路由执行（FakeRewriter 不该被调用）。"""
