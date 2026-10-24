@@ -359,8 +359,7 @@ class Semantics:
             await self.broadcast({"t": "state", "s": "exec"})
         self.state = "exec"
         self.current_brief = prompt[:40]
-        self.narrator.speak(f"收到，开始：{self.current_brief}", prio=1,
-                            kind="confirm")
+        self.narrator.speak("收到，开始。", prio=1, kind="confirm")
         self.transcript.append({"role": "task", "text": prompt,
                                 "ts": time.time()})
         # 执行偏好（默认抑制滥用子代理；设置可关）
