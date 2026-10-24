@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState } from "./state";
+import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState, set, toast as toastMsg } from "./state";
 import { SpicaScene, SceneState } from "./scene";
 import Wave from "./Wave";
 
@@ -13,6 +13,8 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   connected: boolean; onEnableVoice: () => void;
 }) {
   const msgs = useSpica((s) => s.msgs);
+  const toast = useSpica((s) => s.toast);
+  const localListen = useSpica((s) => s.localListen);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
   useEffect(() => {
@@ -30,11 +32,23 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   /** 麦克风按钮：唤醒词不可用时手动进入聆听（说话即可，无需唤醒词） */
   const micClick = () => {
     if (kbdOnly) { onEnableVoice(); return; }
-    if (connected) send({ t: "manual_listen" });
+    if (!connected) { toastMsg("未连接服务：请在终端运行 make up"); return; }
+    // 本地立即反馈；服务器 2.5s 内未接手则提示重启（旧版本无此消息）
+    set({ localListen: true });
+    toastMsg("正在听，请说话…", 0);
+    send({ t: "manual_listen" });
+    setTimeout(() => {
+      const s = getState();
+      if (s.localListen && s.state !== "listen") {
+        set({ localListen: false });
+        toastMsg("服务器没有响应手动聆听——请在终端执行 make stop && make up 重启后重试");
+      }
+    }, 2500);
   };
 
   return (
     <div className="chat">
+      {toast && <div className="chat-toast">{toast}</div>}
       <div className="chat-scroll" ref={scrollRef}>
         {msgs.length === 0 && (
           <div className="chat-empty">
@@ -48,12 +62,12 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
             <div className="chat-text">{m.text}</div>
           </div>
         ))}
-        {st === "listen" && (
+        {st === "listen" || localListen ? (
           <div className="chat-msg user ghost">
             <div className="chat-role">正在听…</div>
             <div className="chat-text">{partial || "（说话中）"}</div>
           </div>
-        )}
+        ) : null}
       </div>
       {kbdOnly ? (
         <div className="kbd-hint" onClick={onEnableVoice}>
@@ -63,7 +77,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         <Wave />
       )}
       <div className="chat-input">
-        <button className={`mic-btn ${st === "listen" ? "live" : ""}`}
+        <button className={`mic-btn ${st === "listen" || localListen ? "live" : ""}`}
           onClick={micClick} title="点击直接说话（无需唤醒词）"
           disabled={!connected && !kbdOnly}>🎤</button>
         <input

@@ -70,8 +70,14 @@ html[data-demo="1"] ::-webkit-scrollbar { display: none; }
   color: var(--ink-dim); font-size: 18px; border-radius: 2px; cursor: pointer;
   transition: all 600ms var(--ease); }
 .mic-btn:hover { border-color: var(--sand); color: var(--sand); }
+.mic-btn:active { transform: scale(0.94); }
 .mic-btn.live { border-color: var(--accent); color: var(--accent);
   animation: cta-breathe 2s var(--ease) infinite; }
+
+/* 顶部轻提示条 */
+.chat-toast { flex: none; font-size: 13px; color: var(--sand);
+  letter-spacing: 0.08em; padding: 8px 0 10px;
+  animation: enter 600ms var(--ease); }
 .chat-input input { flex: 1; background: var(--bg2); border: none; color: var(--ink);
   font: inherit; font-size: 15px; padding: 14px 18px; border-radius: 2px; outline: none; }
 .chat-input input:focus { box-shadow: 0 0 0 1px var(--lilac); }

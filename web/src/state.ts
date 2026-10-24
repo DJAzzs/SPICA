@@ -24,6 +24,8 @@ export interface State {
   micOn: boolean;
   micError: string;
   msgs: { role: string; text: string; ts: number }[];
+  localListen: boolean;   // 手动聆听本地态（不等服务器往返）
+  toast: string;          // 顶部轻提示
 }
 
 const initial: State = {
@@ -31,7 +33,7 @@ const initial: State = {
   partial: "", final: "", rewriteDraft: "", rewriteFinal: "",
   route: null, steps: [], taskDone: "", ttsSpeaking: false, ttsText: "",
   rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
-  micOn: false, micError: "", msgs: [],
+  micOn: false, micError: "", msgs: [], localListen: false, toast: "",
 };
 
 let state: State = initial;
@@ -41,6 +43,7 @@ function set(patch: Partial<State>) {
   state = { ...state, ...patch };
   listeners.forEach((l) => l());
 }
+export { set };
 export function getState() { return state; }
 export function setMic(on: boolean, error = "") {
   set({ micOn: on, micError: error });
@@ -49,6 +52,15 @@ export function setMic(on: boolean, error = "") {
 export function setKbdOnly(on: boolean) {
   localStorage.setItem("spica-kbd", on ? "1" : "0");
   set({ micOn: false, micError: "" });
+}
+
+let _toastTimer: any = null;
+export function toast(msg: string, ms = 4000) {
+  if (_toastTimer) clearTimeout(_toastTimer);
+  set({ toast: msg });
+  if (ms > 0) {
+    _toastTimer = setTimeout(() => set({ toast: "" }), ms);
+  }
 }
 function subscribe(l: () => void) { listeners.add(l); return () => listeners.delete(l); }
 export function useSpica<T>(sel: (s: State) => T): T {
@@ -88,6 +100,8 @@ function handle(e: SpicaEvent) {
     case "settings": set({ settings: e }); break;
     case "state":
       set({ state: e.s, farewell: e.s === "shutdown" });
+      if (e.s === "listen") set({ localListen: false });   // 服务器已接手
+      else if (e.s !== "idle") set({ localListen: false });
       if (e.s === "listen") set({ partial: "", final: "", rewriteDraft: "", rewriteFinal: "", steps: [] });
       break;
     case "wake_ack": set({ wakeFlash: Date.now() }); break;
