@@ -599,7 +599,7 @@ class Semantics:
 
     async def _gen_title(self, prompt: str) -> None:
         """首个任务后自动起会话名（≤10 字）。"""
-        title = prompt[:12]
+        title = prompt[:14] + ("…" if len(prompt) > 14 else "")
         if self.llm is not None:
             try:
                 out = await self.llm.chat(
@@ -608,7 +608,7 @@ class Semantics:
                                  "只输出标题本身，不要截断。"},
                      {"role": "user", "content": prompt}],
                     max_tokens=32, temperature=0.3,
-                    thinking="disabled", timeout=6.0)
+                    thinking="disabled", timeout=10.0)
                 out = (out or "").strip().strip('"').strip('「」')
                 if out and len(out) <= 16:
                     title = out
