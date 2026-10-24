@@ -271,8 +271,8 @@ def test_enroll_period_no_tts_instructions(tmp_path, monkeypatch):
     run(sem._segment_audio(np.zeros(16000 * 2, dtype=np.float32)))
     run(sem._segment_audio(np.zeros(16000 * 2, dtype=np.float32)))
     assert sem.enroll_mode is False
-    # 注册完成后才说话
-    assert any("声纹注册完成" in t for _, t in narrator.said)
+    # 注册全程静默（成功不播报，页面可见结果）
+    assert narrator.said == []
 
 
 # ---------------------------------------------------------------- 手动聆听

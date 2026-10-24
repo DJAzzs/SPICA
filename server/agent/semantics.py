@@ -256,7 +256,7 @@ class Semantics:
         await self.broadcast({"t": "msg", "role": "system",
                               "text": f"长期目标已设定（最多 {self.goal['max_rounds']} 轮）：{text}", "tid": self.turn_seq})
         self._log("system", f"目标设定：{text}")
-        self.narrator.confirm(f"目标已设定，开始多轮推进：{text[:30]}。")
+        self.narrator.confirm("目标已设定，开始推进。")
         if self.state == "exec":
             return  # 当前任务完成后自动接续
         await self._goal_next_round()
@@ -268,7 +268,7 @@ class Semantics:
         note = ("目标流程结束。" if done else "目标已停止。")
         await self.broadcast({"t": "msg", "role": "system", "text": note})
         self._log("system", note)
-        self.narrator.confirm(note if done else "好，目标已停止。")
+        self.narrator.confirm("目标已达成。" if done else "目标已停止。")
 
     async def _goal_next_round(self) -> None:
         if not self.goal.get("active"):
@@ -283,7 +283,7 @@ class Semantics:
         )
         await self.broadcast({"t": "msg", "role": "system",
                               "text": f"目标第 {r} 轮开始。", "tid": self.turn_seq})
-        self.narrator.confirm(f"目标第 {r} 轮，推进中。")
+        self.narrator.confirm(f"第 {r} 轮。")
         await self._start_task(prompt)
 
     def _goal_check(self) -> None:
@@ -340,7 +340,8 @@ class Semantics:
 
     async def session_new(self) -> None:
         if self.state == "exec":
-            self.narrator.confirm("任务还在执行，先等它结束或说暂停。")
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": "任务执行中，结束后再切换会话。"})
             return
         try:
             await self.sdk.stop()   # 当前 DSH 会话已持久化
@@ -361,7 +362,8 @@ class Semantics:
         if not meta:
             return
         if self.state == "exec":
-            self.narrator.confirm("任务还在执行，先等它结束或说暂停。")
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": "任务执行中，结束后再切换会话。"})
             return
         try:
             await self.sdk.stop()
@@ -379,7 +381,6 @@ class Semantics:
         await self.broadcast({"t": "history", "msgs": self.transcript})
         await self.broadcast({"t": "session", "meta": meta})
         await self.broadcast_sessions()
-        self.narrator.confirm(f"已打开会话：{meta.get('title') or '未命名'}。")
 
     async def session_delete(self, sid: str) -> None:
         self.store.delete(sid)
@@ -409,8 +410,6 @@ class Semantics:
         for note in notes:
             await self.broadcast({"t": "msg", "role": "system", "text": note})
             self._log("system", note)
-        if notes:
-            self.narrator.confirm(notes[0] + "。")
         await self.broadcast({"t": "session", "meta": meta})
         await self.broadcast_sessions()
 
@@ -711,7 +710,7 @@ class Semantics:
         if name == "pause":
             if self.state == "exec":
                 self.sdk.pause()
-                self.narrator.confirm("已暂停，说「继续」可以接着做。")
+                self.narrator.confirm("已暂停。")
                 await self._set_state("paused")
         elif name == "resume":
             if self.state == "paused":
@@ -746,7 +745,6 @@ class Semantics:
                 await asyncio.sleep(CONFIRM_WINDOW_S)
                 if self.state == "confirm_shutdown":
                     await self._set_state("exec")
-                    self.narrator.step("继续执行。")
             self._confirm_timer = asyncio.create_task(back())
         else:
             await self.shutdown_sequence()
@@ -860,8 +858,7 @@ class Semantics:
             ok = await asyncio.to_thread(self.speaker.enroll, self.enroll_samples)
         await self.broadcast({"t": "diag", "enroll": {
             "phase": "done", "ok": bool(ok)}})
-        # 注册完成才说话（采集已结束，无自采风险）
-        self.narrator.confirm(
-            "声纹注册完成，现在我只回应你的声音了。" if ok
-            else "注册失败，请重试。")
+        # 注册完成不播报（页面可见结果）；失败才出声提醒
+        if not ok:
+            self.narrator.confirm("注册失败，请重试。")
         await self._set_state("idle")
