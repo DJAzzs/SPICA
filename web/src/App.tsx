@@ -4,6 +4,7 @@ import Wave from "./Wave";
 import Markdown from "./Markdown";
 import { MicIcon, PlusIcon, SendIcon } from "./icons";
 import ThemeToggle from "./ThemeToggle";
+import Backdrop from "./Backdrop";
 
 const ROLE_LABEL: Record<string, string> = {
   user: "用户", assistant: "SPICA", tool: "执行", system: "系统",
@@ -328,6 +329,7 @@ export default function App() {
 
   return (
     <div className="stage">
+      <Backdrop />
       <header className="topbar">
         <div className="brand">
           <span className="mark" />
