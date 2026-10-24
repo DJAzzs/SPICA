@@ -21,15 +21,19 @@ interface Conf { color: number; opacity: number; scale: number;
   pos: [number, number, number]; speed: number; }
 
 const CONF: Record<"light" | "dark", Conf[]> = {
+  // 浅色：无光斑（装饰交给瑞士网格描线）
   light: [
-    { color: 0xb98e77, opacity: 0.26, scale: 15, pos: [6.5, 2.2, -4], speed: 0.05 },
-    { color: 0x6f9793, opacity: 0.22, scale: 12, pos: [4.6, -3.2, -5], speed: 0.04 },
-    { color: 0xa89a55, opacity: 0.14, scale: 9, pos: [8.2, -0.6, -6], speed: 0.06 },
+    { color: 0xb98e77, opacity: 0, scale: 15, pos: [6.5, 2.2, -4], speed: 0.05 },
+    { color: 0x6f9793, opacity: 0, scale: 12, pos: [4.6, -3.2, -5], speed: 0.04 },
+    { color: 0xa89a55, opacity: 0, scale: 9, pos: [8.2, -0.6, -6], speed: 0.06 },
   ],
+  // 深色：5 光斑全屏铺开
   dark: [
-    { color: 0x5a7fa8, opacity: 0.18, scale: 15, pos: [6.5, 2.2, -4], speed: 0.05 },
-    { color: 0x8d7fa3, opacity: 0.14, scale: 12, pos: [4.6, -3.2, -5], speed: 0.04 },
-    { color: 0xa8c3c0, opacity: 0.07, scale: 9, pos: [8.2, -0.6, -6], speed: 0.06 },
+    { color: 0x5a7fa8, opacity: 0.17, scale: 16, pos: [6.8, 2.4, -4], speed: 0.05 },
+    { color: 0x8d7fa3, opacity: 0.13, scale: 13, pos: [-6.2, 3.4, -5], speed: 0.04 },
+    { color: 0xa8c3c0, opacity: 0.10, scale: 11, pos: [-3.0, -4.4, -6], speed: 0.06 },
+    { color: 0x5a7fa8, opacity: 0.09, scale: 9, pos: [8.4, -3.4, -7], speed: 0.045 },
+    { color: 0x8d7fa3, opacity: 0.08, scale: 14, pos: [0.4, 0.6, -8], speed: 0.035 },
   ],
 };
 
@@ -50,7 +54,7 @@ export default function Backdrop() {
       targetColor: THREE.Color; targetOpacity: number;
     }[] = [];
 
-    CONF.light.forEach((c, i) => {
+    CONF.dark.forEach((c, i) => {
       const mat = new THREE.SpriteMaterial({
         map: tex, transparent: true, depthWrite: false,
         color: c.color, opacity: c.opacity,
