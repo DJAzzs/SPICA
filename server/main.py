@@ -79,9 +79,14 @@ async def boot(app, hub) -> Semantics:
 
     sdk = SdkClient(on_notification=on_note, settings=settings)
 
+    from server.evolution.memory import MemoryStore
+    from server.evolution.skills import SkillStore
+    from server.config import ROOT as _ROOT
     sem = Semantics(pipeline, sdk, rewriter, router, narrator, packs,
                     pipeline.speaker, broadcast, settings,
-                    store=SessionStore(), llm=llm)
+                    store=SessionStore(), llm=llm,
+                    memory_store=MemoryStore(),
+                    skill_store=SkillStore(_ROOT / "workspace" / "skills"))
     sem.bind_loop()
     sem_holder["sem"] = sem
     pipeline.cb = sem.pipeline_callbacks()   # 回填真实回调

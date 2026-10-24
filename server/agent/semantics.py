@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import signal
 import subprocess
 import time
@@ -20,6 +21,8 @@ import numpy as np
 from server import lifecycle
 from server.config import (ARCHIVES_DIR, ROOT, WORKSPACE_DIR, load_settings,
                            save_settings)
+from server.evolution.memory import MemoryStore
+from server.evolution.skills import SkillStore
 from server.sessions import PERMS, SessionStore
 from server.tts.narrator import Narrator
 
@@ -29,7 +32,8 @@ CONFIRM_WINDOW_S = 20.0
 class Semantics:
     def __init__(self, pipeline, sdk, rewriter, router, narrator, packs,
                  speaker, broadcast, settings: dict | None = None,
-                 store: SessionStore | None = None, llm=None):
+                 store: SessionStore | None = None, llm=None,
+                 memory_store=None, skill_store=None):
         self.pipeline = pipeline
         self.sdk = sdk
         self.rewriter = rewriter
@@ -59,6 +63,13 @@ class Semantics:
         # turn 跟踪（前端分组折叠 + 计时）
         self.turn_seq: int = 0
         self.turn_started_at: float = 0.0
+        # 自进化
+        self.memory_store = memory_store or MemoryStore()
+        self.skill_store = skill_store or SkillStore(
+            Path(self.settings.get("skill_root", "")) if self.settings.get("skill_root")
+            else ROOT / "workspace" / "skills")
+        self._turn_count = 0          # nudge 节拍
+        self._turn_tool_calls = 0     # 本轮工具调用数（技能收获启发）
         # 长期目标 {active, text, round, max_rounds}
         self.goal: dict = {"active": False, "text": "", "round": 0,
                            "max_rounds": 0}
@@ -188,10 +199,22 @@ class Semantics:
         remainder = _after(text)
         if cmd == "export":
             await self._do_export()
+        elif cmd == "memory_add" and rest:
+            ok, msg = self.memory_store.add("memory", rest, source="voice")
+            if ok:
+                await self.broadcast({"t": "msg", "role": "system",
+                                      "text": f"🧠 已记住：{rest[:60]}"})
+                self.narrator.confirm("已记住。")
+            else:
+                self.narrator.confirm(msg)
         elif cmd == "compact":
             await self._do_compact()
         elif cmd == "goal_stop":
             await self._goal_stop()
+        elif cmd == "memory":
+            await self.memory_command(arg)
+        elif cmd == "skills":
+            await self.skills_command(arg)
         elif cmd == "goal":
             if len(remainder) >= 4:
                 await self._goal_start(remainder)
@@ -206,6 +229,145 @@ class Semantics:
                 self.narrator.confirm("请说出要规划的内容。")
                 self.pipeline.arm_listening(30)
         return True
+
+    # ================================================== 自进化
+    NUDGE_SYSTEM = (
+        "你是记忆管家。根据本轮对话，判断是否有值得持久化的内容："
+        "用户偏好/沟通风格（target=user）、环境事实/项目约定/踩坑教训"
+        "（target=memory）。只输出 JSON：{\"save\":false} 或 "
+        "{\"save\":true,\"target\":\"memory|user\",\"entry\":\"高信息密度的一句话条目\"}。"
+        "琐碎、可网搜到、临时性的内容一律不保存。"
+    )
+    HARVEST_SYSTEM = (
+        "你是技能提炼器。判断这轮 Agent 工作是否包含可复用的非平凡工作流"
+        "（多步骤方法、踩坑后的正确解法、用户纠正过的流程）。只输出 JSON："
+        "{\"harvest\":false} 或 "
+        "{\"harvest\":true,\"name\":\"短名\",\"description\":\"一句话\","
+        "\"when_to_use\":\"触发场景\",\"steps\":\"1. …\n2. …\","
+        "\"pitfalls\":\"已知坑\",\"verify\":\"如何核验\"}。"
+        "常规任务不要硬提炼。"
+    )
+
+    async def _evolution_nudge(self) -> None:
+        """每 5 轮：自动提炼值得记住的内容写入记忆（全自动+审计）。"""
+        recent = "\n".join(
+            f"[{e.get('role')}] {(e.get('text') or '')[:160]}"
+            for e in self.transcript[-14:])
+        if not recent.strip():
+            return
+        try:
+            import json as _json
+            out = await self.llm.chat(
+                [{"role": "system", "content": self.NUDGE_SYSTEM},
+                 {"role": "user", "content": recent}],
+                max_tokens=200, temperature=0.2,
+                thinking="disabled", timeout=12.0)
+            m = re.search(r"\{[\s\S]*\}", out or "")
+            if not m:
+                return
+            d = _json.loads(m.group(0))
+            if d.get("save") and d.get("entry"):
+                target = d.get("target") if d.get("target") in ("memory", "user") \
+                    else "memory"
+                ok, msg = self.memory_store.add(
+                    target, str(d["entry"]).strip(), source="nudge")
+                if ok:
+                    await self.broadcast({"t": "msg", "role": "system",
+                        "text": f"🧠 已记住（{target}）：{str(d['entry'])[:60]}"})
+        except Exception:
+            pass
+
+    async def _evolution_harvest(self, tools_used: int) -> None:
+        """复杂任务（≥5 工具调用）成功后：自动提炼技能入库。"""
+        recent = "\n".join(
+            f"[{e.get('role')}] {(e.get('text') or '')[:160]}"
+            for e in self.transcript[-18:])
+        try:
+            import json as _json
+            out = await self.llm.chat(
+                [{"role": "system", "content": self.HARVEST_SYSTEM},
+                 {"role": "user",
+                  "content": f"本轮工具调用 {tools_used} 次。\n{recent}"}],
+                max_tokens=500, temperature=0.2,
+                thinking="disabled", timeout=15.0)
+            m = re.search(r"\{[\s\S]*\}", out or "")
+            if not m:
+                return
+            d = _json.loads(m.group(0))
+            if not d.get("harvest"):
+                return
+            name = str(d.get("name", "")).strip()
+            if not name:
+                return
+            p = self.skill_store.upsert(
+                name, desc=str(d.get("description", "")),
+                when=str(d.get("when_to_use", "")),
+                steps=str(d.get("steps", "")),
+                pitfalls=str(d.get("pitfalls", "无")),
+                verify=str(d.get("verify", "")))
+            if p:
+                await self.broadcast({"t": "msg", "role": "system",
+                    "text": f"🎓 自动学会技能《{name}》（下个任务起可复用；"
+                            f"/skills 可查看或删除）"})
+                self.narrator.step(f"学会了新技能：{name}。")
+        except Exception:
+            pass
+
+    async def memory_command(self, arg: str) -> None:
+        """/memory list | add <内容> | remove <子串> | user <内容>"""
+        parts = (arg or "").split(None, 1)
+        sub = parts[0].lower() if parts else "list"
+        rest = parts[1].strip() if len(parts) > 1 else ""
+        if sub == "list":
+            for kind in ("memory", "user"):
+                es = self.memory_store.entries(kind)
+                await self.broadcast({"t": "msg", "role": "system",
+                    "text": f"〔{kind}〕(" + str(len(es)) + " 条)\n" +
+                            ("\n§ ".join(es) if es else "（空）")})
+        elif sub == "add" and rest:
+            ok, msg = self.memory_store.add("memory", rest)
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": f"{msg}（memory）" if ok else f"失败：{msg}"})
+        elif sub == "user" and rest:
+            ok, msg = self.memory_store.add("user", rest)
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": f"{msg}（user）" if ok else f"失败：{msg}"})
+        elif sub == "remove" and rest:
+            for kind in ("memory", "user"):
+                ok, msg = self.memory_store.remove(kind, rest)
+                if ok:
+                    await self.broadcast({"t": "msg", "role": "system",
+                                          "text": msg})
+                    return
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": f"未找到：{msg}"})
+        else:
+            await self.broadcast({"t": "msg", "role": "system",
+                "text": "用法：/memory list · /memory add <内容> · "
+                        "/memory user <偏好> · /memory remove <子串>"})
+
+    async def skills_command(self, arg: str) -> None:
+        """/skills list | del <名称>"""
+        parts = (arg or "").split(None, 1)
+        sub = parts[0].lower() if parts else "list"
+        rest = parts[1].strip() if len(parts) > 1 else ""
+        if sub == "list":
+            items = self.skill_store.list()
+            if not items:
+                await self.broadcast({"t": "msg", "role": "system",
+                                      "text": "技能库为空——复杂任务成功后会自动学习。"})
+                return
+            lines = [f"- {s['name']}：{s['when'] or s['desc']}" for s in items]
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": "〔技能库〕\n" + "\n".join(lines)})
+        elif sub in ("del", "delete", "rm") and rest:
+            ok = self.skill_store.delete(rest)
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": f"已删除技能：{rest}" if ok
+                                          else f"未找到技能：{rest}"})
+        else:
+            await self.broadcast({"t": "msg", "role": "system",
+                "text": "用法：/skills list · /skills del <名称>"})
 
     # ================================================== 斜杠命令
     PLAN_SUFFIX = (
@@ -231,6 +393,10 @@ class Semantics:
             await self._do_compact()
         elif cmd == "export":
             await self._do_export()
+        elif cmd == "memory":
+            await self.memory_command(arg)
+        elif cmd == "skills":
+            await self.skills_command(arg)
         elif cmd == "goal":
             if arg in ("stop", "停", "取消"):
                 await self._goal_stop()
@@ -613,8 +779,18 @@ class Semantics:
                    or load_settings().get("persona") or "").strip()
         if persona:
             prompt_out = f"（人设：{persona}）\n\n{prompt_out}"
+        # 自进化记忆快照（冻结注入，有界）
+        mem_snap = "\n".join(x for x in (
+            self.memory_store.render("memory"),
+            self.memory_store.render("user")) if x)
+        if mem_snap:
+            prompt_out = f"{mem_snap}\n\n{prompt_out}"
         if self.compact_summary:
             prompt_out = f"（前情摘要：{self.compact_summary}）\n\n{prompt_out}"
+        # 技能索引（渐进披露 L0：全文 Agent 按需 read）
+        skill_idx = self.skill_store.render_index()
+        if skill_idx:
+            suffix = f"\n\n{skill_idx}" + suffix
         await self.sdk.prompt(prompt_out + suffix)
         self._plan_mode = False   # 计划模式单轮：prompt 已带约束，发起即复位
 
@@ -674,6 +850,9 @@ class Semantics:
                 await self.broadcast({"t": "msg", "role": "tool",
                                       "text": f"结果：{out.strip()[:120]}",
                                       "tid": self.turn_seq})
+        if typ in ("tool/call", "tool/use") or "tool_call" in str(
+                (data.get("message", {}) or {}).get("content", "")):
+            self._turn_tool_calls += 1
         await self.broadcast({"t": "step", "type": typ})
         self.narrator.on_agent_event(ev)
         if typ == "turn/end":
@@ -694,6 +873,15 @@ class Semantics:
         call = f"{nickname}，" if nickname else ""
         self.narrator.final(f"{call}任务完成，请指示。")
         await self._set_state("idle")
+        # 自进化：计数 nudge + 复杂任务收获技能（全自动，异步不阻塞）
+        self._turn_count += 1
+        tools_used = self._turn_tool_calls
+        self._turn_tool_calls = 0
+        if self.state == "idle" and self.llm is not None:
+            if self._turn_count % 5 == 0:
+                asyncio.create_task(self._evolution_nudge())
+            if tools_used >= 5:
+                asyncio.create_task(self._evolution_harvest(tools_used))
         if self.pending_prompts:
             nxt = self.pending_prompts.pop(0)
             await asyncio.sleep(1.0)
