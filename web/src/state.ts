@@ -95,8 +95,11 @@ export function connectWS() {
 
 let stepSeq = 0;
 function pushMsg(role: string, text: string) {
+  // 相邻去重：同角色同文本不重复入列（终稿/总结常同文）
+  const last = state.msgs[state.msgs.length - 1];
+  if (last && last.role === role && last.text === text) return;
   const msg = { role, text, ts: Date.now() };
-  set({ msgs: [...state.msgs.slice(-199), msg] });   // 刷新恢复的上限放大
+  set({ msgs: [...state.msgs.slice(-199), msg] });
 }
 function handle(e: SpicaEvent) {
   switch (e.t) {
@@ -128,8 +131,8 @@ function handle(e: SpicaEvent) {
     case "tts": set({ ttsSpeaking: e.speaking, ttsText: e.text || state.ttsText }); break;
     case "level": set({ rms: e.rms }); break;
     case "task_done":
+      // 完成总结文本已由 assistant/message 入列；这里只更新状态
       set({ taskDone: e.summary });
-      pushMsg("assistant", e.summary);
       break;
     case "shutdown": set({ farewell: true }); break;
     case "diag": set({ diag: { ...state.diag, ...e } }); break;

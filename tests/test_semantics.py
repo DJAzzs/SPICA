@@ -183,8 +183,9 @@ def test_turn_done_back_to_idle_and_summary(tmp_path, monkeypatch):
     run(asyncio.sleep(0.05))
     assert sem.state == "idle"
     assert any(e.get("t") == "task_done" for e in events)
-    assert any("任务完成" in t and "已经完成了三件事" in t
-               for _, t in narrator.said)
+    # 结束语不含总结正文（同内容双播已修）
+    assert any("任务完成" in t for _, t in narrator.said)
+    assert not any("已经完成了三件事" in t for _, t in narrator.said)
 
 
 # ---------------------------------------------------------------- 插话队列

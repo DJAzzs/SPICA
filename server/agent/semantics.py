@@ -227,6 +227,11 @@ class Semantics:
 
     def _log(self, role: str, text: str) -> None:
         if self.session.get("id") and text:
+            # 相邻去重：assistant 终稿与 task 总结常为同文
+            last = getattr(self, "_last_log", None)
+            if last == (role, text):
+                return
+            self._last_log = (role, text)
             try:
                 self.store.append_event(self.session["id"], role, text)
             except Exception:
@@ -414,9 +419,11 @@ class Semantics:
                                 "ts": time.time()})
         await self.broadcast({"t": "task_done", "summary": summary})
         self._log("assistant", summary)
+        # 注意：最后一条 assistant 消息已由步骤播报（含压缩）呈现过，
+        # 这里只播结束语——避免同内容双播双列（两个声音的根因）。
         nickname = self.settings.get("user_nickname", "")
         call = f"{nickname}，" if nickname else ""
-        self.narrator.final(f"{summary}……{call}任务完成，请指示。")
+        self.narrator.final(f"{call}任务完成，请指示。")
         await self._set_state("idle")
         if self.pending_prompts:
             nxt = self.pending_prompts.pop(0)
