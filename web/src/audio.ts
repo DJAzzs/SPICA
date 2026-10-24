@@ -31,6 +31,15 @@ registerProcessor("spica-recorder", SpicaRecorder);
 let stream: MediaStream | null = null;
 let node: AudioWorkletNode | null = null;
 let ctx: AudioContext | null = null;
+let analyser: AnalyserNode | null = null;
+let waveBuf: Uint8Array<ArrayBuffer> | null = null;
+
+function ensureWaveBuf(size: number): Uint8Array<ArrayBuffer> {
+  if (!waveBuf || waveBuf.length !== size) {
+    waveBuf = new Uint8Array(new ArrayBuffer(size));
+  }
+  return waveBuf;
+}
 
 export async function startMic(deviceId?: string): Promise<MediaTrackSettings> {
   stream = await navigator.mediaDevices.getUserMedia({
@@ -48,10 +57,34 @@ export async function startMic(deviceId?: string): Promise<MediaTrackSettings> {
   await ctx.audioWorklet.addModule(url);
   URL.revokeObjectURL(url);
   const src = ctx.createMediaStreamSource(stream);
+  // 本地可视化分析器（rAF 帧率，零网络往返）
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 1024;
+  src.connect(analyser);
   node = new AudioWorkletNode(ctx, "spica-recorder");
   node.port.onmessage = (ev) => sendBinary(ev.data as ArrayBuffer);
   src.connect(node);
   return track.getSettings();
+}
+
+/** 实时波形（time-domain，0-255）。未开启麦克风时返回 null。 */
+export function readWaveform(): Uint8Array<ArrayBuffer> | null {
+  if (!analyser) return null;
+  const buf = ensureWaveBuf(analyser.fftSize);
+  analyser.getByteTimeDomainData(buf);
+  return buf;
+}
+
+/** 本地麦克风 RMS（0~1 附近），可视化/场景律动用。 */
+export function getMicLevel(): number {
+  const w = readWaveform();
+  if (!w) return 0;
+  let s = 0;
+  for (let i = 0; i < w.length; i += 4) {
+    const d = (w[i] - 128) / 128;
+    s += d * d;
+  }
+  return Math.sqrt(s / (w.length / 4));
 }
 
 export function stopMic() {

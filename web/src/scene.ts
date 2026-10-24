@@ -3,6 +3,7 @@
  * 极淡雾、无后处理；60fps；降级只减光晕/阴影/雾。
  */
 import * as THREE from "three";
+import { getMicLevel } from "./audio";
 
 export type SceneState = "idle" | "listen" | "exec" | "paused" | "confirm" | "done";
 
@@ -171,9 +172,11 @@ export class SpicaScene {
       this.taskMesh.children.forEach((c) => this.taskMesh.remove(c));
     }
 
-    // 执行中呼吸幅度更大一点（仍克制）
+    // 聆听：任务体随用户真实音量轻微律动（本地麦克风，rAF 帧率）
     if (this.state === "listen") {
-      this.taskMesh.scale.setScalar(1 + Math.sin(t * 2.2) * 0.008);
+      const target = 1 + Math.min(0.06, getMicLevel() * 0.5);
+      const cur = this.taskMesh.scale.x;
+      this.taskMesh.scale.setScalar(cur + (target - cur) * 0.18);
     } else this.taskMesh.scale.setScalar(1);
 
     // 极缓轨道（演示模式）

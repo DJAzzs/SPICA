@@ -1,38 +1,63 @@
 import { useEffect, useRef, useState } from "react";
 import { useSpica, send, resetPlayback, ensureAudio, setMic } from "./state";
 import { SpicaScene, SceneState } from "./scene";
+import { readWaveform } from "./audio";
 
-/** 声纹线：底部细柔起伏（RMS 驱动，平滑 0.25）。 */
+/** 声纹可视化：真实波形驱动的镜像包络（本地 Analyser，rAF 帧率）。
+ * 说话时上下起伏明显，安静时近乎平直。 */
 function WaveLine() {
   const ref = useRef<HTMLCanvasElement>(null);
-  const rms = useSpica((s) => s.rms);
-  const smooth = useRef(0);
   useEffect(() => {
     const c = ref.current!;
     const x = c.getContext("2d")!;
-    let raf = 0, t = 0;
-    const style = getComputedStyle(document.documentElement);
-    const mist = style.getPropertyValue("--mist").trim() || "#a8c3c0";
-    const draw = () => {
-      t += 0.08;
-      smooth.current += (rms - smooth.current) * 0.25;
-      const w = c.width, h = c.height;
-      x.clearRect(0, 0, w, h);
-      x.beginPath();
-      x.strokeStyle = mist;
-      x.lineWidth = 2;
-      const amp = 3 + Math.min(10, smooth.current * 220);
-      for (let i = 0; i <= w; i += 4) {
-        const y = h / 2 + Math.sin(i * 0.03 + t) * amp * (0.5 + 0.5 * Math.sin(t * 0.35));
-        i === 0 ? x.moveTo(i, y) : x.lineTo(i, y);
-      }
-      x.stroke();
-      raf = requestAnimationFrame(draw);
+    let raf = 0;
+    const cols = 96;
+    const env = new Float32Array(cols);
+    let mist = "#a8c3c0";
+    const refresh = () => {
+      mist = getComputedStyle(document.documentElement)
+        .getPropertyValue("--mist").trim() || mist;
     };
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      const w = c.width, h = c.height, mid = h / 2;
+      x.clearRect(0, 0, w, h);
+      const wave = readWaveform();
+      if (wave) {
+        for (let i = 0; i < cols; i++) {
+          let m = 0;
+          const s = Math.floor((i * wave.length) / cols);
+          const e = Math.floor(((i + 1) * wave.length) / cols);
+          for (let j = s; j < e; j++) m = Math.max(m, Math.abs(wave[j] - 128));
+          const v = Math.min(1, (m / 128) * 1.6);
+          env[i] += (v - env[i]) * 0.35;      // 平滑跟随
+        }
+      } else {
+        for (let i = 0; i < cols; i++) env[i] *= 0.9;
+      }
+      // 上包络
+      x.beginPath();
+      for (let i = 0; i < cols; i++) {
+        const px = (i / (cols - 1)) * w;
+        const y = mid - env[i] * (h * 0.42);
+        i === 0 ? x.moveTo(px, y) : x.lineTo(px, y);
+      }
+      // 下包络（镜像）
+      for (let i = cols - 1; i >= 0; i--) {
+        const px = (i / (cols - 1)) * w;
+        x.lineTo(px, mid + env[i] * (h * 0.42));
+      }
+      x.closePath();
+      x.globalAlpha = 0.16; x.fillStyle = mist; x.fill();
+      x.globalAlpha = 0.9; x.strokeStyle = mist; x.lineWidth = 1.5; x.stroke();
+      x.globalAlpha = 1;
+    };
+    refresh();
+    const themeTimer = setInterval(refresh, 2000);
     draw();
-    return () => cancelAnimationFrame(raf);
-  }, [rms]);
-  return <canvas ref={ref} width={640} height={44} />;
+    return () => { cancelAnimationFrame(raf); clearInterval(themeTimer); };
+  }, []);
+  return <canvas ref={ref} width={720} height={80} />;
 }
 
 const STATE_KICKER: Record<string, string> = {
