@@ -283,7 +283,7 @@ class Semantics:
         )
         await self.broadcast({"t": "msg", "role": "system",
                               "text": f"目标第 {r} 轮开始。", "tid": self.turn_seq})
-        self.narrator.confirm(f"第 {r} 轮。")
+        self.narrator.confirm(f"目标第 {r} 轮，推进中。")
         await self._start_task(prompt)
 
     def _goal_check(self) -> None:

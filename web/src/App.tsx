@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState, set, toast as toastMsg, toggleTurn } from "./state";
-import { SpicaScene, SceneState } from "./scene";
 import Wave from "./Wave";
 import Markdown from "./Markdown";
 import { MicIcon, PlusIcon, SendIcon } from "./icons";
@@ -220,12 +219,9 @@ const STATE_KICKER: Record<string, string> = {
 };
 
 export default function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const sceneRef = useRef<SpicaScene | null>(null);
   const st = useSpica((s) => s.state);
   const partial = useSpica((s) => s.partial);
   const route = useSpica((s) => s.route);
-  const steps = useSpica((s) => s.steps);
   const ttsSpeaking = useSpica((s) => s.ttsSpeaking);
   const wakeFlash = useSpica((s) => s.wakeFlash);
   const farewell = useSpica((s) => s.farewell);
@@ -240,29 +236,6 @@ export default function App() {
   useEffect(() => { if (settings) setWizardDone(!!settings.wizard_done); }, [settings]);
   useEffect(() => { if (wakeFlash) localStorage.setItem("spica-waked", "1"); }, [wakeFlash]);
   const demo = document.documentElement.dataset.demo === "1";
-
-  useEffect(() => {
-    if (canvasRef.current && !sceneRef.current) {
-      sceneRef.current = new SpicaScene(
-        canvasRef.current,
-        document.documentElement.dataset.theme === "dark" ? "dark" : "light");
-    }
-  }, []);
-  // 主题切换时 3D 场景同步换肤
-  useEffect(() => {
-    const on = () => sceneRef.current?.applyTheme(
-      document.documentElement.dataset.theme === "dark" ? "dark" : "light");
-    addEventListener("spica-theme", on);
-    return () => removeEventListener("spica-theme", on);
-  }, []);
-
-  useEffect(() => {
-    const map: Record<string, SceneState> = {
-      idle: "idle", listen: "listen", exec: "exec", paused: "paused",
-      confirm_shutdown: "confirm", shutdown: "done",
-    };
-    sceneRef.current?.setState(map[st] ?? "idle", steps.length);
-  }, [st, steps.length]);
 
   useEffect(() => { if (st === "shutdown") resetPlayback(); }, [st]);
 
@@ -355,8 +328,6 @@ export default function App() {
 
   return (
     <div className="stage">
-      <canvas ref={canvasRef} className="scene-canvas" />
-
       <header className="topbar">
         <div className="brand">
           <span className="mark" />
