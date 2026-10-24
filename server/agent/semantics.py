@@ -56,6 +56,10 @@ class Semantics:
         self.session: dict = {}
         self._plan_mode = False
         self.compact_summary: str = ""
+        # 长期目标 {active, text, round, max_rounds}
+        self.goal: dict = {"active": False, "text": "", "round": 0,
+                           "max_rounds": 0}
+        self._goal_pending = False   # 语音"制定目标"后等待目标文本
         # 声纹注册
         self.enroll_mode = False
         self.enroll_target = 3
@@ -138,7 +142,66 @@ class Semantics:
         self._log("user", text)
         if self.enroll_mode:
             return  # 注册模式只收音频
+        if await self._try_voice_command(text):
+            return
+        if self._goal_pending:
+            self._goal_pending = False
+            await self._goal_start(text)
+            return
         await self._dispatch(text)
+
+    # ================================================== 语音命令触发
+    @staticmethod
+    def _match_voice_cmd(text: str, table: dict) -> tuple[str, list] | None:
+        """关键词组匹配：归一化文本含组内全部词即命中，返回 (cmd, 组)。"""
+        from server.voice.wake import normalize
+        norm = normalize(text)
+        for cmd, groups in table.items():
+            for group in groups:
+                if all(w in norm for w in group):
+                    return cmd, group
+        return None
+
+    async def _try_voice_command(self, text: str) -> bool:
+        """自然语言触发命令：'导出当前会话' → /export 等。"""
+        from server.voice.wake import normalize
+        table = (self.settings.get("slash_voice")
+                 or load_settings().get("slash_voice", {}))
+        hit = self._match_voice_cmd(text, table)
+        if not hit:
+            return False
+        cmd, group = hit
+        norm = normalize(text)
+        tail = group[-1]
+        rest = norm[norm.rfind(tail) + len(tail):].strip() if tail in norm else ""
+
+        def _after(text_full: str) -> str:
+            n = normalize(text_full)
+            t = normalize(group[-1])
+            i = n.rfind(t)
+            return n[i + len(t):].strip() if i >= 0 else ""
+
+        remainder = _after(text)
+        if cmd == "export":
+            await self._do_export()
+        elif cmd == "compact":
+            await self._do_compact()
+        elif cmd == "goal_stop":
+            await self._goal_stop()
+        elif cmd == "goal":
+            if len(remainder) >= 4:
+                await self._goal_start(remainder)
+            else:
+                self._goal_pending = True
+                self.narrator.confirm("好，请说出你的长期目标。")
+                self.pipeline.arm_listening(30)
+        elif cmd == "plan":
+            if len(remainder) >= 4:
+                await self.slash("plan", remainder)
+            else:
+                self.narrator.confirm("请说出要规划的内容。")
+                self.pipeline.arm_listening(30)
+        return True
 
     # ================================================== 斜杠命令
     PLAN_SUFFIX = (
@@ -157,16 +220,76 @@ class Semantics:
             self._plan_mode = True
             await self.broadcast({"t": "msg", "role": "system",
                                   "text": "进入计划模式（只读规划，本轮生效）。"})
+            self.narrator.confirm("计划模式，只规划不修改。")
             self._log("system", "计划模式开启")
             await self.on_text_input(arg)
         elif cmd == "compact":
             await self._do_compact()
         elif cmd == "export":
-            await self.broadcast({"t": "msg", "role": "system",
-                                  "text": "请在浏览器地址栏或页面操作触发导出：/api/session/export"})
+            await self._do_export()
+        elif cmd == "goal":
+            if arg in ("stop", "停", "取消"):
+                await self._goal_stop()
+            elif arg:
+                await self._goal_start(arg)
+            else:
+                await self.broadcast({"t": "msg", "role": "system",
+                                      "text": "用法：/goal <长期目标> · /goal stop 停止"})
         else:
             await self.broadcast({"t": "msg", "role": "system",
-                                  "text": f"未知命令 /{cmd}。可用：/plan /compact /export"})
+                                  "text": f"未知命令 /{cmd}。可用：/plan /compact /export /goal"})
+
+    async def _do_export(self) -> None:
+        await self.broadcast({"t": "trigger_export"})
+        self.narrator.confirm("会话导出完成，文件已开始下载。")
+        self._log("system", "导出会话")
+
+    # ================================================== 长期目标
+    async def _goal_start(self, text: str) -> None:
+        s = load_settings()
+        self.goal = {"active": True, "text": text, "round": 0,
+                     "max_rounds": int(s.get("goal_max_rounds", 12))}
+        await self.broadcast({"t": "msg", "role": "system",
+                              "text": f"长期目标已设定（最多 {self.goal['max_rounds']} 轮）：{text}"})
+        self._log("system", f"目标设定：{text}")
+        self.narrator.confirm(f"目标已设定，开始多轮推进：{text[:30]}。")
+        if self.state == "exec":
+            return  # 当前任务完成后自动接续
+        await self._goal_next_round()
+
+    async def _goal_stop(self, done: bool = False) -> None:
+        if not self.goal.get("active"):
+            return
+        self.goal["active"] = False
+        note = ("目标流程结束。" if done else "目标已停止。")
+        await self.broadcast({"t": "msg", "role": "system", "text": note})
+        self._log("system", note)
+        self.narrator.confirm(note if done else "好，目标已停止。")
+
+    async def _goal_next_round(self) -> None:
+        if not self.goal.get("active"):
+            return
+        self.goal["round"] += 1
+        r = self.goal["round"]
+        prompt = (
+            f"（长期目标推进 · 第 {r}/{self.goal['max_rounds']} 轮）\n"
+            f"目标：{self.goal['text']}\n"
+            f"请执行本轮可推进的具体工作。回复末尾必须单独一行输出："
+            f"目标状态：已达成 或 目标状态：进行中"
+        )
+        await self.broadcast({"t": "msg", "role": "system",
+                              "text": f"目标第 {r} 轮开始。"})
+        self.narrator.confirm(f"目标第 {r} 轮，推进中。")
+        await self._start_task(prompt)
+
+    def _goal_check(self) -> None:
+        """轮末判定：达成/超限 → 结束。"""
+        if not self.goal.get("active"):
+            return
+        text = self.last_assistant_text or ""
+        done = ("已达成" in text) or self.goal["round"] >= self.goal["max_rounds"]
+        if done:
+            asyncio.create_task(self._goal_stop(done=True))
 
     async def _do_compact(self) -> None:
         """压缩上下文：LLM 总结 → 新 DSH 会话（本地记录保留）。"""
@@ -341,6 +464,13 @@ class Semantics:
                     self._confirm_timer.cancel()
                 await self._set_state("exec" if self.sdk.proc else "idle")
             return
+        if self._goal_pending:
+            self._goal_pending = False
+            await self.broadcast({"t": "msg", "role": "user", "text": text})
+            await self._goal_start(text)
+            return
+        if await self._try_voice_command(text):
+            return
         self.transcript.append({"role": "user", "text": text, "ts": time.time()})
         await self.broadcast({"t": "final", "text": text})
         await self.broadcast({"t": "msg", "role": "user", "text": text})
@@ -445,8 +575,12 @@ class Semantics:
         if self._plan_mode:
             suffix = self.PLAN_SUFFIX
         prompt_out = prompt
+        persona = (self.settings.get("persona")
+                   or load_settings().get("persona") or "").strip()
+        if persona:
+            prompt_out = f"（人设：{persona}）\n\n{prompt_out}"
         if self.compact_summary:
-            prompt_out = f"（前情摘要：{self.compact_summary}）\n\n{prompt}"
+            prompt_out = f"（前情摘要：{self.compact_summary}）\n\n{prompt_out}"
         await self.sdk.prompt(prompt_out + suffix)
         self._plan_mode = False   # 计划模式单轮：prompt 已带约束，发起即复位
 
@@ -510,6 +644,12 @@ class Semantics:
             nxt = self.pending_prompts.pop(0)
             await asyncio.sleep(1.0)
             await self._start_task(nxt)
+            return
+        if self.goal.get("active"):
+            self._goal_check()
+            if self.goal.get("active"):
+                await asyncio.sleep(1.5)
+                await self._goal_next_round()
 
     # ================================================== 语义命令
     async def _command(self, name: str, text: str) -> None:

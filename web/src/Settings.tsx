@@ -1,6 +1,24 @@
 import { useState } from "react";
 import { useSpica, send } from "./state";
 
+/** 人设编辑器：SystemPrompt/角色设定，任务级注入。 */
+function PersonaEditor() {
+  const settings = useSpica((s) => s.settings);
+  const [text, setText] = useState(settings?.persona || "");
+  return (
+    <>
+      <textarea value={text} onChange={(e) => setText(e.target.value)}
+        placeholder={"例如：你是一位严谨的资深架构师，回答精炼、给结论先给依据；"
+          + "代码风格偏函数式；对我使用「老板」称呼。"} />
+      <div className="btn-row">
+        <button className="btn" onClick={() =>
+          send({ t: "settings_patch", patch: { persona: text.trim() } })
+        }>保存人设</button>
+      </div>
+    </>
+  );
+}
+
 /** 自定义音色描述编辑器：提示词 + 试听（热更新）。 */
 function VoiceDescEditor() {
   const settings = useSpica((s) => s.settings);
@@ -75,6 +93,11 @@ export default function Settings() {
           <button className="btn" style={{ marginTop: 8 }} onClick={() =>
             send({ t: "settings_patch", patch: { speaker_threshold: parseFloat(threshold) || 0.55 } })
           }>保存阈值</button>
+        </div>
+
+        <div className="field">
+          <label>人设 / SystemPrompt（每个任务前缀注入，留空不启用）</label>
+          <PersonaEditor />
         </div>
 
         <div className="field">

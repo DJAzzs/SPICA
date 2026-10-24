@@ -29,6 +29,7 @@ EVENT_TYPES = {
     "sessions",       # {list, current} 会话列表与当前
     "session",        # {meta} 当前会话元数据变更
     "history",        # {msgs} 会话历史（打开/刷新时整批替换）
+    "trigger_export", # {} 前端自动触发 zip 下载（语音"导出会话"）
     "error",          # {message, fatal: bool}
     "settings",       # 当前设置快照（连接时下发）
     "diag",           # 硬件/环境诊断报告

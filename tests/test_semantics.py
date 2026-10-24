@@ -300,6 +300,95 @@ def test_manual_listen_blocked_in_enroll(tmp_path, monkeypatch):
     assert sem.pipeline.arm_called == 1      # 只有 enroll_start 那一次
 
 
+# ---------------------------------------------------------------- 长期目标
+def test_goal_multi_round(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.slash("goal", "整理所有照片"))
+    assert sem.goal["active"] and sem.goal["round"] == 1
+    assert sdk.prompts and "整理所有照片" in sdk.prompts[-1]
+    assert "第 1/12 轮" in sdk.prompts[-1]
+    # 轮结束（进行中）→ 自动下一轮
+    async def scenario():
+        await sem.on_sdk_notification("session.event", {
+            "event": {"type": "assistant/message",
+                      "data": {"message": {"role": "assistant", "content": [
+                          {"type": "text", "text": "本轮整理了 3 张。目标状态：进行中"}]}}}})
+        await sem.on_sdk_notification("session.event", {
+            "event": {"type": "turn/end", "data": {}}})
+        await asyncio.sleep(1.8)   # 轮间隔
+    run(scenario())
+    assert sem.goal["round"] == 2
+    assert len(sdk.prompts) == 2
+
+
+def test_goal_finishes_when_done(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.slash("goal", "小目标"))
+    async def scenario():
+        await sem.on_sdk_notification("session.event", {
+            "event": {"type": "assistant/message",
+                      "data": {"message": {"role": "assistant", "content": [
+                          {"type": "text", "text": "全部完成。目标状态：已达成"}]}}}})
+        await sem.on_sdk_notification("session.event", {
+            "event": {"type": "turn/end", "data": {}}})
+        await asyncio.sleep(0.3)
+    run(scenario())
+    assert sem.goal["active"] is False
+
+
+def test_goal_stop(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.slash("goal", "x"))
+    run(sem.slash("goal", "stop"))
+    assert sem.goal["active"] is False
+
+
+# ---------------------------------------------------------------- 语音命令
+def test_voice_command_export(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._try_voice_command("帮我把当前会话导出一下"))
+    assert any(e.get("t") == "trigger_export" for e in events)
+    assert any("导出" in t for _, t in narrator.said)
+
+
+def test_voice_command_compact(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.llm = FakeSlashLLM()
+    run(sem.on_text_input("做个东西"))
+    async def scenario():
+        await sem._try_voice_command("压缩一下上下文")
+        await asyncio.sleep(0.1)
+    run(scenario())
+    assert sdk.stopped
+    assert sem.compact_summary == "压缩后的会话摘要"
+
+
+def test_voice_command_goal_with_text(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._try_voice_command("制定目标 把文档全部翻新一遍"))
+    assert sem.goal["active"]
+    assert "把文档全部翻新一遍" in sem.goal["text"]
+
+
+def test_voice_command_goal_pending_then_text(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._try_voice_command("制定目标"))
+    assert sem._goal_pending is True
+    run(sem.on_text_input("重做整个首页"))
+    assert sem.goal["active"] and "重做整个首页" in sem.goal["text"]
+
+
+def test_persona_prefix(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    import server.agent.semantics as sem_mod
+    base = dict(sem.settings)
+    monkeypatch.setattr(sem_mod, "load_settings",
+                        lambda: {**base, "persona": "你是毒舌但专业的架构师"})
+    sem.state = "idle"
+    run(sem.on_text_input("看看代码结构"))
+    assert sdk.prompts[-1].startswith("（人设：你是毒舌但专业的架构师）")
+
+
 # ---------------------------------------------------------------- 斜杠命令
 class FakeSlashLLM:
     async def chat(self, messages, **kw):

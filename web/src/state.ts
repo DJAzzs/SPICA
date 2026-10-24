@@ -145,6 +145,13 @@ function handle(e: SpicaEvent) {
       set({ msgs: (e.msgs || []).map((m: any) => ({
         role: m.role, text: m.text, ts: m.ts || Date.now() })) });
       break;
+    case "trigger_export": {
+      const a = document.createElement("a");
+      a.href = "/api/session/export";
+      a.download = "";
+      a.click();
+      break;
+    }
     case "error": toast(`出错了：${e.message || ""}`); break;
   }
 }

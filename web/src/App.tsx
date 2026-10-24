@@ -28,23 +28,19 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
     const text = input.trim();
     if (!text || !connected) return;   // 断连静默丢弃 = 假死，必须挡住
     setInput("");
-    // 斜杠命令：/plan /compact /export
+    // 斜杠命令：/plan /compact /export /goal
     const m = text.match(/^\/(\w+)\s*([\s\S]*)$/);
     if (m) {
       const cmd = m[1].toLowerCase();
       if (cmd === "export") {
-        toastMsg("正在导出会话 zip…");
-        const a = document.createElement("a");
-        a.href = "/api/session/export";
-        a.download = "";
-        a.click();
+        send({ t: "slash", cmd: "export", arg: "" });   // 服务端播报+触发下载
         return;
       }
-      if (cmd === "plan" || cmd === "compact") {
+      if (["plan", "compact", "goal"].includes(cmd)) {
         send({ t: "slash", cmd, arg: m[2].trim() });
         return;
       }
-      toastMsg(`未知命令 /${cmd}，可用：/plan /compact /export`);
+      toastMsg(`未知命令 /${cmd}，可用：/plan /compact /export /goal`);
       return;
     }
     send({ t: "text_input", text });
