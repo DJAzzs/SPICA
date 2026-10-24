@@ -248,11 +248,17 @@ class Semantics:
         "常规任务不要硬提炼。"
     )
 
+    def _recent_events(self, n: int) -> str:
+        """最近会话事件（含 tool 过程）——harvest/nudge 的输入源。"""
+        sid = self.session.get("id")
+        evs = self.store.events(sid) if sid else self.transcript
+        return "\n".join(
+            f"[{e.get('role')}] {(e.get('text') or '')[:160]}"
+            for e in evs[-n:])
+
     async def _evolution_nudge(self) -> None:
         """每 5 轮：自动提炼值得记住的内容写入记忆（全自动+审计）。"""
-        recent = "\n".join(
-            f"[{e.get('role')}] {(e.get('text') or '')[:160]}"
-            for e in self.transcript[-14:])
+        recent = self._recent_events(16)
         if not recent.strip():
             return
         try:
@@ -279,9 +285,7 @@ class Semantics:
 
     async def _evolution_harvest(self, tools_used: int) -> None:
         """复杂任务（≥5 工具调用）成功后：自动提炼技能入库。"""
-        recent = "\n".join(
-            f"[{e.get('role')}] {(e.get('text') or '')[:160]}"
-            for e in self.transcript[-18:])
+        recent = self._recent_events(20)
         try:
             import json as _json
             out = await self.llm.chat(
@@ -586,8 +590,8 @@ class Semantics:
             try:
                 out = await self.llm.chat(
                     [{"role": "system",
-                      "content": "给下面的任务起一个不超过10个字的会话标题，"
-                                 "只输出标题本身。"},
+                      "content": "给下面的任务起一个 6-12 字的完整短语作为会话标题，"
+                                 "只输出标题本身，不要截断。"},
                      {"role": "user", "content": prompt}],
                     max_tokens=32, temperature=0.3,
                     thinking="disabled", timeout=6.0)

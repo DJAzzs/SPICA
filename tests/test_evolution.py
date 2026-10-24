@@ -8,6 +8,12 @@ from server.evolution.skills import SkillStore
 
 
 # ---------------------------------------------------------------- 记忆
+@pytest.fixture(autouse=True)
+def _isolate_audit(tmp_path, monkeypatch):
+    import server.evolution.memory as EM
+    monkeypatch.setattr(EM, "AUDIT", tmp_path / "audit.jsonl")
+
+
 @pytest.fixture
 def mem(tmp_path):
     return MemoryStore(tmp_path)
