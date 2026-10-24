@@ -83,17 +83,17 @@ DEFAULT_SETTINGS = {
     "speaker_embeddings": [],          # list[float] 列表（多遍注册取均值后再存）
     # ASR
     "asr_partial_debounce_ms": 300,
-    # DSH / LLM（同一 provider；空=读 $DSH_HOME/.env 或环境变量）
+    # DSH / LLM（同一 provider：zai-coding-cn / glm-5.3，与 web profile 一致）
     "dsh_bin": "",                     # 空=自动探测 dsh / npx dsh
-    "llm_base_url": "",                # 空=DeepSeek 官方
-    "llm_api_key": "",                 # 空=读环境 DEEPSEEK_API_KEY 或 ~/.dsh/.env
-    "llm_model_rewrite": "deepseek-chat",
-    "llm_model_route": "deepseek-chat",
-    # 难度 → DSH 路由（InitializeParams: provider/model/reasoningEffort）
+    "llm_base_url": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "llm_api_key": "",                 # 空=env ZAI_CODING_CN_API_KEY 或 ~/.dsh/.credentials.yaml
+    "llm_model_rewrite": "glm-5.3",
+    "llm_model_route": "glm-5.3",
+    # 难度 → DSH 路由（InitializeParams: model/reasoningEffort，glm-5.3 适配器）
     "difficulty_routes": {
-        "simple":   {"model": "deepseek-chat",   "reasoning_effort": "low"},
-        "normal":   {"model": "deepseek-chat",   "reasoning_effort": None},
-        "complex":  {"model": "deepseek-reasoner", "reasoning_effort": None},
+        "simple":   {"model": "glm-5.3", "reasoning_effort": "low"},
+        "normal":   {"model": "glm-5.3", "reasoning_effort": None},
+        "complex":  {"model": "glm-5.3", "reasoning_effort": "max"},
     },
     # TTS
     "tts_model_path": "/home/dja/桌面/Models/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
