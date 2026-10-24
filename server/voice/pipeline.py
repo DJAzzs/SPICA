@@ -74,6 +74,7 @@ class VoicePipeline:
         self.stream_asr = StreamingASR()
         self.final_asr = SenseVoiceASR()
         self.st = _State()
+        self.echo_provider = None          # fn(text)->bool：自身播报回声判定
         self._q: queue.Queue[np.ndarray | None] = queue.Queue(maxsize=200)
         self._ring: deque[np.ndarray] = deque()  # int16 chunks（声纹窗用）
         self._ring_samples = 0
@@ -241,8 +242,25 @@ class VoicePipeline:
         except Exception:
             pass
         text = self.final_asr.transcribe(seg.samples)
+
+        # 播报期（含尾部保持窗）：丢弃一切段——这是自身 TTS 回声；
+        # 唯一例外是「暂停」（用户喊停播报是强意图）。
+        if self._gated():
+            if text and "pause" in self.commands:
+                hit = self.matcher.match_anywhere(
+                    text, self.commands["pause"], "command:pause")
+                if hit:
+                    self.cb.on_command("pause", text)
+            self.stream_asr.reset()
+            return
+
         if not text:
             self._after_utterance()
+            return
+
+        # 自身播报回声（AEC 漏网）：静默丢弃
+        if self.echo_provider and self.echo_provider(text):
+            self.stream_asr.reset()
             return
         now = time.time()
 

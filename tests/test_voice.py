@@ -143,6 +143,50 @@ def test_pipeline_tts_gate_suppresses_wake():
         p.stop()
 
 
+def test_pipeline_tts_gate_drops_segments():
+    """播报期段结算整体丢弃（自身回声不得成为任务）；暂停指令例外。"""
+    rec = Recorder()
+    p = make_pipeline(rec)
+    try:
+        p.set_tts_gate(True)
+        p.arm_listening()          # 模拟已唤醒 LISTENING
+        chunk_feed(p, load_wav("zh.wav"))
+        time.sleep(0.5)
+        assert not rec.final.is_set(), "播报期段不得产生任务"
+        assert not rec.wake.is_set()
+    finally:
+        p.stop()
+
+
+def test_pipeline_echo_guard_drops_self_speech():
+    """回声判定命中：整段静默丢弃（AEC 漏网双保险）。"""
+    rec = Recorder()
+    p = make_pipeline(rec)
+    try:
+        p.echo_provider = lambda t: True
+        chunk_feed(p, load_wav("zh.wav"))
+        time.sleep(0.5)
+        assert not rec.wake.is_set() and not rec.final.is_set()
+    finally:
+        p.stop()
+
+
+def test_narrator_echo_match():
+    from server.tts.narrator import Narrator
+    from server.tts.engine import TTSEngine
+
+    class _Eng:
+        def synth(self, *a):
+            import numpy as np
+            return np.zeros(1, dtype=np.int16), 24000
+
+    n = Narrator(_Eng(), lambda e: None, lambda b, sr: None)  # type: ignore
+    n.recent.append("收到开始统计目录大小")
+    assert n.echo_match("收到，开始：统计目录大小！")
+    assert n.echo_match("统计目录大小")
+    assert not n.echo_match("帮我打开BiliBili搜索AI圈动态")
+
+
 def test_pipeline_dormant_no_wake_for_ordinary_speech():
     rec = Recorder()
     p = make_pipeline(rec)

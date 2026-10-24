@@ -23,40 +23,47 @@ body {
 html[data-demo="1"] body { cursor: none; }
 html[data-demo="1"] ::-webkit-scrollbar { display: none; }
 
-/* 布局：主体左对齐，8pt 网格；对话面板占左列 */
+/* 布局：顶栏 + 左侧对话面板（58%）+ 右侧 3D 场景 */
 .stage { position: relative; width: 100vw; height: 100vh; }
-.main-col { position: absolute; left: 96px; top: 40px; bottom: 32px;
-  width: 44%; max-width: 720px; z-index: 2; display: flex; flex-direction: column; }
-.brand { display: flex; align-items: baseline; gap: 16px; margin-bottom: 24px; }
-.brand .name { font-size: 20px; font-weight: 500; letter-spacing: 0.35em; }
-.brand .sub { font-size: 12px; color: var(--ink-dim); letter-spacing: 0.2em; }
+.topbar { position: absolute; top: 0; left: 64px; right: 32px; height: 96px;
+  display: flex; align-items: center; justify-content: space-between; z-index: 3; }
+.brand { display: flex; align-items: baseline; gap: 20px; }
+.brand .name { font-size: 24px; font-weight: 500; letter-spacing: 0.35em; }
+.brand .sub { font-size: 13px; color: var(--ink-dim); letter-spacing: 0.2em; }
+
+.main-col { position: absolute; left: 64px; top: 112px; bottom: 32px;
+  width: 58%; max-width: 900px; z-index: 2; display: flex; flex-direction: column;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(2px);
+  padding: 16px 20px 12px 0; }
 
 /* ---------- 对话面板 ---------- */
 .chat { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .chat-scroll { flex: 1; overflow-y: auto; padding-right: 8px; }
 .chat-scroll::-webkit-scrollbar { width: 3px; }
 .chat-scroll::-webkit-scrollbar-thumb { background: var(--bg2); }
-.chat-empty { color: var(--ink-dim); font-size: 13px; line-height: 2; padding: 24px 0; }
-.chat-msg { padding: 10px 0; border-bottom: 1px solid var(--bg2);
+.chat-empty { color: var(--ink-dim); font-size: 14px; line-height: 2.1; padding: 24px 0; }
+.chat-msg { padding: 14px 0; border-bottom: 1px solid var(--bg2);
   animation: enter 800ms var(--ease); }
-.chat-msg .chat-role { font-size: 11px; color: var(--ink-dim);
-  letter-spacing: 0.2em; margin-bottom: 4px; }
-.chat-msg .chat-text { font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+.chat-msg .chat-role { font-size: 12px; color: var(--ink-dim);
+  letter-spacing: 0.22em; margin-bottom: 5px; }
+.chat-msg .chat-text { font-size: 15px; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word; }
 .chat-msg.user .chat-text { color: var(--ink); }
 .chat-msg.user .chat-role { color: var(--sand); }
 .chat-msg.assistant .chat-text { color: var(--ink); }
 .chat-msg.assistant .chat-role { color: var(--mist); }
-.chat-msg.tool .chat-text { color: var(--ink-dim); font-size: 13px; }
+.chat-msg.tool .chat-text { color: var(--ink-dim); font-size: 14px; }
 .chat-msg.tool .chat-role { color: var(--mustard); }
-.chat-msg.system .chat-text { color: var(--lilac); font-size: 12px; }
+.chat-msg.system .chat-text { color: var(--lilac); font-size: 13px; }
 .chat-msg.ghost { opacity: 0.65; border-bottom-style: dashed; }
 .chat-msg.ghost .chat-text { color: var(--ink-dim); }
 
 /* 声纹可视化 + 输入行 */
 .chat > canvas { display: block; width: 100%; height: 56px; flex: none; }
-.chat-input { display: flex; gap: 12px; padding-top: 8px; flex: none; }
+.chat-input { display: flex; gap: 12px; padding-top: 10px; flex: none; }
 .chat-input input { flex: 1; background: var(--bg2); border: none; color: var(--ink);
-  font: inherit; font-size: 14px; padding: 12px 16px; border-radius: 2px; outline: none; }
+  font: inherit; font-size: 15px; padding: 14px 18px; border-radius: 2px; outline: none; }
 .chat-input input:focus { box-shadow: 0 0 0 1px var(--lilac); }
 .chat-input .btn { flex: none; }
 
@@ -98,10 +105,9 @@ html[data-demo="1"] ::-webkit-scrollbar { display: none; }
 /* 3D 画布 */
 .scene-canvas { position: absolute; inset: 0; z-index: 1; }
 
-/* 右下工具（非演示模式）——验收反馈：可见性提升 */
-.tools { position: absolute; right: 24px; bottom: 24px; display: flex; gap: 20px;
-  font-size: 13px; letter-spacing: 0.12em; color: var(--ink-dim); z-index: 3;
-  align-items: center; }
+/* 右下工具（非演示模式）——顶栏右侧 */
+.tools { display: flex; gap: 22px; font-size: 13px; letter-spacing: 0.12em;
+  color: var(--ink-dim); align-items: center; }
 .tools a { color: var(--ink-dim); text-decoration: none; cursor: pointer;
   transition: color 600ms var(--ease); padding: 4px 0; }
 .tools a:hover, .tools a.on { color: var(--ink); }

@@ -2,7 +2,7 @@
 
 - 优先级队列：final(0) > confirm(1) > step(2)；step 积压 >2 时丢弃旧的。
 - 播报期间通知 pipeline 关闭唤醒匹配门（防自唤醒）。
-- 同类步骤 30s 内文本去重。
+- recent：最近播报文本（归一化），供管线做自身回声判定。
 - 音频协议：先发 JSON {t:"tts", speaking:true, text, sr} 再发二进制
   24kHz mono int16 PCM 分块，最后 {t:"tts", speaking:false}。
 """
@@ -10,12 +10,20 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections import deque
 from dataclasses import dataclass
 from typing import Callable, Optional
 
 import numpy as np
 
 from server.tts.engine import TTSEngine
+from server.voice.wake import normalize
+
+try:
+    from rapidfuzz import fuzz
+    _HAVE_FUZZ = True
+except Exception:  # pragma: no cover
+    _HAVE_FUZZ = False
 
 PRIO_FINAL, PRIO_CONFIRM, PRIO_STEP = 0, 1, 2
 
@@ -41,6 +49,21 @@ class Narrator:
         self._last_step_at: dict[str, float] = {}
         self.history: list[str] = []        # 播报记录（存档用）
         self.speaking = False
+        self.recent: deque[str] = deque(maxlen=6)   # 最近播报（回声判定）
+
+    def echo_match(self, text: str) -> bool:
+        """判定一段转写是否是自身播报的回声（AEC 漏网）。"""
+        n = normalize(text)
+        if not n:
+            return True
+        for r in self.recent:
+            if not r:
+                continue
+            if len(n) >= 4 and len(r) >= 4 and (n in r or r in n):
+                return True
+            if len(n) >= 6 and _HAVE_FUZZ and fuzz.partial_ratio(n, r) >= 88:
+                return True
+        return False
 
     def start(self) -> None:
         if not self._worker:
@@ -94,6 +117,7 @@ class Narrator:
         self.speaking = True
         self.on_speaking(True)
         self.history.append(f"[{job.kind}] {job.text}")
+        self.recent.append(normalize(job.text))
         try:
             await self.broadcast({"t": "tts", "speaking": True,
                                   "text": job.text, "sr": sr, "kind": job.kind})

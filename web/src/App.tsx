@@ -239,27 +239,29 @@ export default function App() {
     <div className="stage">
       <canvas ref={canvasRef} className="scene-canvas" />
 
-      <div className="main-col">
+      <header className="topbar">
         <div className="brand">
           <span className="name">SPICA</span>
           <span className="sub">{STATE_KICKER[st] || ""}{route && st === "exec" ? ` · ${route.model ?? ""}` : ""}</span>
         </div>
+        {!demo && (
+          <div className="tools">
+            {ttsSpeaking ? <span>播报中</span> : null}
+            <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
+            <a href="#/diagnose">诊断</a>
+            <a href="#/wizard">向导</a>
+            <a href="#/settings">设置</a>
+            <a href="#/review">审阅</a>
+            <a onClick={() => send({ t: "shutdown_now" })}>关停</a>
+          </div>
+        )}
+      </header>
+
+      <div className="main-col">
         <Chat st={st} partial={partial} />
       </div>
 
       <div className={`state-dot ${wakeFlash && Date.now() - wakeFlash < 1500 ? "wake" : ""} ${st === "confirm_shutdown" ? "confirm" : ""}`} />
-
-      {!demo && (
-        <div className="tools">
-          {ttsSpeaking ? <span>播报中</span> : null}
-          <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
-          <a href="#/diagnose">诊断</a>
-          <a href="#/wizard">向导</a>
-          <a href="#/settings">设置</a>
-          <a href="#/review">审阅</a>
-          <a onClick={() => send({ t: "shutdown_now" })}>关停</a>
-        </div>
-      )}
     </div>
   );
 }

@@ -66,6 +66,7 @@ async def boot(app, hub) -> Semantics:
     narrator = Narrator(engine, broadcast, broadcast_audio,
                         on_speaking=pipeline.set_tts_gate)
     narrator.start()
+    pipeline.echo_provider = narrator.echo_match   # 自身回声判定
 
     llm = LLMClient(settings)
     rewriter = Rewriter(llm)

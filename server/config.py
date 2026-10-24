@@ -25,14 +25,17 @@ DEFAULT_WAKE_WORDS: list[dict] = [
         "phrase": "Hey, SPICA",
         "variants": [
             "hey spica", "hi spica", "hey speaker", "hey spiker", "hey spyder",
-            "嘿spica", "嘿思必卡", "嘿斯必卡", "嘿丝必卡", "a spica",
+            "hey spicka", "hey speca", "hey pica", "a spica", "hey, spica",
+            "嘿spica", "嘿思必卡", "嘿斯必卡", "嘿斯皮卡", "嘿丝必卡",
+            "嗨spica", "嗨思必卡",
         ],
         "enabled": True,
     },
     {
         "phrase": "嘿SPICA",
         "variants": [
-            "嘿 spica", "嘿思必卡", "嘿斯必卡", "嘿丝必卡", "黑spica", "嗨spica",
+            "嘿 spica", "嘿思必卡", "嘿斯必卡", "嘿斯皮卡", "嘿丝必卡",
+            "黑spica", "嗨spica", "hey spica",
         ],
         "enabled": True,
     },
@@ -42,15 +45,15 @@ DEFAULT_FAREWELL_WORDS: list[dict] = [
     {
         "phrase": "Bye, SPICA",
         "variants": [
-            "bye spica", "bye speaker", "bye spiker", "by spica",
-            "拜拜spica", "拜拜斯必卡", "拜拜丝必卡",
+            "bye spica", "bye speaker", "bye spiker", "by spica", "bye spicka",
+            "拜拜spica", "拜拜斯必卡", "拜拜丝必卡", "拜拜speaker",
         ],
         "enabled": True,
     },
     {
         "phrase": "拜拜SPICA",
         "variants": [
-            "拜拜 spica", "拜拜斯必卡", "拜拜丝必卡",
+            "拜拜 spica", "拜拜斯必卡", "拜拜丝必卡", "拜拜斯皮卡",
             "白白spica", "白白斯必卡", "拜拜思必卡",
         ],
         "enabled": True,
@@ -106,7 +109,8 @@ DEFAULT_SETTINGS = {
     "port": 8666,
     # 行为
     "archive_git_commit": True,        # 结束词存档时 workspace 若为 git 仓库则 commit
-    "wake_gate_during_tts_ms": 1200,   # TTS 播放期及结束后短暂关闭唤醒匹配
+    "wake_gate_during_tts_ms": 800,    # TTS 播放期及结束后短暂关闭匹配
+    # （回声另有 narrator.echo_match 双保险，门控可短）
 }
 
 
