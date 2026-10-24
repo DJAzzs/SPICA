@@ -262,14 +262,33 @@ html[data-theme="dark"] .tools a::after,
 .tools .conn.ok { background: var(--mist); opacity: 1;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--mist) 20%, transparent); }
 
-.model-select { background: var(--panel); border: var(--glass-bd);
-  color: var(--ink-dim); font: inherit; font-size: 12px;
-  padding: 8px 12px; border-radius: var(--radius-sm); outline: none;
-  cursor: pointer; box-shadow: var(--raise-sm);
-  backdrop-filter: var(--blur);
+/* ---------- 自绘模型下拉 ---------- */
+.model-picker { position: relative; flex: none; }
+.model-current { display: inline-flex; align-items: center; gap: 8px;
+  background: var(--panel); border: var(--glass-bd); color: var(--ink-dim);
+  font: inherit; font-size: 12px; padding: 8px 13px;
+  border-radius: var(--radius-sm); cursor: pointer;
+  box-shadow: var(--raise-sm); backdrop-filter: var(--blur);
   transition: color 600ms var(--ease); }
-.model-select:hover { color: var(--ink); }
-.model-select option { background: var(--bg); color: var(--ink); }
+.model-current:hover { color: var(--ink); }
+.model-current .turn-caret { transition: transform 400ms var(--ease); }
+.model-current .turn-caret.open { transform: rotate(180deg); }
+.model-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 50;
+  min-width: 200px; padding: 6px;
+  background: var(--panel); border: var(--glass-bd);
+  border-radius: var(--radius-sm); box-shadow: var(--raise);
+  backdrop-filter: blur(28px) saturate(1.5);
+  animation: enter 400ms var(--ease); }
+html[data-theme="light"] .model-menu { background: var(--bg-raise); }
+.model-item { display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 9px 12px; font-size: 12.5px; color: var(--ink-dim);
+  border-radius: 8px; cursor: pointer;
+  transition: background 400ms var(--ease), color 400ms var(--ease); }
+html[data-theme="dark"] .model-item:hover { background: rgba(255,255,255,0.07); }
+.model-item:hover { background: color-mix(in srgb, var(--bg) 60%, transparent);
+  color: var(--ink); }
+.model-item.active { color: var(--mist); font-weight: 500; }
+.model-sub { font-size: 10px; color: var(--ink-faint); letter-spacing: 0.06em; }
 
 /* ---------- 主题滑块 ---------- */
 .theme-wrap { display: flex; align-items: center; gap: 7px; }

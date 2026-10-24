@@ -5,6 +5,7 @@ import Markdown from "./Markdown";
 import { MicIcon, PlusIcon, SendIcon } from "./icons";
 import ThemeToggle from "./ThemeToggle";
 import Backdrop from "./Backdrop";
+import ModelPicker from "./ModelPicker";
 
 const ROLE_LABEL: Record<string, string> = {
   user: "用户", assistant: "SPICA", tool: "执行", system: "系统",
@@ -344,17 +345,7 @@ export default function App() {
         {!demo && (
           <div className="tools">
             <ThemeToggle />
-            <select className="model-select"
-              value={currentSession?.model_override || ""}
-              onChange={(e) => send({ t: "session_update",
-                id: currentSession?.id, patch: { model_override: e.target.value } })}
-              title="会话模型（自动=按难度路由）">
-              <option value="">模型：自动</option>
-              {[...new Set(["glm-5.3-flash", "glm-5.3", "glm-4.6",
-                ...(settings?.custom_models || "")
-                  .split(",").map((s: string) => s.trim()).filter(Boolean)])]
-                .map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <ModelPicker />
             {(st === "exec" || st === "paused") && (
               <button className="btn"
                 onClick={() => send({ t: "command",

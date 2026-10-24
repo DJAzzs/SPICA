@@ -1,10 +1,34 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-/** Three.js 环境效果层（非交互，慢速）：
- *  浅色（米白新拟物）：哑光柔和几何体，双向柔光（亮左上/暗右下）
- *  深色（钛黑液态玻璃）：低透明玻璃质球体，冷色微光
- *  极慢漂浮（60-120s 周期），主题切换实时换材质。 */
+/** Three.js 环境层 v2：径向渐变光晕（Canvas 纹理 Sprite）。
+ *  无实体几何、无光照计算——浅色=暖白/雾青柔光，深色=冷蓝/灰紫微光。
+ *  极慢漂移（90s+），主题切换实时换色。 */
+function glowTexture(inner: string): THREE.Texture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const g = c.getContext("2d")!;
+  const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0, inner);
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+}
+
+const THEMES = {
+  light: [
+    { color: "rgba(185,142,119,0.16)", scale: 15, pos: [6.5, 2.2, -4], speed: 0.05 },
+    { color: "rgba(111,151,147,0.14)", scale: 12, pos: [4.6, -3.2, -5], speed: 0.04 },
+    { color: "rgba(168,154,85,0.08)", scale: 9, pos: [8.2, -0.6, -6], speed: 0.06 },
+  ],
+  dark: [
+    { color: "rgba(90,127,168,0.14)", scale: 15, pos: [6.5, 2.2, -4], speed: 0.05 },
+    { color: "rgba(141,127,163,0.11)", scale: 12, pos: [4.6, -3.2, -5], speed: 0.04 },
+    { color: "rgba(168,195,192,0.05)", scale: 9, pos: [8.2, -0.6, -6], speed: 0.06 },
+  ],
+};
+
 export default function Backdrop() {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -16,58 +40,25 @@ export default function Backdrop() {
     const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
     camera.position.set(0, 0, 14);
 
-    // 柔光系统：亮暖左上 + 暗冷右下（新拟物的光感来源）
-    const keyLight = new THREE.DirectionalLight(0xfff6ea, 1.15);
-    keyLight.position.set(-4, 5, 6);
-    const fillLight = new THREE.DirectionalLight(0x9aa4b5, 0.5);
-    fillLight.position.set(5, -4, 3);
-    const amb = new THREE.AmbientLight(0xffffff, 0.55);
-    scene.add(keyLight, fillLight, amb);
-
-    // 形状：右侧竖排（避开居中的对话面板）
-    const group = new THREE.Group();
-    const shapes: { mesh: THREE.Mesh; phase: number; speed: number }[] = [];
-    const geos = [
-      new THREE.SphereGeometry(1.6, 48, 48),
-      new THREE.CapsuleGeometry(0.9, 1.6, 16, 32),
-      new THREE.SphereGeometry(1.0, 48, 48),
-      new THREE.TorusGeometry(1.2, 0.45, 24, 64),
-    ];
-    const positions: [number, number, number][] = [
-      [5.6, 1.6, -1], [7.6, -1.4, -2.5], [4.4, -2.8, -3.5], [6.8, 3.4, -4.5],
-    ];
-    geos.forEach((g, i) => {
-      const mesh = new THREE.Mesh(g);
-      mesh.position.set(...positions[i]);
-      group.add(mesh);
-      shapes.push({ mesh, phase: i * 1.9, speed: 0.14 + i * 0.05 });
-    });
-    // 左下远处一枚呼应
-    const far = new THREE.Mesh(new THREE.SphereGeometry(2.4, 48, 48));
-    far.position.set(-7.5, -4.2, -8);
-    group.add(far);
-    shapes.push({ mesh: far, phase: 5.2, speed: 0.08 });
-    scene.add(group);
-
-    let matLight: THREE.Material[] = [];
-    let matDark: THREE.Material[] = [];
-    const applyTheme = () => {
-      const dark = document.documentElement.dataset.theme === "dark";
-      matLight = shapes.map((_, i) => new THREE.MeshLambertMaterial({
-        color: [0xdfd8cb, 0xd4dcd9, 0xd8d2c4, 0xd6d0da, 0xe2ddd3][i],
-      }));
-      matDark = shapes.map(() => new THREE.MeshPhongMaterial({
-        color: 0x9fb4c8, transparent: true, opacity: 0.10,
-        shininess: 90, specular: 0x88aacc,
-      }));
-      shapes.forEach((s, i) => {
-        s.mesh.material = dark ? matDark[i] : matLight[i];
+    const sprites: { s: THREE.Sprite; speed: number; phase: number }[] = [];
+    const build = () => {
+      sprites.forEach(({ s }) => { scene.remove(s); (s.material as any).dispose?.(); });
+      sprites.length = 0;
+      const conf = document.documentElement.dataset.theme === "dark"
+        ? THEMES.dark : THEMES.light;
+      conf.forEach((c, i) => {
+        const tex = glowTexture(c.color);
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: tex, transparent: true, depthWrite: false,
+        }));
+        s.scale.set(c.scale, c.scale, 1);
+        s.position.set(...(c.pos as [number, number, number]));
+        scene.add(s);
+        sprites.push({ s, speed: c.speed, phase: i * 2.4 });
       });
-      keyLight.intensity = dark ? 0.9 : 1.15;
-      fillLight.intensity = dark ? 0.65 : 0.5;
     };
-    applyTheme();
-    addEventListener("spica-theme", applyTheme);
+    build();
+    addEventListener("spica-theme", build);
 
     const resize = () => {
       renderer.setSize(innerWidth, innerHeight, false);
@@ -79,15 +70,12 @@ export default function Backdrop() {
 
     let raf = 0;
     const t0 = performance.now();
-    shapes.forEach((s) => { s.mesh.userData.baseY = s.mesh.position.y; });
+    sprites.forEach(({ s }, i) => { s.userData.baseY = s.position.y; });
     const loop = () => {
       raf = requestAnimationFrame(loop);
       const t = (performance.now() - t0) / 1000;
-      shapes.forEach((s) => {
-        s.mesh.position.y = s.mesh.userData.baseY
-          + Math.sin(t * s.speed + s.phase) * 0.28;
-        s.mesh.rotation.x = t * 0.05 + s.phase;
-        s.mesh.rotation.y = t * 0.03;
+      sprites.forEach(({ s, speed, phase }) => {
+        s.position.y = s.userData.baseY + Math.sin(t * speed + phase) * 0.35;
       });
       renderer.render(scene, camera);
     };
@@ -96,7 +84,7 @@ export default function Backdrop() {
     return () => {
       cancelAnimationFrame(raf);
       removeEventListener("resize", resize);
-      removeEventListener("spica-theme", applyTheme);
+      removeEventListener("spica-theme", build);
       renderer.dispose();
     };
   }, []);
