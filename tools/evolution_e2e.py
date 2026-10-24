@@ -30,6 +30,10 @@ async def main() -> int:
         rt = asyncio.create_task(reader())
         await asyncio.sleep(0.5)
 
+        # 强制全新会话（避免 DSH 复用历史导致工具调用不足）
+        await ws.send(json.dumps({"t": "session_new"}))
+        await asyncio.sleep(1)
+
         # 任务 1：必然 5+ 工具调用的复杂任务
         task1 = ("在 workspace 里创建 test_project 目录：写 main.py（入口）、"
                  "utils.py（两个工具函数）、README.md（用法说明），"

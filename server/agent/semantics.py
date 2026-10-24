@@ -230,6 +230,20 @@ class Semantics:
                 self.pipeline.arm_listening(30)
         return True
 
+
+    def _bg(self, coro, tag: str) -> None:
+        """fire-and-forget 且异常可见（自进化等后台动作）。"""
+        async def _run():
+            try:
+                print(f"[evo] {tag} start", flush=True)
+                await coro
+                print(f"[evo] {tag} done", flush=True)
+            except Exception:
+                import traceback
+                print(f"[evo] {tag} FAILED:", flush=True)
+                traceback.print_exc()
+        asyncio.create_task(_run())
+
     # ================================================== 自进化
     NUDGE_SYSTEM = (
         "你是记忆管家。根据本轮对话，判断是否有值得持久化的内容："
@@ -883,9 +897,10 @@ class Semantics:
         self._turn_tool_calls = 0
         if self.state == "idle" and self.llm is not None:
             if self._turn_count % 5 == 0:
-                asyncio.create_task(self._evolution_nudge())
+                self._bg(self._evolution_nudge(), f"nudge(turn={self._turn_count})")
             if tools_used >= 5:
-                asyncio.create_task(self._evolution_harvest(tools_used))
+                self._bg(self._evolution_harvest(tools_used),
+                         f"harvest(tools={tools_used})")
         if self.pending_prompts:
             nxt = self.pending_prompts.pop(0)
             await asyncio.sleep(1.0)
