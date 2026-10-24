@@ -187,6 +187,34 @@ def test_narrator_echo_match():
     assert not n.echo_match("帮我打开BiliBili搜索AI圈动态")
 
 
+def test_narrator_condenses_long_text():
+    import asyncio
+    from server.tts.narrator import Narrator
+
+    class _Eng:
+        def synth(self, *a):
+            import numpy as np
+            return np.zeros(1, dtype=np.int16), 24000
+
+    class FakeLLM:
+        async def chat(self, messages, **kw):
+            return "已列出 6 张图片，逐张分析中"
+
+    n = Narrator(_Eng(), lambda e: None, lambda b, sr: None, llm=FakeLLM())  # type: ignore
+    long_text = "目录里有 6 张图片，我逐一查看分析。" * 4
+    out = asyncio.run(n._condense(long_text, "step"))
+    assert out == "已列出 6 张图片，逐张分析中"
+    assert len(out) < len(long_text)
+    # LLM 失败回退原文
+    class BadLLM:
+        async def chat(self, messages, **kw):
+            raise RuntimeError("down")
+    n2 = Narrator(_Eng(), lambda e: None, lambda b, sr: None, llm=BadLLM())  # type: ignore
+    assert asyncio.run(n2._condense(long_text, "step")) == long_text
+    # 短文本不经 LLM 直接播
+    assert asyncio.run(n._condense("已读取文件", "step")) == "已读取文件"
+
+
 def test_pipeline_dormant_no_wake_for_ordinary_speech():
     rec = Recorder()
     p = make_pipeline(rec)

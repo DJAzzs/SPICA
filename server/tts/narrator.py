@@ -35,15 +35,24 @@ class SpeakJob:
     kind: str          # wake | step | final | confirm | farewell
 
 
+CONDENSE_SYSTEM = (
+    "你是语音播报压缩器。把给定的 Agent 工作消息压缩成一句不超过 {limit} 字的"
+    "中文口语短句：保留关键动作和结论，去掉路径、代码、重复细节。"
+    "只输出短句本身。"
+)
+
+
 class Narrator:
     def __init__(self, engine: TTSEngine,
                  broadcast,              # async (dict) -> None  JSON 事件
                  broadcast_audio,        # async (bytes, sr) -> None
-                 on_speaking: Optional[Callable[[bool], None]] = None):
+                 on_speaking: Optional[Callable[[bool], None]] = None,
+                 llm=None):              # LLMClient（长文本缩句用）
         self.engine = engine
         self.broadcast = broadcast
         self.broadcast_audio = broadcast_audio
         self.on_speaking = on_speaking or (lambda b: None)
+        self.llm = llm
         self.q: asyncio.PriorityQueue = asyncio.PriorityQueue()
         self._worker: asyncio.Task | None = None
         self._last_step_at: dict[str, float] = {}
@@ -110,8 +119,32 @@ class Narrator:
         self.speak(text, PRIO_CONFIRM, "confirm")
 
     # ------------------------------------------------------------ 合成播报
+    async def _condense(self, text: str, kind: str) -> str:
+        """长文本压缩成短口播（失败/超时回退原文）。"""
+        limit = 40 if kind == "final" else 24
+        try:
+            out = await self.llm.chat(  # type: ignore[union-attr]
+                [{"role": "system",
+                  "content": CONDENSE_SYSTEM.format(limit=limit)},
+                 {"role": "user", "content": text}],
+                max_tokens=96,
+                temperature=0.2,
+                thinking="disabled",
+                timeout=8.0,
+            )
+            out = (out or "").strip().strip('"').strip('「」')
+            if out and 1 < len(out) < len(text):
+                return out
+        except Exception:
+            pass
+        return text
+
     async def _speak(self, job: SpeakJob) -> None:
-        pcm, sr = self.engine.synth(job.text)
+        spoken = job.text
+        # 超过 36 字的步骤/总结：先压缩再播（口语节奏）
+        if self.llm and len(spoken) > 36 and job.kind in ("step", "final"):
+            spoken = await self._condense(spoken, job.kind)
+        pcm, sr = self.engine.synth(spoken)
         if pcm.size == 0:
             return
         self.speaking = True

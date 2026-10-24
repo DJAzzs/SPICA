@@ -107,8 +107,7 @@ function handle(e: SpicaEvent) {
     case "wake_ack": set({ wakeFlash: Date.now() }); break;
     case "partial": set({ partial: e.text }); break;
     case "final":
-      set({ final: e.text });
-      pushMsg("user", e.text);
+      set({ final: e.text });   // 消息入列统一走 msg 事件（防重复）
       break;
     case "rewrite":
       if (e.stage === "draft") set({ rewriteDraft: e.text });

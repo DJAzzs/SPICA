@@ -125,6 +125,7 @@ class Semantics:
         self.transcript.append({"role": "user", "text": text,
                                 "ts": time.time()})
         await self.broadcast({"t": "final", "text": text})
+        await self.broadcast({"t": "msg", "role": "user", "text": text})
         if self.enroll_mode:
             return  # 注册模式只收音频
         await self._dispatch(text)
@@ -193,7 +194,9 @@ class Semantics:
     async def _after_rewrite(self, prompt: str) -> None:
         """改写完成后的公共路径：路由 →（执行中入队 / 开新任务）。"""
         difficulty = await self.router.classify(prompt)
-        route = self.router.route(difficulty, self.settings)
+        # 现读磁盘设置：改模型不用重启服务
+        route = self.router.route(difficulty)
+        self.settings = load_settings()
         self.route_info = route
         await self.broadcast({"t": "route", **route})
         await self.broadcast({"t": "msg", "role": "system",
@@ -208,7 +211,7 @@ class Semantics:
         await self._start_task(prompt)
 
     async def _start_task(self, prompt: str) -> None:
-        route = self.route_info or self.router.route("normal", self.settings)
+        route = self.route_info or self.router.route("normal")
         if not self.sdk.proc:
             await self.sdk.start(route["model"], route.get("reasoning_effort"))
             await self.broadcast({"t": "state", "s": "exec",
@@ -221,7 +224,12 @@ class Semantics:
                             kind="confirm")
         self.transcript.append({"role": "task", "text": prompt,
                                 "ts": time.time()})
-        await self.sdk.prompt(prompt)
+        # 执行偏好（默认抑制滥用子代理；设置可关）
+        s = self.settings
+        suffix = ""
+        if s.get("use_task_policy", True) and s.get("task_policy_suffix"):
+            suffix = s["task_policy_suffix"]
+        await self.sdk.prompt(prompt + suffix)
 
     # ================================================== SDK 通知
     async def on_sdk_notification(self, method: str, params: dict) -> None:

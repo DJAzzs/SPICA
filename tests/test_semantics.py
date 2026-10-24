@@ -148,7 +148,7 @@ def test_final_dispatches_task(tmp_path, monkeypatch):
     run(sem._wake("嘿SPICA", True, 0.9))
     run(sem._final("帮我写个脚本统计目录大小"))
     assert sdk.started_with == [("glm-5.3", None)]   # 难度路由生效
-    assert sdk.prompts == ["专业版：帮我写个脚本统计目录大小"]
+    assert sdk.prompts and sdk.prompts[0].startswith("专业版：帮我写个脚本统计目录大小")
     assert sem.state == "exec"
     assert any(e.get("t") == "rewrite" and e.get("stage") == "final"
                for e in events)
@@ -289,7 +289,7 @@ def test_text_input_dispatches_without_rewrite(tmp_path, monkeypatch):
     sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
     run(sem.on_text_input("在 workspace 创建 README.md"))
     assert sem.rewriter.finals == []                      # 未走改写
-    assert sdk.prompts == ["在 workspace 创建 README.md"]  # 原文直达
+    assert sdk.prompts and sdk.prompts[0].startswith("在 workspace 创建 README.md")
     assert any(e.get("t") == "msg" and e.get("role") == "user"
                for e in events)
     assert sem.state == "exec"

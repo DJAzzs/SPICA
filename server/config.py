@@ -111,6 +111,12 @@ DEFAULT_SETTINGS = {
     "archive_git_commit": True,        # 结束词存档时 workspace 若为 git 仓库则 commit
     "wake_gate_during_tts_ms": 800,    # TTS 播放期及结束后短暂关闭匹配
     # （回声另有 narrator.echo_match 双保险，门控可短）
+    # 任务执行偏好（追加到任务提示词，抑制滥用子代理；可在设置中关闭）
+    "use_task_policy": True,
+    "task_policy_suffix": (
+        "\n\n（执行偏好：优先直接完成任务；非必要不派生子代理或并行任务，"
+        "不重复委派；需要查看图片或文件时直接逐张读取后汇总。）"
+    ),
 }
 
 
