@@ -166,8 +166,6 @@ def create_app(boot) -> FastAPI:
         return {"path": path, "content": content}
 
     # ---------------- 上传 / 导出 ----------------
-    from fastapi import File, UploadFile
-
     @app.post("/api/files/upload")
     async def files_upload(files: list[UploadFile] = File(...)):
         sem = state["sem"]

@@ -185,9 +185,8 @@ def test_turn_done_back_to_idle_and_summary(tmp_path, monkeypatch):
     done = [e for e in events if e.get("t") == "turn_done"]
     assert done and done[0].get("tid") >= 1
     assert isinstance(done[0].get("seconds"), (int, float))
-    # 结束语不含总结正文（同内容双播已修）
-    assert any("任务完成" in t for _, t in narrator.said)
-    assert not any("已经完成了三件事" in t for _, t in narrator.said)
+    # 任务结束完全静默（界面呈现完成态）
+    assert not any("任务完成" in t for _, t in narrator.said)
 
 
 # ---------------------------------------------------------------- 插话队列

@@ -969,11 +969,7 @@ class Semantics:
         await self.broadcast({"t": "turn_done", "tid": self.turn_seq,
                               "summary": summary, "seconds": round(seconds)})
         self._log("assistant", summary)
-        # 注意：最后一条 assistant 消息已由步骤播报（含压缩）呈现过，
-        # 这里只播结束语——避免同内容双播双列（两个声音的根因）。
-        nickname = self.settings.get("user_nickname", "")
-        call = f"{nickname}，" if nickname else ""
-        self.narrator.final(f"{call}任务完成，请指示。")
+        # 任务结束不再语音播报（完成态由界面呈现）
         await self._set_state("idle")
         # 自进化：计数 nudge + 复杂任务收获技能（全自动，异步不阻塞）
         self._turn_count += 1
