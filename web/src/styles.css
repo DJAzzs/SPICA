@@ -150,6 +150,7 @@ html[data-demo="1"] ::-webkit-scrollbar { display: none; }
 .tools a { color: var(--ink-dim); text-decoration: none; cursor: pointer;
   transition: color 600ms var(--ease); padding: 4px 0; }
 .tools a:hover, .tools a.on { color: var(--ink); }
+.tools .btn { font-size: 13px; padding: 6px 14px; letter-spacing: 0.08em; }
 .tools .conn { width: 7px; height: 7px; border-radius: 50%;
   background: var(--ink-dim); opacity: 0.5; transition: background 800ms var(--ease); }
 .tools .conn.ok { background: var(--mist); opacity: 1; }

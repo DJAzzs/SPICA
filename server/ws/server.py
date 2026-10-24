@@ -176,6 +176,8 @@ def create_app(boot) -> FastAPI:
                 await sem.manual_listen(float(data.get("seconds", 20)))
             elif t == "cancel_listen":
                 await sem.cancel_listen()
+            elif t == "command":
+                await sem._command(str(data.get("name", "")), "手动")
             elif t == "session_new":
                 await sem.session_new()
             elif t == "session_open":

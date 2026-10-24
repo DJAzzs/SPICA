@@ -253,6 +253,13 @@ export default function App() {
         </div>
         {!demo && (
           <div className="tools">
+            {(st === "exec" || st === "paused") && (
+              <button className="btn"
+                onClick={() => send({ t: "command",
+                  name: st === "exec" ? "pause" : "resume" })}>
+                {st === "exec" ? "⏸ 暂停任务" : "▶ 继续任务"}
+              </button>
+            )}
             {ttsSpeaking ? <span>播报中</span> : null}
             <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
             <a href="#/sessions">会话</a>
