@@ -13,6 +13,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from server.config import ROOT, load_settings, save_settings
 
@@ -73,12 +74,22 @@ def create_app(boot) -> FastAPI:
         return JSONResponse({"app": "SPICA", "status": "web 未构建",
                              "ws": "/ws"})
 
+    # 构建产物静态资源（vite 输出 assets/）
+    if (WEB_DIST / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=WEB_DIST / "assets"),
+                  name="assets")
+
     @app.get("/api/settings")
     async def get_settings():
         return _safe_settings()
 
     @app.post("/api/settings")
     async def patch_settings(patch: dict):
+        # 向导试听：不下发设置，直接播一句
+        preview = patch.pop("tts_preview_text", None)
+        if preview and state["sem"]:
+            state["sem"].narrator.speak(preview, prio=1, kind="confirm")
+            return {"preview": True}
         merged = save_settings(patch)
         state["settings"] = merged
         await hub.broadcast({"t": "settings", **_safe_settings()})

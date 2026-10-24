@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPICA 静态布局稿</title>
+<style>
+/* ============================================================
+   SPICA 静态布局稿（效果层规范 §1-§3 的二维呈现）
+   直接浏览器打开；亮/暗切换右下角。真实 3D 场景由 web/ 实现。
+   ============================================================ */
+:root{
+  --bg:#F7F6F3; --bg2:#EFEDE8; --ink:#2B2B28; --ink-dim:#8A877F;
+  --sand:#D9B8A6; --mist:#A8C3C0; --mustard:#D6C98A; --lilac:#B7AEC4;
+  --accent:#B5543F;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+html[data-theme="dark"]{
+  --bg:#1C1F24; --bg2:#232730; --ink:#EDEAE3; --ink-dim:#7E828C;
+  --accent:#C86A54;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans SC","PingFang SC",system-ui,sans-serif;
+  font-weight:400; line-height:1.6; overflow:hidden;
+  transition:background 1200ms var(--ease);
+}
+/* 8pt 网格：主体贴左，占 ≤40% */
+.stage{position:relative;height:100vh;width:100vw}
+.grid-hint{position:absolute;inset:0;opacity:0;pointer-events:none;
+  background-image:linear-gradient(to right,rgba(128,128,128,.06) 1px,transparent 1px);
+  background-size:32px 100%}
+/* ---------- 左列主体（40%） ---------- */
+.main{position:absolute;left:96px;top:96px;width:40%;max-width:640px}
+/* 品牌行 */
+.brand{display:flex;align-items:baseline;gap:16px;margin-bottom:64px}
+.brand .name{font-size:20px;font-weight:500;letter-spacing:.35em}
+.brand .sub{font-size:12px;color:var(--ink-dim);letter-spacing:.2em}
+/* 任务块：无卡片、无边框——用留白与字重分层 */
+.task{margin-bottom:48px}
+.task .kicker{font-size:11px;color:var(--ink-dim);letter-spacing:.25em;
+  margin-bottom:8px;transition:color 800ms var(--ease)}
+.task .title{font-size:22px;font-weight:500;line-height:1.6;
+  max-width:24em;transition:color 800ms var(--ease)}
+.task .title.focused{color:var(--accent)}
+.task .meta{font-size:12px;color:var(--ink-dim);margin-top:8px;letter-spacing:.08em}
+/* 步骤列：位置表达层级，不连线 */
+.steps{margin-top:8px}
+.step{display:flex;align-items:baseline;gap:12px;padding:6px 0;
+  opacity:0;transform:translateY(8px);
+  animation:enter 800ms var(--ease) forwards}
+.step .idx{font-size:11px;color:var(--ink-dim);width:16px}
+.step .txt{font-size:14px;color:var(--ink-dim);transition:color 600ms var(--ease)}
+.step.active .txt{color:var(--ink)}
+.step.done .txt{color:var(--mist)}
+.step .dot{width:4px;height:4px;border-radius:50%;background:var(--ink-dim);
+  opacity:0;transition:opacity 1200ms var(--ease),background 1200ms var(--ease)}
+.step.done .dot{opacity:1;background:var(--mist)}
+.step.active .dot{opacity:1;background:var(--accent)}
+@keyframes enter{to{opacity:1;transform:translateY(0)}}
+/* ---------- 底部声纹线 ---------- */
+.wave{position:absolute;left:96px;bottom:96px;width:40%;height:2px}
+.wave canvas{display:block;width:100%;height:44px}
+/* 改写进度线 */
+.rewrite-bar{position:absolute;left:96px;bottom:148px;width:40%;height:1px;
+  background:var(--bg2)}
+.rewrite-bar .fill{height:1px;width:0%;background:var(--lilac);
+  transition:width 800ms var(--ease)}
+/* ---------- 角点状态点 ---------- */
+.state-dot{position:absolute;left:24px;bottom:24px;width:6px;height:6px;
+  border-radius:50%;background:var(--ink-dim);opacity:.4;
+  animation:breath 1200ms var(--ease)}
+@keyframes breath{0%{opacity:.4;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.2);background:var(--sand)}
+  100%{opacity:.85;transform:scale(1)}}
+/* ---------- 右侧留白的几何示意（3D 场景占位说明） ---------- */
+.space-note{position:absolute;right:96px;top:96px;text-align:right;
+  font-size:11px;color:var(--ink-dim);letter-spacing:.15em;line-height:2}
+.space-note b{font-weight:500;color:var(--ink)}
+/* ---------- 主题切换 ---------- */
+.theme{position:absolute;right:24px;bottom:24px;font-size:11px;
+  color:var(--ink-dim);letter-spacing:.15em;cursor:pointer;user-select:none}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="grid-hint"></div>
+
+  <div class="main">
+    <div class="brand">
+      <span class="name">SPICA</span>
+      <span class="sub">语音优先 · 本地 Agent 操控台</span>
+    </div>
+
+    <div class="task">
+      <div class="kicker">正在执行 · EXEC</div>
+      <div class="title focused">统计 workspace 目录大小并生成报表</div>
+      <div class="meta">GLM-5.3 · 推理强度 normal · DSH session 6f2a…</div>
+      <div class="steps">
+        <div class="step done" style="animation-delay:0ms"><span class="dot"></span><span class="idx">01</span><span class="txt">扫描目录结构</span></div>
+        <div class="step done" style="animation-delay:200ms"><span class="dot"></span><span class="idx">02</span><span class="txt">统计各类型文件体积</span></div>
+        <div class="step active" style="animation-delay:400ms"><span class="dot"></span><span class="idx">03</span><span class="txt">生成 Markdown 报表</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rewrite-bar"><div class="fill" style="width:100%"></div></div>
+  <div class="wave"><canvas id="wave" width="640" height="44"></canvas></div>
+  <div class="state-dot"></div>
+
+  <div class="space-note">
+    <b>此区域为留白</b><br>
+    3D 等距场景在实现中<br>
+    任务=悬浮几何体 · 步骤=上方小块<br>
+    完成上升一档转雾青<br><br>
+    主体 ≤40% · 8pt 网格 · 唯一强调色
+  </div>
+
+  <div class="theme" onclick="toggle()">亮 / 暗</div>
+</div>
+<script>
+/* 声纹线示意：柔和起伏（真实实现由 RMS 驱动） */
+const c=document.getElementById('wave'),x=c.getContext('2d');let t=0;
+(function draw(){
+  x.clearRect(0,0,640,44);x.beginPath();
+  const cs=getComputedStyle(document.documentElement);
+  x.strokeStyle=cs.getPropertyValue('--mist');x.lineWidth=2;
+  for(let i=0;i<=640;i+=4){
+    const amp=6+4*Math.sin(t*.6)+2*Math.sin(t*1.7);
+    const y=22+Math.sin(i*.02+t)*amp*Math.sin(t*.3);
+    i===0?x.moveTo(i,y):x.lineTo(i,y);
+  }
+  x.stroke();t+=.08;requestAnimationFrame(draw);
+})();
+function toggle(){
+  const h=document.documentElement;
+  h.dataset.theme=h.dataset.theme==='dark'?'':'dark';
+}
+</script>
+</body>
+</html>

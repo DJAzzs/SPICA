@@ -137,7 +137,11 @@ class VoicePipeline:
         decode_every = 0.32  # partial 解码节拍
         last_decode = 0.0
         while True:
-            item = self._q.get()
+            try:
+                item = self._q.get(timeout=1.0)
+            except queue.Empty:
+                self._idle_check()   # LISTENING 超时自动回 DORMANT
+                continue
             if item is None:
                 break
             i16 = item
@@ -293,5 +297,9 @@ class VoicePipeline:
 
     def _after_utterance(self) -> None:
         self.stream_asr.reset()
+        self._idle_check()
+
+    def _idle_check(self) -> None:
+        """LISTENING 超时（followup 窗口过后无后续语音）自动回 DORMANT。"""
         if self.st.mode == "LISTENING" and time.time() > self.st.followup_until:
             self.st.mode = "DORMANT"

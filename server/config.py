@@ -120,6 +120,15 @@ def deep_merge(base: dict, override: dict) -> dict:
     return out
 
 
+def _sanitize(merged: dict) -> dict:
+    """防御：词表为 None/空时回退默认（避免 None 污染管线匹配）。"""
+    if not merged.get("wake_words"):
+        merged["wake_words"] = DEFAULT_WAKE_WORDS
+    if not merged.get("farewell_words"):
+        merged["farewell_words"] = DEFAULT_FAREWELL_WORDS
+    return merged
+
+
 def load_settings() -> dict:
     """读 run/settings.json，深合并到默认值。"""
     data = {}
@@ -128,13 +137,19 @@ def load_settings() -> dict:
             data = json.loads(SETTINGS_FILE.read_text("utf-8"))
         except Exception:
             data = {}
-    return deep_merge(DEFAULT_SETTINGS, data)
+    return _sanitize(deep_merge(DEFAULT_SETTINGS, data))
 
 
 def save_settings(patch: dict) -> dict:
     """合并写入并返回新设置。"""
     current = load_settings()
     merged = deep_merge(current, patch)
+    # 过滤显式 None（避免覆盖为 null）
+    for k in list(merged.keys()):
+        if merged[k] is None and k != "reasoning_effort":
+            if k in DEFAULT_SETTINGS:
+                merged[k] = DEFAULT_SETTINGS[k]
+    merged = _sanitize(merged)
     RUN_DIR.mkdir(parents=True, exist_ok=True)
     SETTINGS_FILE.write_text(
         json.dumps(merged, ensure_ascii=False, indent=2), "utf-8"

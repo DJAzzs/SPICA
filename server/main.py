@@ -11,6 +11,16 @@ GPU 桌面数秒；之后全部走缓存）。
 from __future__ import annotations
 
 import asyncio
+import os
+from pathlib import Path
+
+# --- Triton JIT 头文件兜底（Blackwell 上 torch cu130 部分内核走 Triton JIT，
+#     venv 3.12 无 python3.12-dev 时借 3.11 头；C-API 稳定子集，已验证）。
+if "CPATH" not in os.environ:
+    _py311 = Path("/usr/include/python3.11/Python.h")
+    _py312 = Path("/usr/include/python3.12/Python.h")
+    if _py311.exists() and not _py312.exists():
+        os.environ["CPATH"] = "/usr/include/python3.11"
 
 import uvicorn
 

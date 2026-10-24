@@ -1,0 +1,132 @@
+/** WS 客户端 + 全局状态（useSyncExternalStore 模式，无重依赖）。 */
+import { useSyncExternalStore } from "react";
+
+export interface SpicaEvent { t: string; [k: string]: any }
+
+export interface State {
+  connected: boolean;
+  state: string;              // idle|listen|exec|paused|confirm_shutdown|shutdown
+  settings: any;
+  partial: string;
+  final: string;
+  rewriteDraft: string;
+  rewriteFinal: string;
+  route: any;
+  steps: { i: number; type: string; text: string; status: string }[];
+  taskDone: string;
+  ttsSpeaking: boolean;
+  ttsText: string;
+  rms: number;
+  wakeFlash: number;          // 唤醒呼吸触发时间戳
+  farewell: boolean;
+  review: any[];
+  diag: any;
+}
+
+const initial: State = {
+  connected: false, state: "idle", settings: null,
+  partial: "", final: "", rewriteDraft: "", rewriteFinal: "",
+  route: null, steps: [], taskDone: "", ttsSpeaking: false, ttsText: "",
+  rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
+};
+
+let state: State = initial;
+const listeners = new Set<() => void>();
+
+function set(patch: Partial<State>) {
+  state = { ...state, ...patch };
+  listeners.forEach((l) => l());
+}
+export function getState() { return state; }
+function subscribe(l: () => void) { listeners.add(l); return () => listeners.delete(l); }
+export function useSpica<T>(sel: (s: State) => T): T {
+  return useSyncExternalStore(subscribe, () => sel(state));
+}
+
+export function send(msg: object) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+}
+
+/** 二进制帧（麦克风 PCM）直发。 */
+export function sendBinary(buf: ArrayBuffer) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(buf);
+}
+
+let ws: WebSocket | null = null;
+
+export function connectWS() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.binaryType = "arraybuffer";
+  ws.onopen = () => set({ connected: true });
+  ws.onclose = () => { set({ connected: false }); setTimeout(connectWS, 1500); };
+  ws.onmessage = (ev) => {
+    if (typeof ev.data === "string") handle(JSON.parse(ev.data));
+    else onAudioChunk(ev.data);   // TTS PCM
+  };
+}
+
+let stepSeq = 0;
+function handle(e: SpicaEvent) {
+  switch (e.t) {
+    case "settings": set({ settings: e }); break;
+    case "state":
+      set({ state: e.s, farewell: e.s === "shutdown" });
+      if (e.s === "listen") set({ partial: "", final: "", rewriteDraft: "", rewriteFinal: "", steps: [] });
+      break;
+    case "wake_ack": set({ wakeFlash: Date.now() }); break;
+    case "partial": set({ partial: e.text }); break;
+    case "final": set({ final: e.text }); break;
+    case "rewrite":
+      if (e.stage === "draft") set({ rewriteDraft: e.text });
+      else set({ rewriteFinal: e.text });
+      break;
+    case "route": set({ route: e }); break;
+    case "step":
+      stepSeq += 1;
+      set({ steps: [...state.steps.slice(-7), { i: stepSeq, type: e.type, text: e.text || "", status: "active" }] });
+      break;
+    case "tts": set({ ttsSpeaking: e.speaking, ttsText: e.text || state.ttsText }); break;
+    case "level": set({ rms: e.rms }); break;
+    case "task_done": set({ taskDone: e.summary }); break;
+    case "shutdown": set({ farewell: true }); break;
+    case "diag": set({ diag: { ...state.diag, ...e } }); break;
+  }
+}
+
+/* ---------------- TTS 播放（WebAudio 队列） ---------------- */
+let audioCtx: AudioContext | null = null;
+let playHead = 0;
+let ttsSr = 24000;
+let pendingChunks: Int16Array[] = [];
+
+export function ensureAudio(): AudioContext {
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+function onAudioChunk(buf: ArrayBuffer) {
+  pendingChunks.push(new Int16Array(buf));
+  schedule();
+}
+
+function schedule() {
+  const ctx = ensureAudio();
+  if (playHead < ctx.currentTime) playHead = ctx.currentTime + 0.05;
+  while (pendingChunks.length) {
+    const pcm = pendingChunks.shift()!;
+    const f32 = new Float32Array(pcm.length);
+    for (let i = 0; i < pcm.length; i++) f32[i] = pcm[i] / 32768;
+    const buf = ctx.createBuffer(1, f32.length, ttsSr);
+    buf.copyToChannel(f32, 0);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(playHead);
+    playHead += buf.duration;
+  }
+}
+
+/** 重置播放队列（打断/重连）。 */
+export function resetPlayback() { pendingChunks = []; playHead = 0; }
