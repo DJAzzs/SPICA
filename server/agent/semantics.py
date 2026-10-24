@@ -394,6 +394,22 @@ class Semantics:
             if ("cwd" in patch or "perm" in patch) and self.sdk.proc:
                 self.sdk.pause()
                 self._need_resume = bool(meta.get("dsh_session_id"))
+        # 即时反馈：让切换看得见（而不是等下一条任务的路由消息）
+        notes = []
+        if "model_override" in patch and sid == self.session.get("id"):
+            v = patch["model_override"] or "自动（按难度路由）"
+            notes.append(f"模型已切换：{v}，下个任务生效")
+        if "perm" in patch:
+            notes.append(f"权限已切换：{patch['perm']}，下个任务生效")
+        if "cwd" in patch:
+            notes.append(f"工作区已切换：{patch['cwd']}")
+        if "title" in patch:
+            notes.append(f"会话已重命名：{patch['title']}")
+        for note in notes:
+            await self.broadcast({"t": "msg", "role": "system", "text": note})
+            self._log("system", note)
+        if notes:
+            self.narrator.confirm(notes[0] + "。")
         await self.broadcast({"t": "session", "meta": meta})
         await self.broadcast_sessions()
 
@@ -515,9 +531,11 @@ class Semantics:
             route = {**route, "model": override}
         self.route_info = route
         await self.broadcast({"t": "route", **route})
-        await self.broadcast({"t": "msg", "role": "system",
-                              "text": f"路由：{route.get('model')} · {difficulty}"})
-        self._log("system", f"路由：{route.get('model')} · {difficulty}")
+        # 自动模式才播报路由；手动选定时模型是用户决定的，不再报
+        if not override:
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": f"路由：{route.get('model')} · {difficulty}"})
+            self._log("system", f"路由：{route.get('model')} · {difficulty}")
 
         if self.state == "exec":
             # 执行中插话：入队，turn 结束后送达

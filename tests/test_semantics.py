@@ -426,6 +426,22 @@ def test_slash_unknown(tmp_path, monkeypatch):
                if e.get("t") == "msg")
 
 
+def test_model_override_shows_in_route(tmp_path, monkeypatch):
+    """会话级模型覆盖：不输出路由消息（手动选定无需播报），模型实际生效。"""
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.session_new())
+    run(sem.on_text_input("自动模式任务"))
+    assert any("路由" in e.get("text", "") for e in events
+               if e.get("t") == "msg")          # 自动模式：有路由消息
+    events.clear()
+    run(sem.session_update(sem.session["id"], {"model_override": "glm-5.3"}))
+    events.clear()
+    run(sem.on_text_input("手动模式任务"))
+    assert not any("路由" in e.get("text", "") for e in events
+                   if e.get("t") == "msg")      # 手动模式：无路由消息
+    assert sdk.started_with[-1][0] == "glm-5.3"  # 且模型确实生效
+
+
 # ---------------------------------------------------------------- 键盘输入
 def test_text_input_dispatches_without_rewrite(tmp_path, monkeypatch):
     """键盘输入：跳过改写、直接路由执行（FakeRewriter 不该被调用）。"""
