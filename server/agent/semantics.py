@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import random
 import re
 import signal
 import subprocess
@@ -199,6 +200,10 @@ class Semantics:
         remainder = _after(text)
         if cmd == "export":
             await self._do_export()
+        elif cmd == "music_play":
+            await self.music_play(remainder[:40], source="voice")
+        elif cmd == "music_stop":
+            await self.music_stop(quiet=False)
         elif cmd == "memory_add" and rest:
             ok, msg = self.memory_store.add("memory", rest, source="voice")
             if ok:
@@ -211,6 +216,20 @@ class Semantics:
             await self._do_compact()
         elif cmd == "goal_stop":
             await self._goal_stop()
+        elif cmd == "music":
+            parts = arg.split(None, 1)
+            sub = parts[0].lower() if parts else "play"
+            q = parts[1].strip() if len(parts) > 1 else ""
+            if sub in ("stop", "off"):
+                await self.music_stop()
+            elif sub == "pause":
+                await self.broadcast({"t": "music_ctrl", "action": "pause"})
+            elif sub == "resume":
+                await self.broadcast({"t": "music_ctrl", "action": "resume"})
+            elif sub == "next":
+                await self.broadcast({"t": "music_ctrl", "action": "next"})
+            else:
+                await self.music_play(q)
         elif cmd == "memory":
             await self.memory_command(arg)
         elif cmd == "skills":
@@ -387,6 +406,56 @@ class Semantics:
             await self.broadcast({"t": "msg", "role": "system",
                 "text": "用法：/skills list · /skills del <名称>"})
 
+    # ================================================== 音乐（MusicFree/OpenSubsonic）
+    async def music_play(self, query: str, source: str = "manual") -> None:
+        """搜索并播放：有词按词搜，无词随机轻音乐/热门。"""
+        from server.media.musicfree import MusicFree
+        ok, info = await MusicFree.ping()
+        if not ok:
+            await self.broadcast({"t": "msg", "role": "system",
+                "text": f"音乐服务未连接（{info[:60]}）。请在设置中配置 MusicFree 服务器地址与 API Key。"})
+            self.narrator.confirm("音乐服务没有连上，请先在设置里配置。")
+            return
+        keyword = (query or "").strip() or random.choice(
+            ["轻音乐", "流行 热门", "纯音乐 工作", "钢琴曲"])
+        track = await MusicFree.pick(keyword)
+        if not track:
+            await self.broadcast({"t": "msg", "role": "system",
+                                  "text": f"没有找到「{keyword}」相关的歌。"})
+            return
+        await self.broadcast({"t": "music_track", **track})
+        await self.broadcast({"t": "msg", "role": "system",
+            "text": f"♪ 开始播放：{track['title']} — {track['artist']}"})
+        self._log("system", f"播放音乐：{track['title']} — {track['artist']}")
+        if source == "voice":
+            self.narrator.confirm(f"好，来听{track['title']}。")
+
+    async def music_stop(self, quiet: bool = False) -> None:
+        await self.broadcast({"t": "music_stop"})
+        if not quiet:
+            self.narrator.confirm("音乐已停。")
+
+    async def music_auto_pick(self, brief: str) -> None:
+        """任务开始时自动配乐：flash 依据任务气质选关键词。"""
+        if not load_settings().get("music_auto_on_task"):
+            return
+        keyword = "轻音乐"
+        if self.llm is not None:
+            try:
+                out = await self.llm.chat(
+                    [{"role": "system",
+                      "content": "根据任务内容给一个音乐搜索关键词（4-10字，"
+                                 "如『专注电子』『轻快钢琴』『city pop』）。只输出关键词。"},
+                     {"role": "user", "content": brief[:120]}],
+                    max_tokens=32, temperature=0.5,
+                    thinking="disabled", timeout=6.0)
+                k = (out or "").strip().strip('"')[:16]
+                if k:
+                    keyword = k
+            except Exception:
+                pass
+        await self.music_play(keyword, source="auto")
+
     # ================================================== 斜杠命令
     PLAN_SUFFIX = (
         "\n\n（计划模式：本次任务只做分析与规划——不要创建、修改或删除任何文件，"
@@ -411,6 +480,20 @@ class Semantics:
             await self._do_compact()
         elif cmd == "export":
             await self._do_export()
+        elif cmd == "music":
+            parts = arg.split(None, 1)
+            sub = parts[0].lower() if parts else "play"
+            q = parts[1].strip() if len(parts) > 1 else ""
+            if sub in ("stop", "off"):
+                await self.music_stop()
+            elif sub == "pause":
+                await self.broadcast({"t": "music_ctrl", "action": "pause"})
+            elif sub == "resume":
+                await self.broadcast({"t": "music_ctrl", "action": "resume"})
+            elif sub == "next":
+                await self.broadcast({"t": "music_ctrl", "action": "next"})
+            else:
+                await self.music_play(q)
         elif cmd == "memory":
             await self.memory_command(arg)
         elif cmd == "skills":
@@ -811,6 +894,7 @@ class Semantics:
             suffix = f"\n\n{skill_idx}" + suffix
         await self.sdk.prompt(prompt_out + suffix)
         self._plan_mode = False   # 计划模式单轮：prompt 已带约束，发起即复位
+        self._bg(self.music_auto_pick(prompt[:80]), "music-auto")
 
     # ================================================== SDK 通知
     REASONING_BLOCKS = ("reasoning", "thinking")

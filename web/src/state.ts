@@ -31,6 +31,8 @@ export interface State {
   currentSession: any | null;
   turns: Record<number, { collapsed: boolean }>;   // tid → 折叠态
   execSince: number;      // 当前 turn 开始时间戳（计时）
+  musicTrack: any | null;
+  musicStopFlag: number;
 }
 
 const initial: State = {
@@ -40,6 +42,7 @@ const initial: State = {
   rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
   micOn: false, micError: "", msgs: [], localListen: false, toast: "",
   sessions: [], currentSession: null, turns: {}, execSince: 0,
+  musicTrack: null, musicStopFlag: 0,
 };
 
 let state: State = initial;
@@ -184,6 +187,8 @@ function handle(e: SpicaEvent) {
       set({ msgs: (e.msgs || []).map((m: any) => ({
         role: m.role, text: m.text, ts: m.ts || Date.now() })) });
       break;
+    case "music_track": set({ musicTrack: e, musicStopFlag: 0 }); break;
+    case "music_stop": set({ musicStopFlag: Date.now() }); break;
     case "trigger_export": {
       const a = document.createElement("a");
       a.href = "/api/session/export";

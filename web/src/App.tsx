@@ -5,6 +5,7 @@ import Markdown from "./Markdown";
 import { MicIcon, PlusIcon, SendIcon } from "./icons";
 import ThemeToggle from "./ThemeToggle";
 import Backdrop from "./Backdrop";
+import MusicBar from "./MusicBar";
 import ModelPicker from "./ModelPicker";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -331,6 +332,7 @@ export default function App() {
   return (
     <div className="stage">
       <Backdrop />
+      <MusicBar />
       <header className="topbar">
         <div className="brand">
           <span className="mark" />

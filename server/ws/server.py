@@ -225,6 +225,27 @@ def create_app(boot) -> FastAPI:
             headers={"Content-Disposition":
                      f"attachment; filename*=UTF-8''spica-{safe}.zip"})
 
+    # ---------------- 音乐（代理流/封面，解决 CORS） ----------------
+    @app.get("/api/music/stream")
+    async def music_stream(id: str):
+        from server.media.musicfree import MusicFree
+        try:
+            gen, ctype = await MusicFree.stream(id)
+            from fastapi.responses import StreamingResponse
+            return StreamingResponse(gen, media_type=ctype,
+                headers={"Cache-Control": "no-store"})
+        except Exception as e:
+            return JSONResponse({"error": str(e)[:120]}, status_code=502)
+
+    @app.get("/api/music/cover")
+    async def music_cover(id: str):
+        from server.media.musicfree import MusicFree
+        try:
+            data, ctype = await MusicFree.cover(id)
+            return Response(content=data, media_type=ctype)
+        except Exception:
+            return Response(status_code=502)
+
     @app.websocket("/ws")
     async def ws_endpoint(ws: WebSocket):
         await ws.accept()
@@ -290,6 +311,14 @@ def create_app(boot) -> FastAPI:
                 await sem.cancel_listen()
             elif t == "command":
                 await sem._command(str(data.get("name", "")), "手动")
+            elif t == "music_ctrl":
+                action = str(data.get("action", ""))
+                if action == "play":
+                    await sem.music_play(str(data.get("q", "")))
+                elif action == "stop":
+                    await sem.music_stop()
+                else:
+                    await hub.broadcast({"t": "music_ctrl", "action": action})
             elif t == "slash":
                 await sem.slash(str(data.get("cmd", "")),
                                 str(data.get("arg", "")))
