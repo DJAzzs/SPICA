@@ -118,8 +118,10 @@ DEFAULT_SETTINGS = {
         "不重复委派；需要查看图片或文件时直接逐张读取后汇总。）"
     ),
     # 音乐（MusicFree / OpenSubsonic 兼容服务器）
-    "musicfree_url": "http://127.0.0.1:4533",
+    "musicfree_url": "http://127.0.0.1:14533",
     "musicfree_api_key": "",
+    "musicfree_user": "admin",        # u/t/s 认证（无 API key 时使用）
+    "musicfree_pass": "",
     "music_auto_on_task": False,   # Agent 任务开始时自动配乐（关键词由 flash 按任务选）
     # 人设 / SystemPrompt（每个任务前缀注入；空=不启用）
     "persona": "",

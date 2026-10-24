@@ -1,0 +1,33 @@
+2026-10-25 01:03:08.008 INFO Music Free server starting version=1.2.5
+2026-10-25 01:03:08.011 INFO process temp directory tmpdir=/var/tmp
+2026-10-25 01:03:08.142 INFO chromaprint enabled (embedded wasm) algorithm=2 ffmpeg=ffmpeg wasm_memory_limit_mb=256
+2026-10-25 01:03:08.159 INFO sqlite optimized journal_mode=WAL busy_timeout_ms=5000 synchronous=NORMAL max_open_conns=1
+2026-10-25 01:03:08.161 INFO database connected type=sqlite
+2026-10-25 01:03:08.175 INFO duplicate album merge completed
+2026-10-25 01:03:08.177 INFO database schema migrated
+2026-10-25 01:03:08.181 INFO builtin tag cleaning rules synced path=/app/config/tag_cleaning_builtin_rules.json
+2026-10-25 01:03:08.183 INFO applied database config overrides ma_enabled=false ma_server_url=
+2026-10-25 01:03:08.186 INFO starting initial library scan
+2026-10-25 01:03:08.188 INFO starting full library scan
+2026-10-25 01:03:08.188 INFO incremental scan timer started interval_minutes=30
+2026-10-25 01:03:08.188 INFO server-sdk sync timer started interval=30m0s
+2026-10-25 01:03:08.188 INFO cleanup timer started interval_hours=24
+2026-10-25 01:03:08.188 INFO server-sdk playlist sync timer started interval=8h0m0s
+2026-10-25 01:03:08.188 INFO cover service initialized cover_path=/app/data/covers
+2026-10-25 01:03:08.191 INFO full library scan completed files_processed=0 added=0 updated=0 skipped=0
+2026-10-25 01:03:08.205 INFO updating album statistics
+2026-10-25 01:03:08.203 INFO playlist sync timer started interval=6h0m0s
+2026-10-25 01:03:08.203 INFO cast: device discovery started scanInterval=30s
+2026-10-25 01:03:08.207 INFO album statistics updated
+2026-10-25 01:03:08.212 INFO embedded web UI enabled web_root=/app/dist
+2026-10-25 01:03:08.216 INFO HTTP server listening addr=0.0.0.0:14533
+2026-10-25 01:03:08.214 INFO initial library scan completed
+2026-10-25 01:03:08.219 INFO security reminder msg=Change the default admin password after first login if using configured defaults
+2026-10-25 01:03:14.036 INFO | 200 |     153.160µs |      172.17.0.1 | GET     /rest/ping?f=json
+2026-10-25 01:04:51.324 INFO | 200 |     114.420µs |      172.17.0.1 | GET     /rest/ping?u=admin&t=4e9ce23befeaaee14cb94896c67b706d&s=aBb8J464&f=json
+2026-10-25 01:04:51.332 INFO | 200 |     574.770µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=4ea5dc37389fe1cab118b6a6ed569738&s=WOBYPEaf&query=%E6%99%B4%E5%A4%A9+%E5%91%A8%E6%9D%B0%E4%BC%A6&songCount=12&albumCount=0&artistCount=0&f=json
+2026-10-25 01:05:21.352 WARN | 404 |       3.850µs |      172.17.0.1 | GET     /api/v1/plugins
+2026-10-25 01:05:21.374 WARN | 404 |       1.450µs |      172.17.0.1 | GET     /rest/api/v1/plugins
+2026-10-25 01:05:21.386 WARN | 404 |       3.550µs |      172.17.0.1 | GET     /api/plugins
+2026-10-25 01:05:21.397 WARN | 404 |       1.240µs |      172.17.0.1 | GET     /api/v1/plugin/registry
+2026-10-25 01:05:21.411 WARN | 404 |       2.710µs |      172.17.0.1 | GET     /api/v1/settings
