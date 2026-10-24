@@ -4,6 +4,7 @@ import { SpicaScene, SceneState } from "./scene";
 import Wave from "./Wave";
 import Markdown from "./Markdown";
 import { MicIcon, PlusIcon, SendIcon } from "./icons";
+import ThemeToggle from "./ThemeToggle";
 
 const ROLE_LABEL: Record<string, string> = {
   user: "用户", assistant: "SPICA", tool: "执行", system: "系统",
@@ -247,6 +248,13 @@ export default function App() {
         document.documentElement.dataset.theme === "dark" ? "dark" : "light");
     }
   }, []);
+  // 主题切换时 3D 场景同步换肤
+  useEffect(() => {
+    const on = () => sceneRef.current?.applyTheme(
+      document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+    addEventListener("spica-theme", on);
+    return () => removeEventListener("spica-theme", on);
+  }, []);
 
   useEffect(() => {
     const map: Record<string, SceneState> = {
@@ -362,15 +370,17 @@ export default function App() {
         </div>
         {!demo && (
           <div className="tools">
+            <ThemeToggle />
             <select className="model-select"
               value={currentSession?.model_override || ""}
               onChange={(e) => send({ t: "session_update",
                 id: currentSession?.id, patch: { model_override: e.target.value } })}
               title="会话模型（自动=按难度路由）">
               <option value="">模型：自动</option>
-              <option value="glm-5.3-flash">glm-5.3-flash</option>
-              <option value="glm-5.3">glm-5.3</option>
-              <option value="glm-4.6">glm-4.6</option>
+              {[...new Set(["glm-5.3-flash", "glm-5.3", "glm-4.6",
+                ...(settings?.custom_models || "")
+                  .split(",").map((s: string) => s.trim()).filter(Boolean)])]
+                .map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
             {(st === "exec" || st === "paused") && (
               <button className="btn"

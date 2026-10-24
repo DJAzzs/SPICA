@@ -62,7 +62,7 @@ def create_app(boot) -> FastAPI:
 
     def _safe_settings() -> dict:
         s = json.loads(json.dumps(state["settings"]))
-        s.pop("llm_api_key", None)
+        s["has_key"] = bool(s.pop("llm_api_key", None))
         s.pop("speaker_embeddings", None)
         return s
 

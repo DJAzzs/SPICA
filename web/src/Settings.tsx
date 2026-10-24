@@ -1,6 +1,40 @@
 import { useState } from "react";
 import { useSpica, send } from "./state";
 
+/** 模型服务商配置：API 地址 / Key / 改写模型 / 自定义模型列表（热生效）。 */
+function ProviderEditor() {
+  const settings = useSpica((s) => s.settings);
+  const [baseUrl, setBaseUrl] = useState(settings?.llm_base_url || "");
+  const [apiKey, setApiKey] = useState("");
+  const [model, setModel] = useState(settings?.llm_model_rewrite || "");
+  const [custom, setCustom] = useState(settings?.custom_models || "");
+  return (
+    <>
+      <input type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}
+        placeholder="API 地址（如 https://open.bigmodel.cn/api/coding/paas/v4）" />
+      <input type="text" value={apiKey} onChange={(e) => setApiKey(e.target.value)}
+        placeholder={settings?.has_key ? "API Key（已配置，留空不修改）" : "API Key"}
+        style={{ marginTop: 10 }} />
+      <input type="text" value={model} onChange={(e) => setModel(e.target.value)}
+        placeholder="改写/路由模型（如 glm-5.3-flash）" style={{ marginTop: 10 }} />
+      <input type="text" value={custom} onChange={(e) => setCustom(e.target.value)}
+        placeholder="自定义模型列表，逗号分隔（如 deepseek-chat, glm-5.3-air）"
+        style={{ marginTop: 10 }} />
+      <div className="btn-row">
+        <button className="btn" onClick={() => {
+          const patch: any = {
+            llm_base_url: baseUrl.trim(),
+            llm_model_rewrite: model.trim(),
+            custom_models: custom.trim(),
+          };
+          if (apiKey.trim()) patch.llm_api_key = apiKey.trim();
+          send({ t: "settings_patch", patch });
+        }}>保存服务配置</button>
+      </div>
+    </>
+  );
+}
+
 /** 人设编辑器：SystemPrompt/角色设定，任务级注入。 */
 function PersonaEditor() {
   const settings = useSpica((s) => s.settings);
@@ -93,6 +127,14 @@ export default function Settings() {
           <button className="btn" style={{ marginTop: 8 }} onClick={() =>
             send({ t: "settings_patch", patch: { speaker_threshold: parseFloat(threshold) || 0.55 } })
           }>保存阈值</button>
+        </div>
+
+        <div className="field">
+          <label>模型服务（SPICA 改写/路由/播报压缩使用的 API）</label>
+          <ProviderEditor />
+          <div className="hint">
+            OpenAI 兼容端点。执行任务的模型在顶栏下拉选择；自定义模型列表会出现在该下拉中。
+          </div>
         </div>
 
         <div className="field">

@@ -27,17 +27,31 @@ def _key_from_dsh_credentials() -> str:
 
 
 class LLMClient:
+    """配置懒读：每次调用现读 settings——改 API/模型即时生效，无需重启。"""
+
     def __init__(self, settings: dict | None = None):
-        import os
         self.settings = settings or load_settings()
-        self.api_key: str = (
-            (self.settings.get("llm_api_key") or "")
-            or os.environ.get("ZAI_CODING_CN_API_KEY", "")
-            or _key_from_dsh_credentials()
-        )
-        self.base_url: str = (
-            self.settings.get("llm_base_url") or DEFAULT_BASE_URL
-        ).rstrip("/")
+
+    # ------------------------------------------------------------ 配置（懒读）
+    @staticmethod
+    def _live() -> dict:
+        return load_settings()
+
+    @property
+    def api_key(self) -> str:
+        import os
+        s = self._live()
+        return ((s.get("llm_api_key") or "")
+                or os.environ.get("ZAI_CODING_CN_API_KEY", "")
+                or _key_from_dsh_credentials())
+
+    @property
+    def base_url(self) -> str:
+        return (self._live().get("llm_base_url") or DEFAULT_BASE_URL).rstrip("/")
+
+    @property
+    def default_model(self) -> str:
+        return self._live().get("llm_model_rewrite") or "glm-5.3-flash"
 
     @property
     def ready(self) -> bool:
@@ -55,7 +69,7 @@ class LLMClient:
     ) -> str | AsyncIterator[str]:
         """OpenAI 兼容 /chat/completions。stream=True 返回增量迭代器。
         thinking="disabled" 关闭推理（glm 系推理模型的轻量快速模式）。"""
-        model = model or self.settings.get("llm_model_rewrite", "glm-5.3")
+        model = model or self.default_model
         body: dict = {"model": model, "messages": messages, "stream": stream}
         if max_tokens:
             body["max_tokens"] = max_tokens

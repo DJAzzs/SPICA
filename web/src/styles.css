@@ -257,6 +257,26 @@ html[data-theme="light"] .btn.primary { color: #f9f8f5; }
   background: var(--mustard);
   animation: cta-breathe 1.6s var(--ease) infinite; }
 
+/* ---------- 主题滑块（三态：默认跟随系统） ---------- */
+.theme-wrap { display: flex; align-items: center; gap: 7px; }
+.theme-toggle { position: relative; width: 46px; height: 24px;
+  border: 1px solid var(--bg3); background: var(--bg2);
+  border-radius: 13px; cursor: pointer; padding: 0;
+  transition: background 600ms var(--ease), border-color 600ms var(--ease); }
+.theme-toggle:hover { border-color: var(--sand); }
+.theme-knob { position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--mustard); color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  transition: transform 600ms var(--ease), background 600ms var(--ease); }
+.theme-knob.dark { transform: translateX(22px); background: var(--lilac); }
+.theme-auto { background: none; border: none; color: var(--ink-faint);
+  font: inherit; font-size: 9.5px; letter-spacing: 0.14em; cursor: pointer;
+  padding: 2px 0; transition: color 500ms var(--ease); }
+.theme-auto:hover { color: var(--ink-dim); }
+.theme-auto.on { color: var(--mist); }
+
 /* ---------- 顶栏工具 ---------- */
 .tools { display: flex; gap: 18px; font-size: 12.5px; letter-spacing: 0.1em;
   color: var(--ink-dim); align-items: center; flex: none; }

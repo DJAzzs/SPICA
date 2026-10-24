@@ -18,10 +18,12 @@ function Router() {
     return () => removeEventListener("hashchange", on);
   }, []);
 
-  // 主题持久化（默认亮色：暖白/雾灰——效果层规范主推）
+  // 主题：默认跟随系统（spica-theme-mode: auto|light|dark）
   useEffect(() => {
-    const saved = localStorage.getItem("spica-theme") || "light";
-    document.documentElement.dataset.theme = saved;
+    const mode = (localStorage.getItem("spica-theme-mode") as any) || "auto";
+    const resolved = mode !== "auto" ? mode
+      : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.dataset.theme = resolved;
   }, []);
 
   // 演示模式：Esc Esc 退出
