@@ -117,9 +117,28 @@ def test_pipeline_wake_and_final():
         assert rec.wake.wait(10), f"未唤醒 events={rec.events}"
         assert rec.final.wait(10), f"无终稿 events={rec.events}"
         kinds = [e[0] for e in rec.events]
-        assert "partial" in kinds                        # LISTENING 增量已发
+        assert kinds.index("wake") < kinds.index("final")
         final = next(e[1] for e in rec.events if e[0] == "final")
         assert "早上" in final and "开放时间" not in final  # 终稿已剥离唤醒词
+    finally:
+        p.stop()
+
+
+def test_pipeline_tts_gate_suppresses_wake():
+    """TTS 播报期间唤醒匹配必须被抑制（防自唤醒）。"""
+    rec = Recorder()
+    p = make_pipeline(rec)
+    try:
+        p.set_tts_gate(True)
+        chunk_feed(p, load_wav("zh.wav"))
+        time.sleep(0.5)
+        assert not rec.wake.is_set()
+        # 门关（带 hold），hold 过后恢复匹配
+        p.set_tts_gate(False, hold_ms=0)
+        rec2 = Recorder()
+        p.cb = rec2.cb()
+        chunk_feed(p, load_wav("zh.wav"))
+        assert rec2.wake.wait(10), f"门开后未唤醒 events={rec2.events}"
     finally:
         p.stop()
 
@@ -138,7 +157,8 @@ def test_pipeline_dormant_no_wake_for_ordinary_speech():
 
 def test_pipeline_farewell():
     rec = Recorder()
-    p = make_pipeline(rec)
+    # 唤醒词用句中不存在的词，避免夹具句首唤醒优先级压过结束词
+    p = make_pipeline(rec, wake="谢谢观看", farewell="下午5点")
     try:
         chunk_feed(p, load_wav("zh.wav"))
         assert rec.farewell.wait(10), f"未触发结束词 events={rec.events}"

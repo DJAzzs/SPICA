@@ -183,6 +183,25 @@ class VoicePipeline:
             hit = self.matcher.match_prefix(text, self.wake_words, "wake")
             self.cb.on_partial(hit.remainder if hit and hit.remainder else text)
 
+    def _take_pending(self) -> str:
+        """迟到唤醒回收：段结算先于 partial 唤醒完成时，取回待定段的
+        去唤醒词指令文本（3s 窗口内有效）。"""
+        pend = getattr(self, "_pending", None)
+        self._pending = None
+        if not pend:
+            return ""
+        text_sv, text_stream, ts = pend
+        if time.time() - ts > 3.0:
+            return ""
+        # 候选：SenseVoice 终稿、结算时的流式文本、排空解码后的最新流式文本
+        for t in (text_sv, text_stream, self.stream_asr.drain()):
+            if not t:
+                continue
+            hit = self.matcher.match_prefix(t, self.wake_words, "wake")
+            if hit and hit.remainder and len(hit.remainder) >= 2:
+                return hit.remainder
+        return ""
+
     # ------------------------------------------------------------ 唤醒
     def _handle_wake(self, hit, fast: bool,
                      samples: np.ndarray | None = None) -> None:
@@ -200,12 +219,15 @@ class VoicePipeline:
         self.st.mode = "LISTENING"
         self.st.followup_until = time.time() + 12.0
         self.cb.on_wake(hit.phrase, True, score)
-        # 唤醒词后紧跟指令（"Hey SPICA 帮我…"）
-        if hit.remainder and len(hit.remainder) >= 2:
-            if fast:
+        # 唤醒词后紧跟指令：优先迟到段回收，其次本 partial 的剩余
+        if fast:
+            recovered = self._take_pending()
+            if recovered:
+                self.cb.on_final(recovered)
+            elif hit.remainder and len(hit.remainder) >= 2:
                 self.cb.on_partial(hit.remainder)
-            else:
-                self.cb.on_final(hit.remainder)
+        elif hit.remainder and len(hit.remainder) >= 2:
+            self.cb.on_final(hit.remainder)
 
     # ------------------------------------------------------------ 段结算
     def _on_segment(self, seg: Segment) -> None:
@@ -215,14 +237,30 @@ class VoicePipeline:
             return
         now = time.time()
 
-        # DORMANT：唤醒兜底（句首命中优先级高于结束词——句首是更强意图）
+        # DORMANT：唤醒兜底（双引擎文本冗余：SenseVoice 优先，流式排空终稿次之）
         if self.st.mode == "DORMANT":
-            hit = self.matcher.match_prefix(text, self.wake_words, "wake")
-            if hit and not self._gated() and time.time() > self.st.wake_hit_until:
+            stream_text = self.stream_asr.drain()  # 段已结束：解完所有积压帧取完整文本
+            picked = None
+            for t in (text, stream_text):
+                if not t:
+                    continue
+                h = self.matcher.match_prefix(t, self.wake_words, "wake")
+                if not h:
+                    continue
+                # 精确命中且带指令 → 直接选定；否则保留最优（防空 remainder 的
+                # 模糊命中挤掉后续精确命中）
+                if h.score >= 100 and h.remainder:
+                    picked = h
+                    break
+                if picked is None or len(h.remainder) > len(picked.remainder):
+                    picked = h
+            if picked and not self._gated() and time.time() > self.st.wake_hit_until:
                 self.st.wake_hit_until = time.time() + 1.0
-                self._handle_wake(hit, fast=False, samples=seg.samples)
+                self._handle_wake(picked, fast=False, samples=seg.samples)
                 self._after_utterance()
                 return
+            # 未唤醒：暂存待定段（供迟到的 partial 唤醒回收），继续结束词/指令检查
+            self._pending = (text, stream_text, time.time())
 
         # 结束词（任意状态；过声纹门）
         fw = self.matcher.match_anywhere(text, self.farewell_words, "farewell")

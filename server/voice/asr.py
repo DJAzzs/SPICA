@@ -40,6 +40,23 @@ class StreamingASR:
             return self.rec.get_result(self.stream)
         return ""
 
+    def result(self) -> str:
+        """当前流的最新完整结果（不解码）。"""
+        try:
+            return self.rec.get_result(self.stream) or ""
+        except Exception:
+            return ""
+
+    def drain(self) -> str:
+        """把已接受但未解码的帧全部解码完，返回最新结果。
+        （burst/积压场景下 result() 会滞后；关键判定前 drain。）"""
+        try:
+            while self.rec.is_ready(self.stream):
+                self.rec.decode_stream(self.stream)
+        except Exception:
+            pass
+        return self.result()
+
 
 class SenseVoiceASR:
     """非流式整段识别：断句后的高精度终稿。"""
