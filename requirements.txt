@@ -14,7 +14,9 @@ rapidfuzz>=3.10
 pytest>=8
 
 # --- 语音识别（sherpa-onnx，CPU 实时）---
-sherpa-onnx==1.9.30
+# 1.10.46 = 1.x 系末代单块轮子（SenseVoice+VAD+Speaker 全有，且不与
+# qwen-tts 的 onnxruntime 依赖冲突；1.13.x 拆 core 包会撞 so）
+sherpa-onnx==1.10.46
 
 # --- TTS（Qwen3-TTS-VoiceDesign，GPU bf16）---
 # torch 默认拉 cu 轮子（linux x86_64）
