@@ -45,6 +45,11 @@ export function getState() { return state; }
 export function setMic(on: boolean, error = "") {
   set({ micOn: on, micError: error });
 }
+/** 仅键盘模式（localStorage 持久化）。 */
+export function setKbdOnly(on: boolean) {
+  localStorage.setItem("spica-kbd", on ? "1" : "0");
+  set({ micOn: false, micError: "" });
+}
 function subscribe(l: () => void) { listeners.add(l); return () => listeners.delete(l); }
 export function useSpica<T>(sel: (s: State) => T): T {
   return useSyncExternalStore(subscribe, () => sel(state));

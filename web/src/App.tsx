@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSpica, send, resetPlayback, ensureAudio, setMic } from "./state";
+import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState } from "./state";
 import { SpicaScene, SceneState } from "./scene";
 import { readWaveform } from "./audio";
 
@@ -62,7 +62,9 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 /** 对话面板：消息流 + 实时转写气泡 + 键盘输入。 */
-function Chat({ st, partial }: { st: string; partial: string }) {
+function Chat({ st, partial, kbdOnly, onEnableVoice }: {
+  st: string; partial: string; kbdOnly: boolean; onEnableVoice: () => void;
+}) {
   const msgs = useSpica((s) => s.msgs);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
@@ -100,7 +102,13 @@ function Chat({ st, partial }: { st: string; partial: string }) {
           </div>
         )}
       </div>
-      <WaveLine />
+      {kbdOnly ? (
+        <div className="kbd-hint" onClick={onEnableVoice}>
+          语音未启用 —— 点击这里重新开启麦克风
+        </div>
+      ) : (
+        <WaveLine />
+      )}
       <div className="chat-input">
         <input
           type="text"
@@ -168,11 +176,25 @@ export default function App() {
       const { startMic } = await import("./audio");
       await startMic();
       ensureAudio();
+      setKbdOnly(false);
       setMic(true);
     } catch (e: any) {
       setMic(false, String(e?.message || e));
     }
   }
+
+  // 已授权过麦克风则自动恢复；仅键盘模式直接进主界面
+  useEffect(() => {
+    (async () => {
+      if (localStorage.getItem("spica-kbd") !== "1") {
+        try {
+          const perm = await navigator.permissions.query({ name: "microphone" as PermissionName });
+          if (perm.state === "granted") await activate();
+        } catch { /* 浏览器不支持查询则等待点击 */ }
+      }
+    })();
+  }, []);
+  const [kbdOnly, setKbdState] = useState(localStorage.getItem("spica-kbd") === "1");
 
   if (farewell) {
     return (
@@ -183,8 +205,8 @@ export default function App() {
     );
   }
 
-  // ---------- 空态引导层：麦克风未开启 ----------
-  if (!micOn) {
+  // ---------- 空态引导层：麦克风未开启（仅键盘模式跳过） ----------
+  if (!micOn && !kbdOnly) {
     return (
       <div className="onboard" onClick={activate}>
         <div className="card">
@@ -200,14 +222,14 @@ export default function App() {
           </div>
           <div className="cta">点击任意处，允许麦克风 → 语音与对话模式同时可用</div>
           {micError && (
-            <div className="err">
-              麦克风开启失败：{micError}
-              <br />（可先到 <a href="#/diagnose" onClick={(e) => e.stopPropagation()}
-                style={{ color: "var(--accent)" }}>诊断页</a> 检查设备；
-              也可以 <a href="#/" onClick={(e) => { e.stopPropagation(); setMic(true); }}
-                style={{ color: "var(--accent)" }}>只用键盘</a>）
-            </div>
+            <div className="err">麦克风开启失败：{micError}</div>
           )}
+          <div className="skip" onClick={(e) => e.stopPropagation()}>
+            <button className="btn" onClick={() => {
+              setKbdOnly(true); setKbdState(true);
+            }}>仅用键盘（不用语音）</button>
+            <a className="btn" href="#/diagnose">硬件诊断</a>
+          </div>
         </div>
       </div>
     );
@@ -258,7 +280,7 @@ export default function App() {
       </header>
 
       <div className="main-col">
-        <Chat st={st} partial={partial} />
+        <Chat st={st} partial={partial} kbdOnly={kbdOnly} onEnableVoice={activate} />
       </div>
 
       <div className={`state-dot ${wakeFlash && Date.now() - wakeFlash < 1500 ? "wake" : ""} ${st === "confirm_shutdown" ? "confirm" : ""}`} />

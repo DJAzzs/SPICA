@@ -70,7 +70,7 @@ def create_app(boot) -> FastAPI:
     async def index():
         idx = WEB_DIST / "index.html"
         if idx.exists():
-            return FileResponse(idx)
+            return FileResponse(idx, headers={"Cache-Control": "no-store"})
         return JSONResponse({"app": "SPICA", "status": "web 未构建",
                              "ws": "/ws"})
 

@@ -61,6 +61,10 @@ html[data-demo="1"] ::-webkit-scrollbar { display: none; }
 
 /* 声纹可视化 + 输入行 */
 .chat > canvas { display: block; width: 100%; height: 56px; flex: none; }
+.kbd-hint { flex: none; height: 56px; display: flex; align-items: center;
+  font-size: 13px; color: var(--ink-dim); letter-spacing: 0.1em; cursor: pointer;
+  transition: color 600ms var(--ease); }
+.kbd-hint:hover { color: var(--sand); }
 .chat-input { display: flex; gap: 12px; padding-top: 10px; flex: none; }
 .chat-input input { flex: 1; background: var(--bg2); border: none; color: var(--ink);
   font: inherit; font-size: 15px; padding: 14px 18px; border-radius: 2px; outline: none; }

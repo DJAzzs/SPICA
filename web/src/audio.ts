@@ -7,15 +7,20 @@ const WORKLET_CODE = `
 class SpicaRecorder extends AudioWorkletProcessor {
   constructor() {
     super();
-    this._carry = 0;   // 跨块相位余数
+    this._pos = 0;   // 浮点相位（支持任意采样率的分数倍重采样）
   }
   process(inputs) {
     const ch = inputs[0] && inputs[0][0];
     if (!ch) return true;
-    const step = Math.round(sampleRate / 16000);
+    const ratio = sampleRate / 16000;
     const out = [];
-    for (let i = this._carry; i < ch.length; i += step) out.push(ch[i]);
-    this._carry = (this._carry + ch.length) % step;
+    for (let i = 0; i < ch.length; i++) {
+      while (this._pos <= i) {
+        out.push(ch[Math.floor(this._pos)]);
+        this._pos += ratio;
+      }
+    }
+    this._pos -= ch.length;
     const pcm = new Int16Array(out.length);
     for (let i = 0; i < out.length; i++) {
       const v = Math.max(-1, Math.min(1, out[i]));
@@ -52,7 +57,9 @@ export async function startMic(deviceId?: string): Promise<MediaTrackSettings> {
     },
   });
   const track = stream.getAudioTracks()[0];
-  ctx = new AudioContext({ sampleRate: 48000 });
+  // 不强制采样率（Firefox 对不支持的 sampleRate 会抛异常）；
+  // worklet 内做任意比率→16k 的分数重采样
+  ctx = new AudioContext();
   const url = URL.createObjectURL(new Blob([WORKLET_CODE], { type: "text/javascript" }));
   await ctx.audioWorklet.addModule(url);
   URL.revokeObjectURL(url);
