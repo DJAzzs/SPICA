@@ -140,6 +140,8 @@ def create_app(boot) -> FastAPI:
                 "t": "diag", "wake_test": bool(hit),
                 "matched": hit.phrase if hit else None,
                 "farewell": bool(fw)}, ensure_ascii=False))
+        elif t == "text_input":
+            await sem.on_text_input(str(data.get("text", "")))
         elif t == "enroll_start":
             await sem.enroll_start(int(data.get("n", 3)))
         elif t == "shutdown_now":

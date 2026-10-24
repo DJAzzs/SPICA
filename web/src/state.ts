@@ -23,6 +23,7 @@ export interface State {
   diag: any;
   micOn: boolean;
   micError: string;
+  msgs: { role: string; text: string; ts: number }[];
 }
 
 const initial: State = {
@@ -30,7 +31,7 @@ const initial: State = {
   partial: "", final: "", rewriteDraft: "", rewriteFinal: "",
   route: null, steps: [], taskDone: "", ttsSpeaking: false, ttsText: "",
   rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
-  micOn: false, micError: "",
+  micOn: false, micError: "", msgs: [],
 };
 
 let state: State = initial;
@@ -73,6 +74,10 @@ export function connectWS() {
 }
 
 let stepSeq = 0;
+function pushMsg(role: string, text: string) {
+  const msg = { role, text, ts: Date.now() };
+  set({ msgs: [...state.msgs.slice(-79), msg] });
+}
 function handle(e: SpicaEvent) {
   switch (e.t) {
     case "settings": set({ settings: e }); break;
@@ -82,11 +87,18 @@ function handle(e: SpicaEvent) {
       break;
     case "wake_ack": set({ wakeFlash: Date.now() }); break;
     case "partial": set({ partial: e.text }); break;
-    case "final": set({ final: e.text }); break;
+    case "final":
+      set({ final: e.text });
+      pushMsg("user", e.text);
+      break;
     case "rewrite":
       if (e.stage === "draft") set({ rewriteDraft: e.text });
-      else set({ rewriteFinal: e.text });
+      else {
+        set({ rewriteFinal: e.text });
+        pushMsg("system", `改写 → ${e.text}`);
+      }
       break;
+    case "msg": pushMsg(e.role, e.text); break;
     case "route": set({ route: e }); break;
     case "step":
       stepSeq += 1;
@@ -94,7 +106,10 @@ function handle(e: SpicaEvent) {
       break;
     case "tts": set({ ttsSpeaking: e.speaking, ttsText: e.text || state.ttsText }); break;
     case "level": set({ rms: e.rms }); break;
-    case "task_done": set({ taskDone: e.summary }); break;
+    case "task_done":
+      set({ taskDone: e.summary });
+      pushMsg("assistant", e.summary);
+      break;
     case "shutdown": set({ farewell: true }); break;
     case "diag": set({ diag: { ...state.diag, ...e } }); break;
   }

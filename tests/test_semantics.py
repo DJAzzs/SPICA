@@ -202,6 +202,26 @@ def test_pause_resume(tmp_path, monkeypatch):
     assert sem.state == "exec"
 
 
+# ---------------------------------------------------------------- 键盘输入
+def test_text_input_dispatches_without_rewrite(tmp_path, monkeypatch):
+    """键盘输入：跳过改写、直接路由执行（FakeRewriter 不该被调用）。"""
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.on_text_input("在 workspace 创建 README.md"))
+    assert sem.rewriter.finals == []                      # 未走改写
+    assert sdk.prompts == ["在 workspace 创建 README.md"]  # 原文直达
+    assert any(e.get("t") == "msg" and e.get("role") == "user"
+               for e in events)
+    assert sem.state == "exec"
+
+
+def test_text_input_queues_when_exec(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.on_text_input("任务一"))
+    run(sem.on_text_input("任务二"))
+    assert len(sdk.prompts) == 1
+    assert sem.pending_prompts == ["任务二"]
+
+
 # ---------------------------------------------------------------- 结束词
 def test_farewell_idle_shuts_down(tmp_path, monkeypatch):
     sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)

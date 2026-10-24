@@ -23,12 +23,42 @@ body {
 html[data-demo="1"] body { cursor: none; }
 html[data-demo="1"] ::-webkit-scrollbar { display: none; }
 
-/* 布局：主体左对齐 40%，8pt 网格 */
+/* 布局：主体左对齐，8pt 网格；对话面板占左列 */
 .stage { position: relative; width: 100vw; height: 100vh; }
-.main-col { position: absolute; left: 96px; top: 96px; width: 40%; max-width: 640px; z-index: 2; }
-.brand { display: flex; align-items: baseline; gap: 16px; margin-bottom: 64px; }
+.main-col { position: absolute; left: 96px; top: 40px; bottom: 32px;
+  width: 44%; max-width: 720px; z-index: 2; display: flex; flex-direction: column; }
+.brand { display: flex; align-items: baseline; gap: 16px; margin-bottom: 24px; }
 .brand .name { font-size: 20px; font-weight: 500; letter-spacing: 0.35em; }
 .brand .sub { font-size: 12px; color: var(--ink-dim); letter-spacing: 0.2em; }
+
+/* ---------- 对话面板 ---------- */
+.chat { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.chat-scroll { flex: 1; overflow-y: auto; padding-right: 8px; }
+.chat-scroll::-webkit-scrollbar { width: 3px; }
+.chat-scroll::-webkit-scrollbar-thumb { background: var(--bg2); }
+.chat-empty { color: var(--ink-dim); font-size: 13px; line-height: 2; padding: 24px 0; }
+.chat-msg { padding: 10px 0; border-bottom: 1px solid var(--bg2);
+  animation: enter 800ms var(--ease); }
+.chat-msg .chat-role { font-size: 11px; color: var(--ink-dim);
+  letter-spacing: 0.2em; margin-bottom: 4px; }
+.chat-msg .chat-text { font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+.chat-msg.user .chat-text { color: var(--ink); }
+.chat-msg.user .chat-role { color: var(--sand); }
+.chat-msg.assistant .chat-text { color: var(--ink); }
+.chat-msg.assistant .chat-role { color: var(--mist); }
+.chat-msg.tool .chat-text { color: var(--ink-dim); font-size: 13px; }
+.chat-msg.tool .chat-role { color: var(--mustard); }
+.chat-msg.system .chat-text { color: var(--lilac); font-size: 12px; }
+.chat-msg.ghost { opacity: 0.65; border-bottom-style: dashed; }
+.chat-msg.ghost .chat-text { color: var(--ink-dim); }
+
+/* 声纹可视化 + 输入行 */
+.chat > canvas { display: block; width: 100%; height: 56px; flex: none; }
+.chat-input { display: flex; gap: 12px; padding-top: 8px; flex: none; }
+.chat-input input { flex: 1; background: var(--bg2); border: none; color: var(--ink);
+  font: inherit; font-size: 14px; padding: 12px 16px; border-radius: 2px; outline: none; }
+.chat-input input:focus { box-shadow: 0 0 0 1px var(--lilac); }
+.chat-input .btn { flex: none; }
 
 .kicker { font-size: 11px; color: var(--ink-dim); letter-spacing: 0.25em; margin-bottom: 8px;
   transition: color 800ms var(--ease); }

@@ -111,6 +111,29 @@ class Semantics:
             return  # 注册模式只收音频
         await self._dispatch(text)
 
+    # ================================================== 键盘输入（与语音同管线）
+    async def on_text_input(self, text: str) -> None:
+        """文本输入：已是指令，跳过改写，仍做难度路由。"""
+        text = (text or "").strip()
+        if not text:
+            return
+        if self.state == "confirm_shutdown":
+            from server.voice.wake import Matcher, command_entries, normalize
+            m = Matcher()
+            cmds = command_entries(self.settings.get("commands", {}))
+            norm = normalize(text)
+            if norm in ("确定", "确认", "y", "yes", "ok"):
+                await self.shutdown_sequence()
+            else:
+                if self._confirm_timer:
+                    self._confirm_timer.cancel()
+                await self._set_state("exec" if self.sdk.proc else "idle")
+            return
+        self.transcript.append({"role": "user", "text": text, "ts": time.time()})
+        await self.broadcast({"t": "final", "text": text})
+        await self.broadcast({"t": "msg", "role": "user", "text": text})
+        await self._after_rewrite(text)
+
     # ================================================== 任务分发
     async def _dispatch(self, text: str) -> None:
         if self.state == "confirm_shutdown":
@@ -135,19 +158,24 @@ class Semantics:
                               "text": result.text})
         self.transcript.append({"role": "rewrite", "text": result.text,
                                 "ts": time.time()})
+        await self._after_rewrite(result.text)
 
-        difficulty = await self.router.classify(result.text)
+    async def _after_rewrite(self, prompt: str) -> None:
+        """改写完成后的公共路径：路由 →（执行中入队 / 开新任务）。"""
+        difficulty = await self.router.classify(prompt)
         route = self.router.route(difficulty, self.settings)
         self.route_info = route
         await self.broadcast({"t": "route", **route})
+        await self.broadcast({"t": "msg", "role": "system",
+                              "text": f"路由：{route.get('model')} · {difficulty}"})
 
         if self.state == "exec":
             # 执行中插话：入队，turn 结束后送达
-            self.pending_prompts.append(result.text)
+            self.pending_prompts.append(prompt)
             self.narrator.step("收到，记下了，当前任务完成后就做。")
             return
 
-        await self._start_task(result.text)
+        await self._start_task(prompt)
 
     async def _start_task(self, prompt: str) -> None:
         route = self.route_info or self.router.route("normal", self.settings)
@@ -178,7 +206,28 @@ class Semantics:
             msg = data.get("message", {})
             for block in msg.get("content", []):
                 if block.get("type") == "text" and block.get("text", "").strip():
-                    self.last_assistant_text = block["text"].strip()
+                    text = block["text"].strip()
+                    self.last_assistant_text = text
+                    await self.broadcast({"t": "msg", "role": "assistant",
+                                          "text": text})
+                elif block.get("type") in ("tool_call", "tool_use"):
+                    summary = self.narrator.tool_summary(
+                        block.get("name", "tool"),
+                        block.get("arguments") or block.get("input") or "")
+                    await self.broadcast({"t": "msg", "role": "tool",
+                                          "text": summary})
+        elif typ in ("tool/call", "tool/use"):
+            summary = self.narrator.tool_summary(
+                data.get("name") or data.get("tool") or "tool",
+                data.get("arguments") or data.get("input")
+                or data.get("args") or data.get("command") or "")
+            await self.broadcast({"t": "msg", "role": "tool",
+                                  "text": summary})
+        elif typ == "tool/result":
+            out = (data.get("result") or data.get("output") or "")
+            if isinstance(out, str) and out.strip():
+                await self.broadcast({"t": "msg", "role": "tool",
+                                      "text": f"结果：{out.strip()[:120]}"})
         await self.broadcast({"t": "step", "type": typ})
         self.narrator.on_agent_event(ev)
         if typ == "turn/end":

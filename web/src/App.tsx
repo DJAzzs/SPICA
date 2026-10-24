@@ -3,8 +3,7 @@ import { useSpica, send, resetPlayback, ensureAudio, setMic } from "./state";
 import { SpicaScene, SceneState } from "./scene";
 import { readWaveform } from "./audio";
 
-/** 声纹可视化：真实波形驱动的镜像包络（本地 Analyser，rAF 帧率）。
- * 说话时上下起伏明显，安静时近乎平直。 */
+/** 声纹可视化：真实波形驱动的镜像包络（本地 Analyser，rAF 帧率）。 */
 function WaveLine() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -30,19 +29,17 @@ function WaveLine() {
           const e = Math.floor(((i + 1) * wave.length) / cols);
           for (let j = s; j < e; j++) m = Math.max(m, Math.abs(wave[j] - 128));
           const v = Math.min(1, (m / 128) * 1.6);
-          env[i] += (v - env[i]) * 0.35;      // 平滑跟随
+          env[i] += (v - env[i]) * 0.35;
         }
       } else {
         for (let i = 0; i < cols; i++) env[i] *= 0.9;
       }
-      // 上包络
       x.beginPath();
       for (let i = 0; i < cols; i++) {
         const px = (i / (cols - 1)) * w;
         const y = mid - env[i] * (h * 0.42);
         i === 0 ? x.moveTo(px, y) : x.lineTo(px, y);
       }
-      // 下包络（镜像）
       for (let i = cols - 1; i >= 0; i--) {
         const px = (i / (cols - 1)) * w;
         x.lineTo(px, mid + env[i] * (h * 0.42));
@@ -57,7 +54,65 @@ function WaveLine() {
     draw();
     return () => { cancelAnimationFrame(raf); clearInterval(themeTimer); };
   }, []);
-  return <canvas ref={ref} width={720} height={80} />;
+  return <canvas ref={ref} width={720} height={56} />;
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  user: "我", assistant: "SPICA", tool: "执行", system: "系统",
+};
+
+/** 对话面板：消息流 + 实时转写气泡 + 键盘输入。 */
+function Chat({ st, partial }: { st: string; partial: string }) {
+  const msgs = useSpica((s) => s.msgs);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState("");
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [msgs.length, partial]);
+
+  const submit = () => {
+    const text = input.trim();
+    if (!text) return;
+    send({ t: "text_input", text });
+    setInput("");
+  };
+
+  return (
+    <div className="chat">
+      <div className="chat-scroll" ref={scrollRef}>
+        {msgs.length === 0 && (
+          <div className="chat-empty">
+            说「Hey, SPICA」唤醒，或直接在下方输入任务。<br />
+            语音和键盘走同一条管线：改写 → 路由 → DSH 执行。
+          </div>
+        )}
+        {msgs.map((m, i) => (
+          <div key={i} className={`chat-msg ${m.role}`}>
+            <div className="chat-role">{ROLE_LABEL[m.role] || m.role}</div>
+            <div className="chat-text">{m.text}</div>
+          </div>
+        ))}
+        {st === "listen" && (
+          <div className="chat-msg user ghost">
+            <div className="chat-role">正在听…</div>
+            <div className="chat-text">{partial || "（说话中）"}</div>
+          </div>
+        )}
+      </div>
+      <WaveLine />
+      <div className="chat-input">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          placeholder="输入任务，回车发送（无需唤醒词）"
+        />
+        <button className="btn primary" onClick={submit}>发送</button>
+      </div>
+    </div>
+  );
 }
 
 const STATE_KICKER: Record<string, string> = {
@@ -74,12 +129,8 @@ export default function App() {
   const sceneRef = useRef<SpicaScene | null>(null);
   const st = useSpica((s) => s.state);
   const partial = useSpica((s) => s.partial);
-  const finalText = useSpica((s) => s.final);
-  const rewriteFinal = useSpica((s) => s.rewriteFinal);
-  const rewriteDraft = useSpica((s) => s.rewriteDraft);
   const route = useSpica((s) => s.route);
   const steps = useSpica((s) => s.steps);
-  const taskDone = useSpica((s) => s.taskDone);
   const ttsSpeaking = useSpica((s) => s.ttsSpeaking);
   const wakeFlash = useSpica((s) => s.wakeFlash);
   const farewell = useSpica((s) => s.farewell);
@@ -92,7 +143,6 @@ export default function App() {
   const [skipWizard, setSkipWizard] = useState(false);
   useEffect(() => { if (settings) setWizardDone(!!settings.wizard_done); }, [settings]);
   useEffect(() => { if (wakeFlash) localStorage.setItem("spica-waked", "1"); }, [wakeFlash]);
-  const hasWaked = localStorage.getItem("spica-waked") === "1";
   const demo = document.documentElement.dataset.demo === "1";
 
   useEffect(() => {
@@ -113,7 +163,6 @@ export default function App() {
 
   useEffect(() => { if (st === "shutdown") resetPlayback(); }, [st]);
 
-  /** 点击任意处：授权麦克风（浏览器手势要求）+ 解锁播放。 */
   async function activate() {
     try {
       const { startMic } = await import("./audio");
@@ -145,16 +194,18 @@ export default function App() {
           </div>
           <div className="how">
             <div className="row"><b>唤醒</b>说「Hey, SPICA」或「嘿SPICA」</div>
-            <div className="row"><b>下达任务</b>用一句话描述，SPICA 会改写后交给 DSH 执行</div>
+            <div className="row"><b>下达任务</b>语音或键盘输入（改写后交给 DSH 执行）</div>
             <div className="row"><b>控制</b>「暂停」「继续」，插话随时可说</div>
             <div className="row"><b>结束</b>「Bye, SPICA」或「拜拜SPICA」存档关停</div>
           </div>
-          <div className="cta">点击任意处，允许麦克风 → 就可以说话了</div>
+          <div className="cta">点击任意处，允许麦克风 → 语音与对话模式同时可用</div>
           {micError && (
             <div className="err">
               麦克风开启失败：{micError}
               <br />（可先到 <a href="#/diagnose" onClick={(e) => e.stopPropagation()}
-                style={{ color: "var(--accent)" }}>诊断页</a> 检查设备）
+                style={{ color: "var(--accent)" }}>诊断页</a> 检查设备；
+              也可以 <a href="#/" onClick={(e) => { e.stopPropagation(); setMic(true); }}
+                style={{ color: "var(--accent)" }}>只用键盘</a>）
             </div>
           )}
         </div>
@@ -184,10 +235,6 @@ export default function App() {
     );
   }
 
-  const title = st === "exec" || st === "paused"
-    ? (rewriteFinal || finalText)
-    : st === "done" ? taskDone : "";
-
   return (
     <div className="stage">
       <canvas ref={canvasRef} className="scene-canvas" />
@@ -195,56 +242,10 @@ export default function App() {
       <div className="main-col">
         <div className="brand">
           <span className="name">SPICA</span>
-          <span className="sub">语音优先 · 本地 Agent 操控台</span>
+          <span className="sub">{STATE_KICKER[st] || ""}{route && st === "exec" ? ` · ${route.model ?? ""}` : ""}</span>
         </div>
-
-        {(st === "exec" || st === "paused" || st === "confirm_shutdown") && (
-          <div className="task" style={{ animation: "enter 800ms var(--ease)" }}>
-            <div className="kicker">{STATE_KICKER[st]}</div>
-            <div className="task-title focused">{title.slice(0, 40) || "…"}</div>
-            <div className="task-meta">
-              {route ? `${route.model ?? ""} · 推理 ${route.difficulty}` : ""}
-            </div>
-            <div className="steps">
-              {steps.map((s) => (
-                <div key={s.i} className={`step-row ${s.status}`}>
-                  <span className="dot" />
-                  <span className="idx">{String(s.i).padStart(2, "0")}</span>
-                  <span className="txt">
-                    {s.type === "assistant/message" ? s.text.slice(0, 48) : s.type}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {st === "done" && taskDone && (
-          <div className="task" style={{ animation: "enter 800ms var(--ease)" }}>
-            <div className="kicker">完成 · DONE</div>
-            <div className="task-title">{taskDone.slice(0, 60)}</div>
-          </div>
-        )}
-
-        {st === "idle" && !hasWaked && (
-          <div className="idle-hint">
-            待命中 —— 说 <span className="wake-word">「Hey, SPICA」</span>唤醒我
-          </div>
-        )}
+        <Chat st={st} partial={partial} />
       </div>
-
-      {/* 改写进度线：草稿即满 */}
-      <div className="rewrite-bar">
-        <div className="fill" style={{ width: rewriteDraft ? "100%" : rewriteFinal ? "100%" : "0%" }} />
-      </div>
-
-      {/* 聆听提示：低对比单行（不逐字展示，仅当前 partial 尾部） */}
-      {st === "listen" && (
-        <div className="listening-hint">
-          {partial ? `… ${partial.slice(-24)}` : "在听"}
-        </div>
-      )}
-      <div className="wave-wrap"><WaveLine /></div>
 
       <div className={`state-dot ${wakeFlash && Date.now() - wakeFlash < 1500 ? "wake" : ""} ${st === "confirm_shutdown" ? "confirm" : ""}`} />
 

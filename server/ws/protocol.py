@@ -18,7 +18,8 @@ EVENT_TYPES = {
     "final",          # {text} SenseVoice 终稿
     "rewrite",        # {stage: draft|final, text, difficulty}
     "route",          # {model, reasoning_effort, difficulty} DSH 初始化选择
-    "step",           # {i, summary, status: start|ok|fail}
+    "step",           # {i, summary, status: start|ok|fail}（场景动画用，瘦）
+    "msg",            # {role: user|assistant|tool|system, text} 对话流富消息
     "tts",            # {speaking: bool, text} 播报开始/结束
     "task_done",      # {summary} 任务完成（完成呼吸动画+喊人）
     "paused", "resumed",
@@ -35,6 +36,7 @@ EVENT_TYPES = {
 CLIENT_TYPES = {
     "mic",            # {on: bool, device_id?}
     "audio_meta",     # {sample_rate, channels}
+    "text_input",     # {text} 键盘输入（与语音同管线分发）
     "settings_patch", # {…} 设置更新
     "enroll_start", "enroll_add", "enroll_finish",  # 声纹注册流程
     "voice_preview",  # {text?} 音色试听
