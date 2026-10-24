@@ -1,0 +1,15 @@
+.venv/
+.cache/
+models/
+workspace/
+archives/
+run/
+assets/voices/*.wav
+assets/voices/*.mp3
+web/node_modules/
+web/dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+*.egg-info/

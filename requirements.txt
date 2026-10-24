@@ -1,0 +1,23 @@
+# SPICA Python 依赖（Python 3.12 venv）
+# 安装：make deps（自动带清华源）
+# 真实依赖源为本文件；pyproject.toml 仅作元数据
+
+# --- 核心 orchestrator ---
+fastapi>=0.115
+uvicorn[standard]>=0.32
+websockets>=13
+numpy>=1.26
+pydantic>=2.9
+httpx>=0.27
+pypinyin>=0.53
+rapidfuzz>=3.10
+pytest>=8
+
+# --- 语音识别（sherpa-onnx，CPU 实时）---
+sherpa-onnx==1.9.30
+
+# --- TTS（Qwen3-TTS-VoiceDesign，GPU bf16）---
+# torch 默认拉 cu 轮子（linux x86_64）
+torch
+torchaudio
+qwen-tts==0.1.1
