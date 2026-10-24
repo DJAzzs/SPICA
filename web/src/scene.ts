@@ -59,13 +59,13 @@ export class SpicaScene {
     ground.receiveShadow = true;
     this.scene.add(ground);
 
-    // 任务几何体（右侧留白区，不压左列文本）
+    // 任务几何体（右侧区域，避开居中的对话面板）
     this.taskBase = 0;
     this.taskMesh = new THREE.Mesh(
       new THREE.BoxGeometry(1.4, 1.4, 1.4),
       new THREE.MeshLambertMaterial({ color: this.baseColor }),
     );
-    this.taskMesh.position.set(3.2, this.taskBase, 0);
+    this.taskMesh.position.set(4.8, this.taskBase, 0);
     this.taskMesh.castShadow = true;
     this.scene.add(this.taskMesh);
 
@@ -75,10 +75,11 @@ export class SpicaScene {
   }
 
   private setIso() {
-    // 等距：绕 Y 45°，俯 35.264°
+    // 等距：绕 Y 45°，俯 35.264°；注视点对齐右侧几何体群
     const r = 14;
-    this.camera.position.set(r * Math.cos(Math.PI / 6), r * Math.sin(Math.PI / 6), r * Math.cos(Math.PI / 6));
-    this.camera.lookAt(2.6, 0, 0);
+    const c = 4.8;
+    this.camera.position.set(c + r * Math.cos(Math.PI / 6), r * Math.sin(Math.PI / 6), r * Math.cos(Math.PI / 6));
+    this.camera.lookAt(c, 0, 0);
   }
 
   private onResize() {
@@ -118,7 +119,7 @@ export class SpicaScene {
         new THREE.MeshLambertMaterial({ color: LAYER_COLORS[i % 3] }),
       );
       const col = i % 3, row = Math.floor(i / 3);
-      m.position.set(3.2 + (col - 1) * 0.7, this.taskBase + 1.2 + row * 0.7, (row % 2 ? 0.2 : -0.2));
+      m.position.set(4.8 + (col - 1) * 0.7, this.taskBase + 1.2 + row * 0.7, (row % 2 ? 0.2 : -0.2));
       m.castShadow = true;
       this.scene.add(m);
       this.stepMeshes.push(m);
@@ -183,8 +184,9 @@ export class SpicaScene {
     if (this.orbit) {
       const a = t * (2 * Math.PI / 90);
       const r = 14;
-      this.camera.position.set(2.6 + r * Math.cos(a), 7, r * Math.sin(a));
-      this.camera.lookAt(2.6, 0, 0);
+      const c = 4.8;
+      this.camera.position.set(c + r * Math.cos(a), 7, r * Math.sin(a));
+      this.camera.lookAt(c, 0, 0);
     }
 
     this.renderer.render(this.scene, this.camera);

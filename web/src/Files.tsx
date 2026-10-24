@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSpica } from "./state";
+import { FolderIcon, FileIcon } from "./icons";
 
 /** 工作区文件浏览器：浏览当前会话工作区，查看文本文件。 */
 export default function Files() {
@@ -68,12 +69,12 @@ export default function Files() {
                 const parts = sub.split("/");
                 parts.pop();
                 load(parts.join("/"));
-              }}>📁 ..</div>
+              }}><FolderIcon /> ..</div>
             )}
             {(data?.entries || []).map((e: any) => (
               <div key={e.name} className="file-row"
                 onClick={() => open(e.name, e.dir)}>
-                <span>{e.dir ? "📁" : "📄"} {e.name}</span>
+                <span className="file-name">{e.dir ? <FolderIcon /> : <FileIcon />}{e.name}</span>
                 {!e.dir && <span className="file-size">{fmt(e.size)}</span>}
               </div>
             ))}

@@ -3,6 +3,7 @@ import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getStat
 import { SpicaScene, SceneState } from "./scene";
 import Wave from "./Wave";
 import Markdown from "./Markdown";
+import { MicIcon, PlusIcon, SendIcon } from "./icons";
 
 const ROLE_LABEL: Record<string, string> = {
   user: "用户", assistant: "SPICA", tool: "执行", system: "系统",
@@ -94,8 +95,13 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       <div className="chat-scroll" ref={scrollRef}>
         {msgs.length === 0 && (
           <div className="chat-empty">
-            说「Hey, SPICA」唤醒，或直接在下方输入任务。<br />
-            语音和键盘走同一条管线：改写 → 路由 → DSH 执行。
+            <div className="chat-empty-title">和 SPICA 聊聊</div>
+            <div className="chat-empty-line">
+              语音唤醒「Hey, SPICA」 · 点击 <MicIcon size={13} /> 直接说 · 或在下方输入
+            </div>
+            <div className="chat-empty-line dim">
+              支持命令：/plan 只读规划 · /compact 压缩上下文 · /goal 长期目标 · /export 导出
+            </div>
           </div>
         )}
         {msgs.map((m, i) => (
@@ -119,14 +125,14 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         <Wave />
       )}
       <div className="chat-input">
-        <label className="mic-btn" title="上传文件到工作区（也可直接拖拽）">
-          ＋
+        <label className="icon-btn" title="上传文件到工作区（也可直接拖拽）">
+          <PlusIcon />
           <input type="file" multiple style={{ display: "none" }}
             onChange={(e) => { upload(e.target.files); e.currentTarget.value = ""; }} />
         </label>
-        <button className={`mic-btn ${st === "listen" || localListen ? "live" : ""}`}
+        <button className={`icon-btn mic ${st === "listen" || localListen ? "live" : ""}`}
           onClick={micClick} title="点击直接说话（聆听中点击取消）"
-          disabled={!connected && !kbdOnly}>🎤</button>
+          disabled={!connected && !kbdOnly}><MicIcon /></button>
         <input
           type="text"
           value={input}
@@ -134,10 +140,11 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
           placeholder={connected
-            ? "输入任务，回车发送（无需唤醒词）"
+            ? "输入任务，回车发送 · / 唤起命令"
             : "未连接服务 —— 请在终端运行 make up 后自动重连"}
         />
-        <button className="btn primary" onClick={submit} disabled={!connected}>发送</button>
+        <button className="send-btn" onClick={submit} disabled={!connected}
+          title="发送（Enter）"><SendIcon /></button>
       </div>
     </div>
   );
