@@ -30,6 +30,15 @@ def test_update_and_perm_validation(store):
     assert store.update("不存在", {"title": "x"}) is None
 
 
+def test_model_override_can_be_cleared(store):
+    """切回自动：model_override 空串必须生效（不是被 falsy 丢弃）。"""
+    m = store.create()
+    store.update(m["id"], {"model_override": "glm-5.3"})
+    assert store.get(m["id"])["model_override"] == "glm-5.3"
+    store.update(m["id"], {"model_override": ""})
+    assert store.get(m["id"])["model_override"] == ""
+
+
 def test_events_append_and_read(store):
     m = store.create()
     store.append_event(m["id"], "user", "分析图片")
