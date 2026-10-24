@@ -275,7 +275,7 @@ class Semantics:
         elif name == "resume":
             if self.state == "paused":
                 route = self.route_info or {}
-                await self.sdk.start(route.get("model") or "glm-5.3",
+                await self.sdk.start(route.get("model") or "glm-5.3-flash",
                                      route.get("reasoning_effort"))
                 await self.sdk.resume(self.sdk.session_id)
                 await self.sdk.prompt("继续刚才的任务。")

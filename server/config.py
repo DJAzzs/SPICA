@@ -86,17 +86,17 @@ DEFAULT_SETTINGS = {
     "speaker_embeddings": [],          # list[float] 列表（多遍注册取均值后再存）
     # ASR
     "asr_partial_debounce_ms": 300,
-    # DSH / LLM（同一 provider：zai-coding-cn / glm-5.3，与 web profile 一致）
+    # DSH / LLM（同一 provider：zai-coding-cn，默认 GLM-5.3-Flash 快速档）
     "dsh_bin": "",                     # 空=自动探测 dsh / npx dsh
     "llm_base_url": "https://open.bigmodel.cn/api/coding/paas/v4",
     "llm_api_key": "",                 # 空=env ZAI_CODING_CN_API_KEY 或 ~/.dsh/.credentials.yaml
-    "llm_model_rewrite": "glm-5.3",
-    "llm_model_route": "glm-5.3",
-    # 难度 → DSH 路由（InitializeParams: model/reasoningEffort，glm-5.3 适配器）
+    "llm_model_rewrite": "glm-5.3-flash",
+    "llm_model_route": "glm-5.3-flash",
+    # 难度 → DSH 路由（InitializeParams: model/reasoningEffort，glm 适配器）
     "difficulty_routes": {
-        "simple":   {"model": "glm-5.3", "reasoning_effort": "low"},
-        "normal":   {"model": "glm-5.3", "reasoning_effort": None},
-        "complex":  {"model": "glm-5.3", "reasoning_effort": "max"},
+        "simple":   {"model": "glm-5.3-flash", "reasoning_effort": "low"},
+        "normal":   {"model": "glm-5.3-flash", "reasoning_effort": None},
+        "complex":  {"model": "glm-5.3-flash", "reasoning_effort": "max"},
     },
     # TTS
     "tts_model_path": "/home/dja/桌面/Models/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
