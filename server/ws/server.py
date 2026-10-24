@@ -85,13 +85,31 @@ def create_app(boot) -> FastAPI:
 
     @app.post("/api/settings")
     async def patch_settings(patch: dict):
-        # 向导试听：不下发设置，直接播一句
+        sem = state["sem"]
+        # 试听请求：可同时携带音色字段（先保存并热更新引擎，再播）
         preview = patch.pop("tts_preview_text", None)
-        if preview and state["sem"]:
-            state["sem"].narrator.speak(preview, prio=1, kind="confirm")
+        voice_keys = ("tts_voice_preset", "tts_custom_description", "tts_language")
+        voice_patch = {k: patch.pop(k) for k in list(patch.keys())
+                       if k in voice_keys}
+        merged: dict | None = None
+        if voice_patch:
+            merged = save_settings(voice_patch)
+            state["settings"] = merged
+            if sem:
+                # 热更新 TTS 引擎音色（不重启）
+                sem.narrator.engine.settings = merged
+                sem.settings = merged
+            await hub.broadcast({"t": "settings", **_safe_settings()})
+        if preview and sem:
+            sem.narrator.speak(str(preview), prio=1, kind="confirm")
             return {"preview": True}
+        if merged is not None and not patch:
+            return _safe_settings()
         merged = save_settings(patch)
         state["settings"] = merged
+        if sem:
+            sem.narrator.engine.settings = merged
+            sem.settings = merged
         await hub.broadcast({"t": "settings", **_safe_settings()})
         return _safe_settings()
 
@@ -144,6 +162,8 @@ def create_app(boot) -> FastAPI:
             await sem.on_text_input(str(data.get("text", "")))
         elif t == "enroll_start":
             await sem.enroll_start(int(data.get("n", 3)))
+        elif t == "enroll_abort":
+            await sem.enroll_abort()
         elif t == "shutdown_now":
             asyncio.create_task(sem.shutdown_sequence())
         elif t == "review_get":

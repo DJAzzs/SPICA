@@ -237,14 +237,11 @@ class VoicePipeline:
 
     # ------------------------------------------------------------ 段结算
     def _on_segment(self, seg: Segment) -> None:
-        try:
-            self.cb.on_segment_audio(seg.samples)
-        except Exception:
-            pass
         text = self.final_asr.transcribe(seg.samples)
 
         # 播报期（含尾部保持窗）：丢弃一切段——这是自身 TTS 回声；
         # 唯一例外是「暂停」（用户喊停播报是强意图）。
+        # 注意：on_segment_audio 也一并丢弃（否则注册会收进自己的声音）。
         if self._gated():
             if text and "pause" in self.commands:
                 hit = self.matcher.match_anywhere(
@@ -262,6 +259,11 @@ class VoicePipeline:
         if self.echo_provider and self.echo_provider(text):
             self.stream_asr.reset()
             return
+
+        try:
+            self.cb.on_segment_audio(seg.samples)
+        except Exception:
+            pass
         now = time.time()
 
         # DORMANT：唤醒兜底（双引擎文本冗余：SenseVoice 优先，流式排空终稿次之）

@@ -109,6 +109,15 @@ html[data-demo="1"] ::-webkit-scrollbar { display: none; }
 /* 3D 画布 */
 .scene-canvas { position: absolute; inset: 0; z-index: 1; }
 
+/* 声纹注册步骤 */
+.enroll-progress { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+.enroll-dot { width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg2); transition: background 800ms var(--ease); }
+.enroll-dot.on { background: var(--mist); }
+.enroll-count { font-size: 13px; color: var(--ink-dim); letter-spacing: 0.15em; margin-left: 8px; }
+.enroll-live { margin-top: 12px; font-size: 14px; color: var(--ink);
+  min-height: 24px; opacity: 0.85; }
+
 /* 右下工具（非演示模式）——顶栏右侧 */
 .tools { display: flex; gap: 22px; font-size: 13px; letter-spacing: 0.12em;
   color: var(--ink-dim); align-items: center; }

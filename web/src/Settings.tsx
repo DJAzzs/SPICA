@@ -1,6 +1,34 @@
 import { useState } from "react";
 import { useSpica, send } from "./state";
 
+/** 自定义音色描述编辑器：提示词 + 试听（热更新）。 */
+function VoiceDescEditor() {
+  const settings = useSpica((s) => s.settings);
+  const [desc, setDesc] = useState(settings?.tts_custom_description || "");
+  const [busy, setBusy] = useState(false);
+  return (
+    <>
+      <textarea value={desc} onChange={(e) => setDesc(e.target.value)}
+        placeholder="例如：一位温和的青年女性声音，语速平缓，带一点书卷气" />
+      <div className="btn-row">
+        <button className="btn" disabled={busy} onClick={async () => {
+          setBusy(true);
+          try {
+            await fetch("/api/settings", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                tts_custom_description: desc.trim(),
+                tts_preview_text: "你好，我是 SPICA，这是当前音色。",
+              }),
+            });
+          } finally { setTimeout(() => setBusy(false), 4000); }
+        }}>{busy ? "合成中…" : "保存并试听"}</button>
+      </div>
+    </>
+  );
+}
+
 /** 设置页：词表/阈值/路由/音色/主题/演示模式。 */
 export default function Settings() {
   const settings = useSpica((s) => s.settings);
@@ -55,6 +83,8 @@ export default function Settings() {
             onChange={(e) => send({ t: "settings_patch", patch: { tts_voice_preset: e.target.value } })}>
             {["清朗助理", "沉稳管家", "少年灵音"].map((v) => <option key={v}>{v}</option>)}
           </select>
+          <label style={{ marginTop: 16 }}>自定义音色描述（提示词，留空用预设）</label>
+          <VoiceDescEditor />
         </div>
 
         <div className="field">

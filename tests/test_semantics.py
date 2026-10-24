@@ -22,7 +22,7 @@ class FakePipeline:
     def set_tts_gate(self, on, hold=None):
         self.tts_gate = on
 
-    def arm_listening(self, s=12):
+    def arm_listening(self, seconds=12):
         self.arm_called += 1
 
 
@@ -200,6 +200,60 @@ def test_pause_resume(tmp_path, monkeypatch):
     assert sdk.resumed == "sess-test-1"
     assert "继续刚才的任务。" in sdk.prompts
     assert sem.state == "exec"
+
+
+# ---------------------------------------------------------------- 声纹注册
+class FakeSpeaker:
+    def __init__(self):
+        self.enrolled_with = None
+
+    def enroll(self, samples):
+        self.enrolled_with = samples
+        return True
+
+
+def test_enroll_flow_collects_and_finishes(tmp_path, monkeypatch):
+    import numpy as np
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.speaker = FakeSpeaker()
+    run(sem.enroll_start(3))
+    assert sem.enroll_mode is True
+    for _ in range(3):
+        run(sem._segment_audio(np.zeros(16000 * 2, dtype=np.float32)))
+    assert sem.enroll_mode is False
+    assert len(sem.speaker.enrolled_with) == 3
+    done = [e for e in events if e.get("t") == "diag"
+            and e.get("enroll", {}).get("phase") == "done"]
+    assert done and done[0]["enroll"]["ok"] is True
+    assert sem.state == "idle"
+
+
+def test_enroll_short_segment_rejected(tmp_path, monkeypatch):
+    import numpy as np
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.speaker = FakeSpeaker()
+    run(sem.enroll_start(3))
+    run(sem._segment_audio(np.zeros(8000, dtype=np.float32)))  # 0.5s
+    assert len(sem.enroll_samples) == 0
+    assert any(e.get("t") == "diag" and e.get("enroll", {}).get("phase") == "too_short"
+               for e in events)
+    assert sem.enroll_mode is True
+
+
+def test_enroll_period_no_tts_instructions(tmp_path, monkeypatch):
+    """注册期间不发任何 TTS（防自采）：开始/进度全走界面事件。"""
+    import numpy as np
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.speaker = FakeSpeaker()
+    run(sem.enroll_start(3))
+    assert narrator.said == []            # 开始注册：无语音
+    run(sem._segment_audio(np.zeros(16000 * 2, dtype=np.float32)))
+    assert narrator.said == []            # 收到第 1 段：无语音
+    run(sem._segment_audio(np.zeros(16000 * 2, dtype=np.float32)))
+    run(sem._segment_audio(np.zeros(16000 * 2, dtype=np.float32)))
+    assert sem.enroll_mode is False
+    # 注册完成后才说话
+    assert any("声纹注册完成" in t for _, t in narrator.said)
 
 
 # ---------------------------------------------------------------- 键盘输入

@@ -94,6 +94,8 @@ class Semantics:
 
     async def _partial(self, text: str) -> None:
         await self.broadcast({"t": "partial", "text": text})
+        if self.enroll_mode:
+            return  # 注册朗读不进改写预热（省 LLM 调用）
         # 边说边改（预热）
         def on_draft(res):
             asyncio.create_task(self.broadcast(
@@ -358,29 +360,48 @@ class Semantics:
         return d
 
     # ================================================== 声纹注册
+    # 设计要点：注册过程**零 TTS**（引导/计数全走界面视觉），
+    # 否则自己的声音会被收进样本；段音频经管线门控+回声过滤后才到达这里。
     async def enroll_start(self, n: int = 3) -> None:
         self.enroll_mode = True
         self.enroll_target = n
         self.enroll_samples = []
-        self.pipeline.arm_listening(seconds=60)
+        self.pipeline.arm_listening(seconds=120)
         await self._set_state("listen")
-        self.narrator.confirm(f"开始声纹注册，请自然地说 {n} 句话，"
-                              "例如说说你今天打算做什么。")
+        await self.broadcast({"t": "diag", "enroll": {
+            "phase": "start", "got": 0, "target": n}})
+
+    async def enroll_abort(self) -> None:
+        self.enroll_mode = False
+        await self.broadcast({"t": "diag", "enroll": {"phase": "abort"}})
+        await self._set_state("idle")
 
     async def _segment_audio(self, samples: np.ndarray) -> None:
         if not self.enroll_mode:
             return
+        dur = samples.size / 16000.0
+        if dur < 1.2:
+            # 过短（多为回声尾巴/误触发）：不计，界面提示重说
+            await self.broadcast({"t": "diag", "enroll": {
+                "phase": "too_short",
+                "got": len(self.enroll_samples), "target": self.enroll_target}})
+            self.pipeline.arm_listening(seconds=60)
+            return
         self.enroll_samples.append(samples)
         got = len(self.enroll_samples)
         if got < self.enroll_target:
-            self.narrator.confirm(f"收到第 {got} 段，继续。")
+            await self.broadcast({"t": "diag", "enroll": {
+                "phase": "progress", "got": got, "target": self.enroll_target}})
             self.pipeline.arm_listening(seconds=60)
             return
         self.enroll_mode = False
-        ok = await asyncio.to_thread(self.speaker.enroll, self.enroll_samples)
-        save_settings({})  # 触发落盘
-        await self.broadcast({"t": "diag", "enroll": "ok" if ok else "fail"})
+        ok = False
+        if self.speaker is not None:
+            ok = await asyncio.to_thread(self.speaker.enroll, self.enroll_samples)
+        await self.broadcast({"t": "diag", "enroll": {
+            "phase": "done", "ok": bool(ok)}})
+        # 注册完成才说话（采集已结束，无自采风险）
         self.narrator.confirm(
             "声纹注册完成，现在我只回应你的声音了。" if ok
-            else "注册失败，请在设置里重试。")
+            else "注册失败，请重试。")
         await self._set_state("idle")
