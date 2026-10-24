@@ -29,9 +29,15 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
     setInput("");
   };
 
-  /** 麦克风按钮：唤醒词不可用时手动进入聆听（说话即可，无需唤醒词） */
+  /** 麦克风按钮：聆听中=取消；否则手动进入聆听（说话即可，无需唤醒词） */
   const micClick = () => {
     if (kbdOnly) { onEnableVoice(); return; }
+    if (st === "listen") {
+      set({ localListen: false });
+      toastMsg("已取消聆听");
+      send({ t: "cancel_listen" });
+      return;
+    }
     if (!connected) { toastMsg("未连接服务：请在终端运行 make up"); return; }
     // 本地立即反馈；服务器 2.5s 内未接手则提示重启（旧版本无此消息）
     set({ localListen: true });
@@ -117,6 +123,7 @@ export default function App() {
   const farewell = useSpica((s) => s.farewell);
   const settings = useSpica((s) => s.settings);
   const connected = useSpica((s) => s.connected);
+  const currentSession = useSpica((s) => s.currentSession);
   const micOn = useSpica((s) => s.micOn);
   const micError = useSpica((s) => s.micError);
 
@@ -237,12 +244,18 @@ export default function App() {
       <header className="topbar">
         <div className="brand">
           <span className="name">SPICA</span>
-          <span className="sub">{STATE_KICKER[st] || ""}{route && st === "exec" ? ` · ${route.model ?? ""}` : ""}</span>
+          <span className="sub">
+            {currentSession?.title
+              ? `${currentSession.title} · ${STATE_KICKER[st] || ""}`
+              : STATE_KICKER[st] || ""}
+            {route && st === "exec" ? ` · ${route.model ?? ""}` : ""}
+          </span>
         </div>
         {!demo && (
           <div className="tools">
             {ttsSpeaking ? <span>播报中</span> : null}
             <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
+            <a href="#/sessions">会话</a>
             <a href="#/diagnose">诊断</a>
             <a href="#/wizard">向导</a>
             <a href="#/settings">设置</a>

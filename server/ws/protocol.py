@@ -26,6 +26,9 @@ EVENT_TYPES = {
     "confirm_ask",    # {q, kind: shutdown|...} 需要用户语音确认
     "shutdown",       # 服务即将自停，前端展示告别画面
     "archive_done",   # {path} 存档完成
+    "sessions",       # {list, current} 会话列表与当前
+    "session",        # {meta} 当前会话元数据变更
+    "history",        # {msgs} 会话历史（打开/刷新时整批替换）
     "error",          # {message, fatal: bool}
     "settings",       # 当前设置快照（连接时下发）
     "diag",           # 硬件/环境诊断报告
@@ -38,6 +41,8 @@ CLIENT_TYPES = {
     "audio_meta",     # {sample_rate, channels}
     "text_input",     # {text} 键盘输入（与语音同管线分发）
     "manual_listen",  # {} 手动开启语音输入（唤醒词不可用时的兜底入口）
+    "cancel_listen",  # {} 取消聆听（再次按麦克风按钮）
+    "session_new", "session_open", "session_delete", "session_update",
     "settings_patch", # {…} 设置更新
     "enroll_start", "enroll_add", "enroll_finish",  # 声纹注册流程
     "voice_preview",  # {text?} 音色试听

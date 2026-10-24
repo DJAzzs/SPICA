@@ -26,6 +26,8 @@ export interface State {
   msgs: { role: string; text: string; ts: number }[];
   localListen: boolean;   // 手动聆听本地态（不等服务器往返）
   toast: string;          // 顶部轻提示
+  sessions: any[];
+  currentSession: any | null;
 }
 
 const initial: State = {
@@ -34,6 +36,7 @@ const initial: State = {
   route: null, steps: [], taskDone: "", ttsSpeaking: false, ttsText: "",
   rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
   micOn: false, micError: "", msgs: [], localListen: false, toast: "",
+  sessions: [], currentSession: null,
 };
 
 let state: State = initial;
@@ -93,7 +96,7 @@ export function connectWS() {
 let stepSeq = 0;
 function pushMsg(role: string, text: string) {
   const msg = { role, text, ts: Date.now() };
-  set({ msgs: [...state.msgs.slice(-79), msg] });
+  set({ msgs: [...state.msgs.slice(-199), msg] });   // 刷新恢复的上限放大
 }
 function handle(e: SpicaEvent) {
   switch (e.t) {
@@ -130,6 +133,16 @@ function handle(e: SpicaEvent) {
       break;
     case "shutdown": set({ farewell: true }); break;
     case "diag": set({ diag: { ...state.diag, ...e } }); break;
+    case "sessions":
+      set({ sessions: e.list || [], currentSession:
+        (e.list || []).find((s: any) => s.id === e.current) || null });
+      break;
+    case "session": set({ currentSession: e.meta }); break;
+    case "history":
+      set({ msgs: (e.msgs || []).map((m: any) => ({
+        role: m.role, text: m.text, ts: m.ts || Date.now() })) });
+      break;
+    case "error": toast(`出错了：${e.message || ""}`); break;
   }
 }
 

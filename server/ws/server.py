@@ -121,6 +121,16 @@ def create_app(boot) -> FastAPI:
         try:
             await ws.send_text(json.dumps(
                 {"t": "settings", **_safe_settings()}, ensure_ascii=False))
+            if sem:
+                # 连接即恢复：当前会话与历史
+                await ws.send_text(json.dumps(
+                    {"t": "history", "msgs": sem.transcript[-200:]},
+                    ensure_ascii=False))
+                await sem.broadcast_sessions()
+                if sem.session:
+                    await ws.send_text(json.dumps(
+                        {"t": "session", "meta": sem.session},
+                        ensure_ascii=False))
             while True:
                 msg = await ws.receive()
                 if msg.get("type") == "websocket.receive":
@@ -164,6 +174,17 @@ def create_app(boot) -> FastAPI:
                 await sem.on_text_input(str(data.get("text", "")))
             elif t == "manual_listen":
                 await sem.manual_listen(float(data.get("seconds", 20)))
+            elif t == "cancel_listen":
+                await sem.cancel_listen()
+            elif t == "session_new":
+                await sem.session_new()
+            elif t == "session_open":
+                await sem.session_open(str(data.get("id", "")))
+            elif t == "session_delete":
+                await sem.session_delete(str(data.get("id", "")))
+            elif t == "session_update":
+                await sem.session_update(str(data.get("id", "")),
+                                         dict(data.get("patch", {})))
             elif t == "enroll_start":
                 await sem.enroll_start(int(data.get("n", 3)))
             elif t == "enroll_abort":

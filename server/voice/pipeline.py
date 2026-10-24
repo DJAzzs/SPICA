@@ -75,6 +75,7 @@ class VoicePipeline:
         self.final_asr = SenseVoiceASR()
         self.st = _State()
         self.echo_provider = None          # fn(text)->bool：自身播报回声判定
+        self.enroll_cancel = False         # 取消注册标记
         self._q: queue.Queue[np.ndarray | None] = queue.Queue(maxsize=200)
         self._ring: deque[np.ndarray] = deque()  # int16 chunks（声纹窗用）
         self._ring_samples = 0
@@ -112,6 +113,12 @@ class VoicePipeline:
         """外部（如向导/确认对话）直接进入 LISTENING。"""
         self.st.mode = "LISTENING"
         self.st.followup_until = time.time() + seconds
+
+    def standby(self) -> None:
+        """立即回 DORMANT（取消聆听）。"""
+        self.st.mode = "DORMANT"
+        self.st.followup_until = 0.0
+        self.enroll_cancel = True
 
     # ------------------------------------------------------------ 声纹窗
     def _push_ring(self, chunk_i16: np.ndarray) -> None:

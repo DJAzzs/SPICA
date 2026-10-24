@@ -30,6 +30,7 @@ from server.agent.router import Router
 from server.agent.sdk_client import SdkClient
 from server.agent.semantics import Semantics
 from server.config import load_settings
+from server.sessions import SessionStore
 from server.tts.engine import TTSEngine
 from server.tts.narrator import Narrator
 from server.tts.packs import VoicePacks
@@ -79,11 +80,32 @@ async def boot(app, hub) -> Semantics:
     sdk = SdkClient(on_notification=on_note, settings=settings)
 
     sem = Semantics(pipeline, sdk, rewriter, router, narrator, packs,
-                    pipeline.speaker, broadcast, settings)
+                    pipeline.speaker, broadcast, settings,
+                    store=SessionStore(), llm=llm)
     sem.bind_loop()
     sem_holder["sem"] = sem
     pipeline.cb = sem.pipeline_callbacks()   # 回填真实回调
     await broadcast({"t": "state", "s": "idle"})
+
+    # 自动续接最近会话（服务重启不失上下文）
+    try:
+        latest = sem.store.list()
+        if latest:
+            meta = latest[0]
+            sem.session = meta
+            sem.sdk.reset_identity(meta.get("dsh_session_id", ""))
+            sem._need_resume = bool(meta.get("dsh_session_id"))
+            sem.transcript = [
+                {"role": e.get("role", ""), "text": e.get("text", ""),
+                 "ts": e.get("ts", 0)}
+                for e in sem.store.events(meta["id"])
+            ]
+            print(f"[spica] 续接会话：{meta.get('title') or meta['id']}",
+                  flush=True)
+        else:
+            await sem.session_new()
+    except Exception as e:
+        print(f"[spica] 会话恢复失败（忽略）：{e}", flush=True)
 
     # 后台预热：TTS 模型 + 应答包（不阻塞启动）
     async def warmup() -> None:

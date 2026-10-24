@@ -20,6 +20,7 @@ import numpy as np
 from server import lifecycle
 from server.config import (ARCHIVES_DIR, ROOT, WORKSPACE_DIR, load_settings,
                            save_settings)
+from server.sessions import PERMS, SessionStore
 from server.tts.narrator import Narrator
 
 CONFIRM_WINDOW_S = 20.0
@@ -27,7 +28,8 @@ CONFIRM_WINDOW_S = 20.0
 
 class Semantics:
     def __init__(self, pipeline, sdk, rewriter, router, narrator, packs,
-                 speaker, broadcast, settings: dict | None = None):
+                 speaker, broadcast, settings: dict | None = None,
+                 store: SessionStore | None = None, llm=None):
         self.pipeline = pipeline
         self.sdk = sdk
         self.rewriter = rewriter
@@ -37,6 +39,8 @@ class Semantics:
         self.speaker = speaker
         self.broadcast = broadcast            # async (dict) -> None
         self.settings = settings or load_settings()
+        self.store = store or SessionStore()
+        self.llm = llm
         self.state = "idle"
         self.loop: asyncio.AbstractEventLoop | None = None
         # 任务上下文（存档用）
@@ -47,6 +51,9 @@ class Semantics:
         self.current_brief: str = ""
         self._confirm_timer: asyncio.Task | None = None
         self._turn_task: asyncio.Task | None = None
+        self._need_resume = False            # 打开历史会话后首个任务先 resume
+        # 当前会话
+        self.session: dict = {}
         # 声纹注册
         self.enroll_mode = False
         self.enroll_target = 3
@@ -126,9 +133,110 @@ class Semantics:
                                 "ts": time.time()})
         await self.broadcast({"t": "final", "text": text})
         await self.broadcast({"t": "msg", "role": "user", "text": text})
+        self._log("user", text)
         if self.enroll_mode:
             return  # 注册模式只收音频
         await self._dispatch(text)
+
+    # ================================================== 会话管理
+    async def broadcast_sessions(self) -> None:
+        await self.broadcast({"t": "sessions", "list": self.store.list(),
+                              "current": self.session.get("id", "")})
+
+    async def session_new(self) -> None:
+        if self.state == "exec":
+            self.narrator.confirm("任务还在执行，先等它结束或说暂停。")
+            return
+        try:
+            await self.sdk.stop()   # 当前 DSH 会话已持久化
+        except Exception:
+            pass
+        self.sdk.reset_identity("")
+        self._need_resume = False
+        self.session = self.store.create()
+        self.transcript = []
+        self.pending_prompts = []
+        self.route_info = {}
+        await self.broadcast({"t": "history", "msgs": []})
+        await self.broadcast({"t": "session", "meta": self.session})
+        await self.broadcast_sessions()
+
+    async def session_open(self, sid: str) -> None:
+        meta = self.store.get(sid)
+        if not meta:
+            return
+        if self.state == "exec":
+            self.narrator.confirm("任务还在执行，先等它结束或说暂停。")
+            return
+        try:
+            await self.sdk.stop()
+        except Exception:
+            pass
+        self.session = meta
+        self.sdk.reset_identity(meta.get("dsh_session_id", ""))
+        self._need_resume = bool(meta.get("dsh_session_id"))
+        self.transcript = [
+            {"role": e.get("role", ""), "text": e.get("text", ""),
+             "ts": e.get("ts", 0)}
+            for e in self.store.events(sid)
+        ]
+        self.pending_prompts = []
+        await self.broadcast({"t": "history", "msgs": self.transcript})
+        await self.broadcast({"t": "session", "meta": meta})
+        await self.broadcast_sessions()
+        self.narrator.confirm(f"已打开会话：{meta.get('title') or '未命名'}。")
+
+    async def session_delete(self, sid: str) -> None:
+        self.store.delete(sid)
+        if self.session.get("id") == sid:
+            await self.session_new()
+        else:
+            await self.broadcast_sessions()
+
+    async def session_update(self, sid: str, patch: dict) -> None:
+        meta = self.store.update(sid, patch)
+        if not meta:
+            return
+        if self.session.get("id") == sid:
+            self.session = meta
+            # 工作区/权限变更：下次任务生效；运行中进程重启
+            if ("cwd" in patch or "perm" in patch) and self.sdk.proc:
+                self.sdk.pause()
+                self._need_resume = bool(meta.get("dsh_session_id"))
+        await self.broadcast({"t": "session", "meta": meta})
+        await self.broadcast_sessions()
+
+    async def _gen_title(self, prompt: str) -> None:
+        """首个任务后自动起会话名（≤10 字）。"""
+        title = prompt[:12]
+        if self.llm is not None:
+            try:
+                out = await self.llm.chat(
+                    [{"role": "system",
+                      "content": "给下面的任务起一个不超过10个字的会话标题，"
+                                 "只输出标题本身。"},
+                     {"role": "user", "content": prompt}],
+                    max_tokens=32, temperature=0.3,
+                    thinking="disabled", timeout=6.0)
+                out = (out or "").strip().strip('"').strip('「」')
+                if out and len(out) <= 16:
+                    title = out
+            except Exception:
+                pass
+        await self.session_update(self.session["id"], {"title": title})
+
+    def _log(self, role: str, text: str) -> None:
+        if self.session.get("id") and text:
+            try:
+                self.store.append_event(self.session["id"], role, text)
+            except Exception:
+                pass
+
+    # ================================================== 取消聆听
+    async def cancel_listen(self) -> None:
+        self.pipeline.standby()
+        self.enroll_mode = False
+        await self._set_state("idle")
 
     # ================================================== 手动语音输入
     async def manual_listen(self, seconds: float = 20.0) -> None:
@@ -189,6 +297,7 @@ class Semantics:
                               "text": result.text})
         self.transcript.append({"role": "rewrite", "text": result.text,
                                 "ts": time.time()})
+        self._log("system", f"改写 → {result.text}")
         await self._after_rewrite(result.text)
 
     async def _after_rewrite(self, prompt: str) -> None:
@@ -201,6 +310,7 @@ class Semantics:
         await self.broadcast({"t": "route", **route})
         await self.broadcast({"t": "msg", "role": "system",
                               "text": f"路由：{route.get('model')} · {difficulty}"})
+        self._log("system", f"路由：{route.get('model')} · {difficulty}")
 
         if self.state == "exec":
             # 执行中插话：入队，turn 结束后送达
@@ -211,11 +321,35 @@ class Semantics:
         await self._start_task(prompt)
 
     async def _start_task(self, prompt: str) -> None:
+        if not self.session.get("id"):
+            self.session = self.store.create()
         route = self.route_info or self.router.route("normal")
         if not self.sdk.proc:
-            await self.sdk.start(route["model"], route.get("reasoning_effort"))
+            await self.sdk.start(route["model"], route.get("reasoning_effort"),
+                                 cwd=self.session.get("cwd"),
+                                 permission=self.session.get("perm"))
+            if self._need_resume:
+                try:
+                    await self.sdk.resume(self.sdk.session_id)
+                except Exception:
+                    # 工作区已变更等原因导致历史不可续接：新开 DSH 会话
+                    await self.broadcast({"t": "msg", "role": "system",
+                                          "text": "历史会话无法在此工作区续接，已开启新对话上下文。"})
+                    self.sdk.reset_identity("")
+                    await self.sdk.start(route["model"],
+                                         route.get("reasoning_effort"),
+                                         cwd=self.session.get("cwd"),
+                                         permission=self.session.get("perm"))
+                self._need_resume = False
             await self.broadcast({"t": "state", "s": "exec",
                                   "session": self.sdk.session_id})
+            # 绑定/回填 dsh 会话 id，首个任务自动起名
+            if not self.session.get("dsh_session_id"):
+                self.session["dsh_session_id"] = self.sdk.session_id
+                self.session["model"] = route.get("model") or ""
+                self.store.upsert(self.session)
+                if not self.session.get("title"):
+                    asyncio.create_task(self._gen_title(prompt))
         else:
             await self.broadcast({"t": "state", "s": "exec"})
         self.state = "exec"
@@ -248,12 +382,14 @@ class Semantics:
                     self.last_assistant_text = text
                     await self.broadcast({"t": "msg", "role": "assistant",
                                           "text": text})
+                    self._log("assistant", text)
                 elif block.get("type") in ("tool_call", "tool_use"):
                     summary = self.narrator.tool_summary(
                         block.get("name", "tool"),
                         block.get("arguments") or block.get("input") or "")
                     await self.broadcast({"t": "msg", "role": "tool",
                                           "text": summary})
+                    self._log("tool", summary)
         elif typ in ("tool/call", "tool/use"):
             summary = self.narrator.tool_summary(
                 data.get("name") or data.get("tool") or "tool",
@@ -261,6 +397,7 @@ class Semantics:
                 or data.get("args") or data.get("command") or "")
             await self.broadcast({"t": "msg", "role": "tool",
                                   "text": summary})
+            self._log("tool", summary)
         elif typ == "tool/result":
             out = (data.get("result") or data.get("output") or "")
             if isinstance(out, str) and out.strip():
@@ -276,6 +413,7 @@ class Semantics:
         self.transcript.append({"role": "assistant", "text": summary,
                                 "ts": time.time()})
         await self.broadcast({"t": "task_done", "summary": summary})
+        self._log("assistant", summary)
         nickname = self.settings.get("user_nickname", "")
         call = f"{nickname}，" if nickname else ""
         self.narrator.final(f"{summary}……{call}任务完成，请指示。")
@@ -295,9 +433,12 @@ class Semantics:
         elif name == "resume":
             if self.state == "paused":
                 route = self.route_info or {}
-                await self.sdk.start(route.get("model") or "glm-5.3-flash",
-                                     route.get("reasoning_effort"))
-                await self.sdk.resume(self.sdk.session_id)
+                if not self.sdk.proc:
+                    await self.sdk.start(route.get("model") or "glm-5.3-flash",
+                                         route.get("reasoning_effort"),
+                                         cwd=self.session.get("cwd"),
+                                         permission=self.session.get("perm"))
+                    await self.sdk.resume(self.sdk.session_id)
                 await self.sdk.prompt("继续刚才的任务。")
                 self.narrator.confirm("好，继续。")
                 await self._set_state("exec")

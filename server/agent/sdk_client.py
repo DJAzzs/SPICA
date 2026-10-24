@@ -63,8 +63,12 @@ class SdkClient:
 
     # ------------------------------------------------------------ 生命周期
     async def start(self, model: str, reasoning_effort: str | None,
-                    max_tokens: int | None = None) -> str:
-        """启动并 initialize。返回 session id。"""
+                    max_tokens: int | None = None,
+                    cwd: str | None = None,
+                    permission: str | None = None) -> str:
+        """启动并 initialize。返回 session id。
+        cwd：会话工作区；permission：DSH_PERMISSION_MODE
+        （read-only | workspace-write | danger-full-access）。"""
         async with self._lock:
             if self.proc and self.proc.returncode is None:
                 return self.session_id
@@ -72,19 +76,24 @@ class SdkClient:
                 "--profile", "sdk",
                 "--patch", str(PATCH),
             ]
+            env = zai_env(self.settings)
+            if permission:
+                env["DSH_PERMISSION_MODE"] = permission
+            workdir = cwd or str(ROOT / "workspace")
+            Path(workdir).mkdir(parents=True, exist_ok=True)
             self.proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=open(ROOT / "run" / "sdk-stderr.log", "ab"),
-                cwd=str(ROOT / "workspace"),
-                env=zai_env(self.settings),
+                cwd=workdir,
+                env=env,
                 start_new_session=True,
             )
             lifecycle.register("dsh-sdk", self.proc.pid, cmd)
             self._reader_task = asyncio.create_task(self._read_loop())
             params: dict = {
-                "cwd": str(ROOT / "workspace"),
+                "cwd": workdir,
                 "provider": "zai-coding-cn",
                 "model": model,
             }
@@ -96,6 +105,11 @@ class SdkClient:
             if not self.session_id:
                 self.session_id = f"spica-{uuid.uuid4().hex[:12]}"
             return self.session_id
+
+    def reset_identity(self, session_id: str = "") -> None:
+        """丢弃当前进程绑定，换用指定（可为空=新建）会话身份。"""
+        self.pause()
+        self.session_id = session_id
 
     async def stop(self) -> None:
         """优雅关停：shutdown 请求 + SIGTERM 兜底。"""

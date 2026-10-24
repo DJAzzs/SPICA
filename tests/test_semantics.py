@@ -25,6 +25,9 @@ class FakePipeline:
     def arm_listening(self, seconds=12):
         self.arm_called += 1
 
+    def standby(self):
+        self.arm_called = 0
+
 
 class FakeSdk:
     def __init__(self):
@@ -36,10 +39,17 @@ class FakeSdk:
         self.paused = False
         self.stopped = False
 
-    async def start(self, model, effort, max_tokens=None):
+    async def start(self, model, effort, max_tokens=None,
+                    cwd=None, permission=None):
         self.started_with.append((model, effort))
         self.proc = object()  # 非 None 表示活着
+        if not self.session_id:
+            self.session_id = "sess-test-1"   # 与真实客户端一致的懒生成
         return self.session_id
+
+    def reset_identity(self, session_id=""):
+        self.session_id = session_id
+        self.proc = None
 
     async def prompt(self, text, sid=None):
         self.prompts.append(text)
@@ -121,9 +131,15 @@ def make_sem(tmp_path, monkeypatch):
     async def broadcast(ev):
         events.append(ev)
 
+    # 隔离会话存储（防写真实 run/sessions.json）
+    import server.sessions as S
+    monkeypatch.setattr(S, "STORE_DIR", tmp_path / "sess")
+    monkeypatch.setattr(S, "INDEX", tmp_path / "sess.json")
+    store = S.SessionStore()
+
     pipeline, sdk, narrator = FakePipeline(), FakeSdk(), FakeNarrator()
     sem = Semantics(pipeline, sdk, FakeRewriter(), FakeRouter(), narrator,
-                    FakePacks(), None, broadcast, load_settings())
+                    FakePacks(), None, broadcast, load_settings(), store=store)
     # 存档与自停替身
     monkeypatch.setattr(sem, "_archive", lambda: tmp_path / "arch")
     monkeypatch.setattr(sem, "self_stop", lambda: events.append({"t": "_stopped"}))
