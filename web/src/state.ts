@@ -21,6 +21,8 @@ export interface State {
   farewell: boolean;
   review: any[];
   diag: any;
+  micOn: boolean;
+  micError: string;
 }
 
 const initial: State = {
@@ -28,6 +30,7 @@ const initial: State = {
   partial: "", final: "", rewriteDraft: "", rewriteFinal: "",
   route: null, steps: [], taskDone: "", ttsSpeaking: false, ttsText: "",
   rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
+  micOn: false, micError: "",
 };
 
 let state: State = initial;
@@ -38,6 +41,9 @@ function set(patch: Partial<State>) {
   listeners.forEach((l) => l());
 }
 export function getState() { return state; }
+export function setMic(on: boolean, error = "") {
+  set({ micOn: on, micError: error });
+}
 function subscribe(l: () => void) { listeners.add(l); return () => listeners.delete(l); }
 export function useSpica<T>(sel: (s: State) => T): T {
   return useSyncExternalStore(subscribe, () => sel(state));

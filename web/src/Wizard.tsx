@@ -84,8 +84,14 @@ export default function Wizard() {
           <div className="field">
             <label>第五步：完成</label>
             <div className="hint">
-              唤醒词与结束词已就绪（设置页可增删变体）；应答语音包将在后台预生成。
-              现在可以回到主界面说「Hey, SPICA」。
+              唤醒词与结束词已就绪（设置页可增删变体）；应答语音包已在后台预生成。
+              现在回到主界面说「Hey, SPICA」试试。
+            </div>
+            <div className="btn-row">
+              <button className="btn primary" onClick={() => {
+                send({ t: "settings_patch", patch: { wizard_done: true } });
+                location.hash = "#/";
+              }}>完成向导</button>
             </div>
           </div>
         )}

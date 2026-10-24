@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { useSpica, send, resetPlayback } from "./state";
+import { useEffect, useRef, useState } from "react";
+import { useSpica, send, resetPlayback, ensureAudio, setMic } from "./state";
 import { SpicaScene, SceneState } from "./scene";
 
 /** 声纹线：底部细柔起伏（RMS 驱动，平滑 0.25）。 */
@@ -59,6 +59,15 @@ export default function App() {
   const wakeFlash = useSpica((s) => s.wakeFlash);
   const farewell = useSpica((s) => s.farewell);
   const settings = useSpica((s) => s.settings);
+  const connected = useSpica((s) => s.connected);
+  const micOn = useSpica((s) => s.micOn);
+  const micError = useSpica((s) => s.micError);
+
+  const [wizardDone, setWizardDone] = useState<boolean | null>(null);
+  const [skipWizard, setSkipWizard] = useState(false);
+  useEffect(() => { if (settings) setWizardDone(!!settings.wizard_done); }, [settings]);
+  useEffect(() => { if (wakeFlash) localStorage.setItem("spica-waked", "1"); }, [wakeFlash]);
+  const hasWaked = localStorage.getItem("spica-waked") === "1";
   const demo = document.documentElement.dataset.demo === "1";
 
   useEffect(() => {
@@ -77,18 +86,75 @@ export default function App() {
     sceneRef.current?.setState(map[st] ?? "idle", steps.length);
   }, [st, steps.length]);
 
-  useEffect(() => {
-    const unsubRms = setInterval(() => {}, 1000);
-    return () => clearInterval(unsubRms);
-  }, []);
+  useEffect(() => { if (st === "shutdown") resetPlayback(); }, [st]);
 
-  useEffect(() => { resetPlayback(); }, [st === "shutdown"]);
+  /** 点击任意处：授权麦克风（浏览器手势要求）+ 解锁播放。 */
+  async function activate() {
+    try {
+      const { startMic } = await import("./audio");
+      await startMic();
+      ensureAudio();
+      setMic(true);
+    } catch (e: any) {
+      setMic(false, String(e?.message || e));
+    }
+  }
 
   if (farewell) {
     return (
       <div className="farewell">
         <div className="name">SPICA</div>
         <div className="sub">已休眠 · 会话已存档 · 重启请运行 make up</div>
+      </div>
+    );
+  }
+
+  // ---------- 空态引导层：麦克风未开启 ----------
+  if (!micOn) {
+    return (
+      <div className="onboard" onClick={activate}>
+        <div className="card">
+          <div className="brand">
+            <span className="name">SPICA</span>
+            <span className="sub">语音优先 · 本地 Agent 操控台</span>
+          </div>
+          <div className="how">
+            <div className="row"><b>唤醒</b>说「Hey, SPICA」或「嘿SPICA」</div>
+            <div className="row"><b>下达任务</b>用一句话描述，SPICA 会改写后交给 DSH 执行</div>
+            <div className="row"><b>控制</b>「暂停」「继续」，插话随时可说</div>
+            <div className="row"><b>结束</b>「Bye, SPICA」或「拜拜SPICA」存档关停</div>
+          </div>
+          <div className="cta">点击任意处，允许麦克风 → 就可以说话了</div>
+          {micError && (
+            <div className="err">
+              麦克风开启失败：{micError}
+              <br />（可先到 <a href="#/diagnose" onClick={(e) => e.stopPropagation()}
+                style={{ color: "var(--accent)" }}>诊断页</a> 检查设备）
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- 首启向导引导（一次性） ----------
+  if (wizardDone === false && !skipWizard) {
+    return (
+      <div className="onboard" style={{ cursor: "default" }}>
+        <div className="card">
+          <div className="how">
+            <div className="row"><b>① 声纹</b>让 SPICA 记住你的声音，只回应你</div>
+            <div className="row"><b>② 校准</b>测试唤醒词命中率</div>
+            <div className="row"><b>③ 音色</b>挑一个喜欢的声音</div>
+          </div>
+          <div className="skip">
+            <a className="btn primary" href="#/wizard">进入向导（约 1 分钟）</a>
+            <button className="btn" onClick={() => {
+              setSkipWizard(true);
+              send({ t: "settings_patch", patch: { wizard_done: true } });
+            }}>跳过，直接用</button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -113,7 +179,6 @@ export default function App() {
             <div className="task-title focused">{title.slice(0, 40) || "…"}</div>
             <div className="task-meta">
               {route ? `${route.model ?? ""} · 推理 ${route.difficulty}` : ""}
-              {settings?.wake_words ? "" : ""}
             </div>
             <div className="steps">
               {steps.map((s) => (
@@ -135,6 +200,12 @@ export default function App() {
             <div className="task-title">{taskDone.slice(0, 60)}</div>
           </div>
         )}
+
+        {st === "idle" && !hasWaked && (
+          <div className="idle-hint">
+            待命中 —— 说 <span className="wake-word">「Hey, SPICA」</span>唤醒我
+          </div>
+        )}
       </div>
 
       {/* 改写进度线：草稿即满 */}
@@ -154,12 +225,13 @@ export default function App() {
 
       {!demo && (
         <div className="tools">
-          {ttsSpeaking ? <span>播报中</span> : <span />}
+          {ttsSpeaking ? <span>播报中</span> : null}
+          <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
           <a href="#/diagnose">诊断</a>
           <a href="#/wizard">向导</a>
           <a href="#/settings">设置</a>
           <a href="#/review">审阅</a>
-          <a onClick={() => send({ t: "shutdown_now" })} style={{ cursor: "pointer" }}>关停</a>
+          <a onClick={() => send({ t: "shutdown_now" })}>关停</a>
         </div>
       )}
     </div>

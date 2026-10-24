@@ -68,11 +68,37 @@ html[data-demo="1"] ::-webkit-scrollbar { display: none; }
 /* 3D 画布 */
 .scene-canvas { position: absolute; inset: 0; z-index: 1; }
 
-/* 右下工具（非演示模式） */
-.tools { position: absolute; right: 24px; bottom: 24px; display: flex; gap: 16px;
-  font-size: 11px; letter-spacing: 0.15em; color: var(--ink-dim); z-index: 3; }
-.tools a { color: var(--ink-dim); text-decoration: none; transition: color 600ms var(--ease); }
+/* 右下工具（非演示模式）——验收反馈：可见性提升 */
+.tools { position: absolute; right: 24px; bottom: 24px; display: flex; gap: 20px;
+  font-size: 13px; letter-spacing: 0.12em; color: var(--ink-dim); z-index: 3;
+  align-items: center; }
+.tools a { color: var(--ink-dim); text-decoration: none; cursor: pointer;
+  transition: color 600ms var(--ease); padding: 4px 0; }
 .tools a:hover, .tools a.on { color: var(--ink); }
+.tools .conn { width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ink-dim); opacity: 0.5; transition: background 800ms var(--ease); }
+.tools .conn.ok { background: var(--mist); opacity: 1; }
+
+/* ---------- 空态引导（首次/麦克风未开启） ---------- */
+.onboard { position: absolute; inset: 0; z-index: 15; cursor: pointer;
+  display: flex; align-items: center; padding-left: 96px;
+  animation: panel-in 1200ms var(--ease); }
+.onboard .card { max-width: 480px; }
+.onboard .how { margin: 24px 0 40px; }
+.onboard .how .row { display: flex; gap: 16px; padding: 8px 0; font-size: 14px;
+  color: var(--ink-dim); }
+.onboard .how .row b { font-weight: 500; color: var(--ink); min-width: 96px; }
+.onboard .cta { font-size: 15px; color: var(--accent); letter-spacing: 0.15em;
+  animation: cta-breathe 3s var(--ease) infinite; }
+@keyframes cta-breathe { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.onboard .err { margin-top: 16px; font-size: 13px; color: var(--accent); }
+.onboard .skip { margin-top: 24px; display: flex; gap: 16px; }
+
+/* idle 首次提示（低对比，唤醒过一次后消失） */
+.idle-hint { position: absolute; left: 96px; top: 40%; font-size: 14px;
+  color: var(--ink-dim); letter-spacing: 0.12em;
+  animation: cta-breathe 4s var(--ease) infinite; }
+.idle-hint .wake-word { color: var(--sand); }
 
 /* 功能页（向导/设置/诊断/审阅）共用：极简表单、同套令牌 */
 .panel { position: absolute; inset: 0; z-index: 10; background: var(--bg);

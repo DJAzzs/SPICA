@@ -68,6 +68,10 @@ export default function Settings() {
             <button className="btn" onClick={() => {
               document.documentElement.dataset.demo = "1";
             }}>进入演示模式（Esc Esc 退出）</button>
+            <button className="btn" onClick={() => {
+              send({ t: "settings_patch", patch: { wizard_done: false } });
+              location.hash = "#/wizard";
+            }}>重新运行向导</button>
           </div>
         </div>
 
