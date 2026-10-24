@@ -58,8 +58,24 @@ class Semantics:
     # ================================================== 线程→asyncio 桥
     def _from_thread(self, coro_factory) -> None:
         if self.loop and not self.loop.is_closed():
-            self.loop.call_soon_threadsafe(
-                lambda: asyncio.create_task(coro_factory()))
+            def _runner():
+                async def _safe():
+                    try:
+                        await coro_factory()
+                    except Exception as e:  # 必须可见：任务链断裂用户要看到
+                        import traceback
+                        traceback.print_exc()
+                        try:
+                            await self.broadcast({"t": "error",
+                                                  "message": f"{type(e).__name__}: {e}"})
+                            await self.broadcast({"t": "msg", "role": "system",
+                                                  "text": f"出错了：{e}"})
+                            if self.state not in ("idle", "shutdown"):
+                                await self._set_state("idle")
+                        except Exception:
+                            pass
+                return asyncio.create_task(_safe())
+            self.loop.call_soon_threadsafe(_runner)
 
     def pipeline_callbacks(self):
         from server.voice.pipeline import PipelineCallbacks

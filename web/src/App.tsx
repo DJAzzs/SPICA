@@ -8,8 +8,9 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 /** 对话面板：消息流 + 实时转写气泡 + 键盘输入。 */
-function Chat({ st, partial, kbdOnly, onEnableVoice }: {
-  st: string; partial: string; kbdOnly: boolean; onEnableVoice: () => void;
+function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
+  st: string; partial: string; kbdOnly: boolean;
+  connected: boolean; onEnableVoice: () => void;
 }) {
   const msgs = useSpica((s) => s.msgs);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -21,7 +22,7 @@ function Chat({ st, partial, kbdOnly, onEnableVoice }: {
 
   const submit = () => {
     const text = input.trim();
-    if (!text) return;
+    if (!text || !connected) return;   // 断连静默丢弃 = 假死，必须挡住
     send({ t: "text_input", text });
     setInput("");
   };
@@ -59,11 +60,14 @@ function Chat({ st, partial, kbdOnly, onEnableVoice }: {
         <input
           type="text"
           value={input}
+          disabled={!connected}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-          placeholder="输入任务，回车发送（无需唤醒词）"
+          placeholder={connected
+            ? "输入任务，回车发送（无需唤醒词）"
+            : "未连接服务 —— 请在终端运行 make up 后自动重连"}
         />
-        <button className="btn primary" onClick={submit}>发送</button>
+        <button className="btn primary" onClick={submit} disabled={!connected}>发送</button>
       </div>
     </div>
   );
@@ -226,7 +230,8 @@ export default function App() {
       </header>
 
       <div className="main-col">
-        <Chat st={st} partial={partial} kbdOnly={kbdOnly} onEnableVoice={activate} />
+        <Chat st={st} partial={partial} kbdOnly={kbdOnly}
+          connected={connected} onEnableVoice={activate} />
       </div>
 
       <div className={`state-dot ${wakeFlash && Date.now() - wakeFlash < 1500 ? "wake" : ""} ${st === "confirm_shutdown" ? "confirm" : ""}`} />

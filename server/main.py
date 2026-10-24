@@ -101,6 +101,29 @@ async def boot(app, hub) -> Semantics:
 
 def main() -> None:
     settings = load_settings()
+    # Ctrl+C / SIGTERM：清理全部子进程再退出（不留 dsh 残尸）
+    import signal
+    import subprocess
+
+    def _cleanup(sig, frame):
+        try:
+            from server import lifecycle
+            lifecycle.killall(verbose=False)
+        finally:
+            raise SystemExit(0)
+
+    signal.signal(signal.SIGTERM, _cleanup)
+    signal.signal(signal.SIGINT, _cleanup)
+
+    # 版本戳：日志与界面可对齐（防"新前端旧后端"错配）
+    try:
+        git_hash = subprocess.run(
+            ["git", "log", "-1", "--format=%h %ci"],
+            capture_output=True, text=True, cwd=ROOT).stdout.strip()
+    except Exception:
+        git_hash = "?"
+    print(f"[spica] 版本：{git_hash}", flush=True)
+
     app = create_app(boot)
     uvicorn.run(app, host=settings.get("host", "127.0.0.1"),
                 port=int(settings.get("port", 8666)), log_level="info")

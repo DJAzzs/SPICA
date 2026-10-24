@@ -4,7 +4,7 @@ PIP  := .venv/bin/pip
 export PIP_INDEX_URL := https://pypi.tuna.tsinghua.edu.cn/simple
 export PIP_CACHE_DIR := $(CURDIR)/.cache/pip
 
-.PHONY: deps venv up down killall check test models tts-smoke
+.PHONY: deps venv up up-fg stop log status killall check test models tts-smoke
 
 venv:
 	python3.12 -m venv .venv
@@ -14,9 +14,28 @@ venv:
 deps: venv
 	$(PIP) install -r requirements.txt
 
-# 启动本地服务（默认 127.0.0.1:8666）
+# 启动本地服务（后台守护：日志 run/server.log，pid run/server.pid）
 up:
+	@mkdir -p run
+	@if [ -f run/server.pid ] && kill -0 $$(cat run/server.pid) 2>/dev/null; then \
+		echo "已在运行 pid=$$(cat run/server.pid)，make log 看日志 / make stop 停止"; exit 0; fi
+	@nohup $(PY) -m server.main >> run/server.log 2>&1 & \
+	echo $$! > run/server.pid; \
+	sleep 1; echo "SPICA 已启动 pid=$$(cat run/server.pid) → http://127.0.0.1:8666 （make log 跟日志）"
+
+# 前台运行（调试用，Ctrl+C 退出并清理子进程）
+up-fg:
 	$(PY) -m server.main
+
+stop:
+	@if [ -f run/server.pid ]; then kill $$(cat run/server.pid) 2>/dev/null; rm -f run/server.pid; echo stopped; else echo not-running; fi
+
+log:
+	tail -f run/server.log | grep -vE "telemetry"
+
+status:
+	@if [ -f run/server.pid ] && kill -0 $$(cat run/server.pid) 2>/dev/null; then \
+		echo "运行中 pid=$$(cat run/server.pid)"; else echo "未运行（make up 启动）"; fi
 
 # 关停：按进程注册表清扫 + 兜底 pkill
 killall:

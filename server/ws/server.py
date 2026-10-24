@@ -136,39 +136,48 @@ def create_app(boot) -> FastAPI:
 
     async def _handle(ws: WebSocket, sem, data: dict) -> None:
         t = data.get("t", "")
-        if t == "ping":
-            await ws.send_text(json.dumps({"t": "pong"}))
-        elif t == "mic":
-            sem.pipeline._gated()  # noop，保留语义
-        elif t == "settings_patch":
-            merged = save_settings(data.get("patch", {}))
-            state["settings"] = merged
-            sem.settings = merged
-            sem.pipeline.settings = merged
-            sem.pipeline.wake_words = merged.get("wake_words", [])
-            sem.pipeline.farewell_words = merged.get("farewell_words", [])
-            await hub.broadcast({"t": "settings", **_safe_settings()})
-        elif t == "wake_test":
-            from server.voice.wake import Matcher
-            m = Matcher()
-            text = data.get("text", "")
-            hit = m.match_prefix(text, sem.pipeline.wake_words, "wake")
-            fw = m.match_anywhere(text, sem.pipeline.farewell_words, "farewell")
-            await ws.send_text(json.dumps({
-                "t": "diag", "wake_test": bool(hit),
-                "matched": hit.phrase if hit else None,
-                "farewell": bool(fw)}, ensure_ascii=False))
-        elif t == "text_input":
-            await sem.on_text_input(str(data.get("text", "")))
-        elif t == "enroll_start":
-            await sem.enroll_start(int(data.get("n", 3)))
-        elif t == "enroll_abort":
-            await sem.enroll_abort()
-        elif t == "shutdown_now":
-            asyncio.create_task(sem.shutdown_sequence())
-        elif t == "review_get":
-            await ws.send_text(json.dumps({
-                "t": "diag", "review": sem.transcript[-40:]},
-                ensure_ascii=False))
+        try:
+            if t == "ping":
+                await ws.send_text(json.dumps({"t": "pong"}))
+            elif t == "mic":
+                pass
+            elif t == "settings_patch":
+                merged = save_settings(data.get("patch", {}))
+                state["settings"] = merged
+                sem.settings = merged
+                sem.pipeline.settings = merged
+                sem.pipeline.wake_words = merged.get("wake_words", [])
+                sem.pipeline.farewell_words = merged.get("farewell_words", [])
+                sem.narrator.engine.settings = merged
+                await hub.broadcast({"t": "settings", **_safe_settings()})
+            elif t == "wake_test":
+                from server.voice.wake import Matcher
+                m = Matcher()
+                text = data.get("text", "")
+                hit = m.match_prefix(text, sem.pipeline.wake_words, "wake")
+                fw = m.match_anywhere(text, sem.pipeline.farewell_words, "farewell")
+                await ws.send_text(json.dumps({
+                    "t": "diag", "wake_test": bool(hit),
+                    "matched": hit.phrase if hit else None,
+                    "farewell": bool(fw)}, ensure_ascii=False))
+            elif t == "text_input":
+                await sem.on_text_input(str(data.get("text", "")))
+            elif t == "enroll_start":
+                await sem.enroll_start(int(data.get("n", 3)))
+            elif t == "enroll_abort":
+                await sem.enroll_abort()
+            elif t == "shutdown_now":
+                asyncio.create_task(sem.shutdown_sequence())
+            elif t == "review_get":
+                await ws.send_text(json.dumps({
+                    "t": "diag", "review": sem.transcript[-40:]},
+                    ensure_ascii=False))
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            await hub.broadcast({"t": "error",
+                                 "message": f"{type(e).__name__}: {e}"})
+            await hub.broadcast({"t": "msg", "role": "system",
+                                 "text": f"出错了：{e}"})
 
     return app
