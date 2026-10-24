@@ -398,11 +398,8 @@ class Semantics:
             if ("cwd" in patch or "perm" in patch) and self.sdk.proc:
                 self.sdk.pause()
                 self._need_resume = bool(meta.get("dsh_session_id"))
-        # 即时反馈：让切换看得见（而不是等下一条任务的路由消息）
+        # 即时反馈：仅工作区/权限/重命名（模型选择静默——下拉自身即反馈）
         notes = []
-        if "model_override" in patch and sid == self.session.get("id"):
-            v = patch["model_override"] or "自动（按难度路由）"
-            notes.append(f"模型已切换：{v}，下个任务生效")
         if "perm" in patch:
             notes.append(f"权限已切换：{patch['perm']}，下个任务生效")
         if "cwd" in patch:
