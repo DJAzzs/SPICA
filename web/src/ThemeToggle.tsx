@@ -8,10 +8,17 @@ function resolve(mode: ThemeMode): "light" | "dark" {
   return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-/** 应用主题并广播（单一事实源：document.dataset.theme + 事件刷新）。 */
+/** 应用主题并广播（单一事实源：document.dataset.theme + 事件刷新）。
+ *  切换期间挂 theme-anim 类：全局所有元素的颜色/阴影统一 800ms 过渡，
+ *  消除"分层切换"感（各组件原本过渡时长不一）。 */
+let _animTimer: any = null;
 export function applyTheme(mode: ThemeMode) {
   localStorage.setItem("spica-theme-mode", mode);
-  document.documentElement.dataset.theme = resolve(mode);
+  const root = document.documentElement;
+  root.classList.add("theme-anim");
+  if (_animTimer) clearTimeout(_animTimer);
+  _animTimer = setTimeout(() => root.classList.remove("theme-anim"), 850);
+  root.dataset.theme = resolve(mode);
   dispatchEvent(new Event("spica-theme"));
 }
 

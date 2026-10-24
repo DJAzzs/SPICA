@@ -60,6 +60,29 @@ html[data-demo="1"] body { cursor: none; }
 /* Three.js 环境层 */
 .backdrop-canvas { position: fixed; inset: 0; z-index: 0; }
 
+/* 主题切换：全局同步过渡（800ms 统一时长，消除分层感） */
+html.theme-anim, html.theme-anim body,
+html.theme-anim *, html.theme-anim *::before, html.theme-anim *::after {
+  transition: background-color 800ms var(--ease) !important,
+    background 800ms var(--ease) !important,
+    color 800ms var(--ease) !important,
+    border-color 800ms var(--ease) !important,
+    box-shadow 800ms var(--ease) !important,
+    opacity 800ms var(--ease) !important;
+}
+
+/* 瑞士基线网格装饰（8pt，极淡；两种主题各自的呼吸感） */
+.stage::after { content: ""; position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(166,156,138,0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(166,156,138,0.045) 1px, transparent 1px);
+  background-size: 64px 64px; }
+html[data-theme="dark"] .stage::after {
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.028) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.022) 1px, transparent 1px); }
+
 /* ---------- 顶栏（瑞士：细网格 + 左对齐） ---------- */
 .stage { position: relative; width: 100vw; height: 100vh; }
 .topbar { position: absolute; top: 0; left: 0; right: 0; height: 84px;
