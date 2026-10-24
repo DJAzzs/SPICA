@@ -4,7 +4,7 @@ import { SpicaScene, SceneState } from "./scene";
 import Wave from "./Wave";
 
 const ROLE_LABEL: Record<string, string> = {
-  user: "我", assistant: "SPICA", tool: "执行", system: "系统",
+  user: "用户", assistant: "SPICA", tool: "执行", system: "系统",
 };
 
 /** 对话面板：消息流 + 实时转写气泡 + 键盘输入。 */
@@ -263,6 +263,7 @@ export default function App() {
             {ttsSpeaking ? <span>播报中</span> : null}
             <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
             <a href="#/sessions">会话</a>
+            <a href="#/files">文件</a>
             <a href="#/diagnose">诊断</a>
             <a href="#/wizard">向导</a>
             <a href="#/settings">设置</a>

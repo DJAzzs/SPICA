@@ -7,6 +7,7 @@ import Wizard from "./Wizard";
 import SettingsPage from "./Settings";
 import Review from "./Review";
 import Sessions from "./Sessions";
+import Files from "./Files";
 import { connectWS } from "./state";
 
 function Router() {
@@ -44,6 +45,7 @@ function Router() {
     case "#/settings": return <SettingsPage />;
     case "#/review": return <Review />;
     case "#/sessions": return <Sessions />;
+    case "#/files": return <Files />;
     default: return <App />;
   }
 }

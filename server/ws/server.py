@@ -113,6 +113,58 @@ def create_app(boot) -> FastAPI:
         await hub.broadcast({"t": "settings", **_safe_settings()})
         return _safe_settings()
 
+    # ---------------- 工作区文件浏览器（限当前会话工作区内，防越界）
+    def _ws_root() -> Path | None:
+        sem = state["sem"]
+        if not sem or not sem.session.get("cwd"):
+            return None
+        return Path(sem.session["cwd"]).resolve()
+
+    @app.get("/api/files/list")
+    async def files_list(sub: str = ""):
+        root = _ws_root()
+        if not root:
+            return JSONResponse({"error": "无会话工作区"}, status_code=400)
+        target = (root / sub).resolve() if sub else root
+        try:
+            target.relative_to(root)
+        except ValueError:
+            return JSONResponse({"error": "路径越界"}, status_code=400)
+        entries = []
+        if target.exists():
+            for p in sorted(target.iterdir(),
+                            key=lambda x: (x.is_file(), x.name.lower())):
+                if p.name in (".git", "node_modules", "__pycache__"):
+                    continue
+                entries.append({
+                    "name": p.name, "dir": p.is_dir(),
+                    "size": p.stat().st_size if p.is_file() else 0,
+                })
+        return {"root": str(root), "sub": sub, "entries": entries}
+
+    @app.get("/api/files/read")
+    async def files_read(path: str):
+        root = _ws_root()
+        if not root:
+            return JSONResponse({"error": "无会话工作区"}, status_code=400)
+        f = (root / path).resolve()
+        try:
+            f.relative_to(root)
+        except ValueError:
+            return JSONResponse({"error": "路径越界"}, status_code=400)
+        if not f.is_file():
+            return JSONResponse({"error": "不是文件"}, status_code=400)
+        if f.stat().st_size > 300_000:
+            return JSONResponse({"error": "文件过大（>300KB）"}, status_code=400)
+        raw = f.read_bytes()[:2048]
+        if b"\x00" in raw:
+            return JSONResponse({"error": "二进制文件不支持预览"}, status_code=400)
+        try:
+            content = f.read_text("utf-8")
+        except Exception:
+            content = f.read_text("utf-8", errors="replace")
+        return {"path": path, "content": content}
+
     @app.websocket("/ws")
     async def ws_endpoint(ws: WebSocket):
         await ws.accept()
