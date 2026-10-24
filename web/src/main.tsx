@@ -18,9 +18,9 @@ function Router() {
     return () => removeEventListener("hashchange", on);
   }, []);
 
-  // 主题持久化
+  // 主题持久化（默认亮色：暖白/雾灰——效果层规范主推）
   useEffect(() => {
-    const saved = localStorage.getItem("spica-theme") || "dark";
+    const saved = localStorage.getItem("spica-theme") || "light";
     document.documentElement.dataset.theme = saved;
   }, []);
 

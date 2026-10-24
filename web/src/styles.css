@@ -1,15 +1,17 @@
-/* SPICA 设计令牌（docs/design/motion-params.md）+ 美化层 */
+/* SPICA 设计令牌（docs/design/motion-params.md）+ 美化层
+   默认亮色（暖白/雾灰）；暗色经 data-theme="dark" 切换 */
 :root {
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --bg: #f7f6f3; --bg2: #efede8; --bg3: #e4e1d9;
+  --ink: #2b2b28; --ink-dim: #8a877f;
+  --sand: #c79e8a; --mist: #7fa39f; --mustard: #b3a45f; --lilac: #9c8fae;
+  --accent: #b5543f;
+}
+html[data-theme="dark"] {
   --bg: #1c1f24; --bg2: #232730; --bg3: #2a2f3a;
   --ink: #edeae3; --ink-dim: #7e828c;
   --sand: #d9b8a6; --mist: #a8c3c0; --mustard: #d6c98a; --lilac: #b7aec4;
   --accent: #c86a54;
-}
-html[data-theme="light"] {
-  --bg: #f7f6f3; --bg2: #efede8; --bg3: #e6e3dc;
-  --ink: #2b2b28; --ink-dim: #8a877f;
-  --accent: #b5543f;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #root { height: 100%; }
@@ -25,19 +27,23 @@ body {
 }
 html[data-demo="1"] body { cursor: none; }
 
-/* 大面积极缓渐变底（规范允许） */
+/* 顶栏分隔线 + 毛玻璃（空气感） */
+.topbar { position: absolute; top: 0; left: 0; right: 0; height: 96px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; z-index: 3;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid color-mix(in srgb, var(--bg3) 60%, transparent); }
+
+/* 极缓暖调光晕（亮色下几乎察觉不到，只提一点空气感） */
 .stage::before { content: ""; position: absolute; inset: 0; z-index: 0;
   background:
-    radial-gradient(1200px 800px at 78% 20%, rgba(169, 195, 192, 0.05), transparent 60%),
-    radial-gradient(1000px 700px at 15% 85%, rgba(217, 184, 166, 0.04), transparent 60%),
-    linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
+    radial-gradient(1200px 800px at 80% 12%, color-mix(in srgb, var(--sand) 7%, transparent), transparent 60%),
+    radial-gradient(1000px 700px at 12% 90%, color-mix(in srgb, var(--mist) 6%, transparent), transparent 60%);
   transition: background 1200ms var(--ease); }
 
 /* 布局：输出整体居中 + 右侧 3D 场景 */
 .stage { position: relative; width: 100vw; height: 100vh; }
-.topbar { position: absolute; top: 0; left: 0; right: 0; height: 96px;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 40px; z-index: 3; }
 .brand { display: flex; align-items: baseline; gap: 20px; }
 .brand .mark { width: 14px; height: 14px; align-self: center; flex: none;
   background: var(--mist); transform: rotate(45deg) skewY(-8deg);

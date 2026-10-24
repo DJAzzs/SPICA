@@ -138,7 +138,7 @@ export default function App() {
     if (canvasRef.current && !sceneRef.current) {
       sceneRef.current = new SpicaScene(
         canvasRef.current,
-        document.documentElement.dataset.theme === "light" ? "light" : "dark");
+        document.documentElement.dataset.theme === "dark" ? "dark" : "light");
     }
   }, []);
 
