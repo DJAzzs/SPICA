@@ -37,7 +37,7 @@ class SpeakJob:
 
 CONDENSE_SYSTEM = (
     "你是语音播报压缩器。把给定的 Agent 工作消息压缩成一句不超过 {limit} 字的"
-    "中文口语短句：保留关键动作和结论，去掉路径、代码、重复细节。"
+    "中文口语短句：保留关键动作、对象和结论，去掉路径、代码、重复细节。"
     "只输出短句本身。"
 )
 
@@ -121,13 +121,13 @@ class Narrator:
     # ------------------------------------------------------------ 合成播报
     async def _condense(self, text: str, kind: str) -> str:
         """长文本压缩成短口播（失败/超时回退原文）。"""
-        limit = 40 if kind == "final" else 24
+        limit = 60 if kind == "final" else 36
         try:
             out = await self.llm.chat(  # type: ignore[union-attr]
                 [{"role": "system",
                   "content": CONDENSE_SYSTEM.format(limit=limit)},
                  {"role": "user", "content": text}],
-                max_tokens=96,
+                max_tokens=128,
                 temperature=0.2,
                 thinking="disabled",
                 timeout=8.0,
@@ -141,8 +141,8 @@ class Narrator:
 
     async def _speak(self, job: SpeakJob) -> None:
         spoken = job.text
-        # 超过 36 字的步骤/总结：先压缩再播（口语节奏）
-        if self.llm and len(spoken) > 36 and job.kind in ("step", "final"):
+        # 超过 44 字的步骤/总结：先压缩再播（口语节奏）
+        if self.llm and len(spoken) > 44 and job.kind in ("step", "final"):
             spoken = await self._condense(spoken, job.kind)
         pcm, sr = self.engine.synth(spoken)
         if pcm.size == 0:

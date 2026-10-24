@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState, set, toast as toastMsg } from "./state";
 import { SpicaScene, SceneState } from "./scene";
 import Wave from "./Wave";
+import Markdown from "./Markdown";
 
 const ROLE_LABEL: Record<string, string> = {
   user: "用户", assistant: "SPICA", tool: "执行", system: "系统",
@@ -65,7 +66,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         {msgs.map((m, i) => (
           <div key={i} className={`chat-msg ${m.role}`}>
             <div className="chat-role">{ROLE_LABEL[m.role] || m.role}</div>
-            <div className="chat-text">{m.text}</div>
+            <div className="chat-text"><Markdown text={m.text} /></div>
           </div>
         ))}
         {st === "listen" || localListen ? (
@@ -191,6 +192,7 @@ export default function App() {
       <div className="onboard" onClick={activate}>
         <div className="card">
           <div className="brand">
+            <span className="mark" />
             <span className="name">SPICA</span>
             <span className="sub">语音优先 · 本地 Agent 操控台</span>
           </div>
@@ -243,6 +245,7 @@ export default function App() {
 
       <header className="topbar">
         <div className="brand">
+          <span className="mark" />
           <span className="name">SPICA</span>
           <span className="sub">
             {currentSession?.title
