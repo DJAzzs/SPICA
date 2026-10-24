@@ -44,6 +44,7 @@ class PipelineCallbacks:
     on_final: Callable[[str], None] = lambda t: None        # 终稿（已去唤醒词）
     on_farewell: Callable[[str], None] = lambda phrase: None
     on_command: Callable[[str, str], None] = lambda name, text: None
+    on_segment_audio: Callable[[np.ndarray], None] = lambda s: None  # 段音频（声纹注册用）
 
 
 @dataclass
@@ -231,6 +232,10 @@ class VoicePipeline:
 
     # ------------------------------------------------------------ 段结算
     def _on_segment(self, seg: Segment) -> None:
+        try:
+            self.cb.on_segment_audio(seg.samples)
+        except Exception:
+            pass
         text = self.final_asr.transcribe(seg.samples)
         if not text:
             self._after_utterance()

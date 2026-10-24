@@ -1,0 +1,222 @@
+"""总控语义机状态机单测（全替身，无模型/网络/进程）。"""
+import asyncio
+import json
+
+import pytest
+
+from server.agent.rewriter import RewriteResult
+from server.agent.semantics import Semantics
+from server.config import load_settings
+
+
+class FakePipeline:
+    def __init__(self):
+        self.fed = b""
+        self.tts_gate = None
+        self.arm_called = 0
+        self.settings = {}
+
+    def feed_pcm(self, b):
+        self.fed += b
+
+    def set_tts_gate(self, on, hold=None):
+        self.tts_gate = on
+
+    def arm_listening(self, s=12):
+        self.arm_called += 1
+
+
+class FakeSdk:
+    def __init__(self):
+        self.proc = None
+        self.session_id = "sess-test-1"
+        self.started_with = []
+        self.prompts = []
+        self.resumed = None
+        self.paused = False
+        self.stopped = False
+
+    async def start(self, model, effort, max_tokens=None):
+        self.started_with.append((model, effort))
+        self.proc = object()  # 非 None 表示活着
+        return self.session_id
+
+    async def prompt(self, text, sid=None):
+        self.prompts.append(text)
+        return {"messageId": "m"}
+
+    async def resume(self, sid):
+        self.resumed = sid
+
+    def pause(self):
+        self.paused = True
+        self.proc = None
+
+    async def stop(self):
+        self.stopped = True
+        self.proc = None
+
+
+class FakeNarrator:
+    def __init__(self):
+        self.said: list[tuple] = []
+        self.history: list[str] = []
+        self.speaking = False
+
+    class _Q:
+        def empty(self):
+            return True
+
+    q = _Q()
+
+    def speak(self, text, prio=2, kind="step", dedup=False):
+        self.said.append((kind, text))
+        self.history.append(text)
+
+    def step(self, t):
+        self.speak(t, 2, "step", dedup=True)
+
+    def final(self, t):
+        self.speak(t, 0, "final")
+
+    def confirm(self, t):
+        self.speak(t, 1, "confirm")
+
+    def on_agent_event(self, ev):
+        pass
+
+
+class FakePacks:
+    def wake_phrase(self):
+        return "在的，请讲。"
+
+    def farewell_phrase(self):
+        return "再见。"
+
+
+class FakeRewriter:
+    def __init__(self):
+        self.finals = []
+
+    async def prewarm(self, t, on_draft=None):
+        pass
+
+    async def finalize(self, t):
+        self.finals.append(t)
+        return RewriteResult("final", f"专业版：{t}")
+
+
+class FakeRouter:
+    async def classify(self, p):
+        return "normal"
+
+    def route(self, d, settings=None):
+        return {"model": "glm-5.3", "reasoning_effort": None,
+                "difficulty": d}
+
+
+def make_sem(tmp_path, monkeypatch):
+    events = []
+
+    async def broadcast(ev):
+        events.append(ev)
+
+    pipeline, sdk, narrator = FakePipeline(), FakeSdk(), FakeNarrator()
+    sem = Semantics(pipeline, sdk, FakeRewriter(), FakeRouter(), narrator,
+                    FakePacks(), None, broadcast, load_settings())
+    # 存档与自停替身
+    monkeypatch.setattr(sem, "_archive", lambda: tmp_path / "arch")
+    monkeypatch.setattr(sem, "self_stop", lambda: events.append({"t": "_stopped"}))
+    return sem, sdk, narrator, events
+
+
+def run(coro):
+    return asyncio.run(coro)
+
+
+# ---------------------------------------------------------------- 基本流
+def test_wake_to_listen(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._wake("Hey, SPICA", True, 0.9))
+    assert sem.state == "listen"
+    assert narrator.said[0][1] == "在的，请讲。"
+    assert any(e.get("t") == "wake_ack" for e in events)
+
+
+def test_final_dispatches_task(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._wake("嘿SPICA", True, 0.9))
+    run(sem._final("帮我写个脚本统计目录大小"))
+    assert sdk.started_with == [("glm-5.3", None)]   # 难度路由生效
+    assert sdk.prompts == ["专业版：帮我写个脚本统计目录大小"]
+    assert sem.state == "exec"
+    assert any(e.get("t") == "rewrite" and e.get("stage") == "final"
+               for e in events)
+
+
+def test_turn_done_back_to_idle_and_summary(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._wake("嘿SPICA", True, 0.9))
+    run(sem._final("做点东西"))
+    run(sem.on_sdk_notification("session.event", {
+        "event": {"type": "assistant/message",
+                  "data": {"message": {"role": "assistant", "content": [
+                      {"type": "text", "text": "已经完成了三件事。"}]}}}}))
+    run(sem.on_sdk_notification("session.event", {
+        "event": {"type": "turn/end", "data": {"reason": {"kind": "completed"}}}}))
+    run(asyncio.sleep(0.05))
+    assert sem.state == "idle"
+    assert any(e.get("t") == "task_done" for e in events)
+    assert any("任务完成" in t and "已经完成了三件事" in t
+               for _, t in narrator.said)
+
+
+# ---------------------------------------------------------------- 插话队列
+def test_bargein_queues_prompt(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._wake("嘿SPICA", True, 0.9))
+    run(sem._final("第一个任务"))
+    run(sem._final("第二个任务"))          # 执行中插话
+    assert len(sdk.prompts) == 1           # 不打断当前
+    assert sem.pending_prompts == ["专业版：第二个任务"]
+    # turn 结束后自动派发
+    # turn 结束后自动派发（与通知同循环，等待后台任务完成）
+    async def scenario():
+        await sem.on_sdk_notification("session.event", {
+            "event": {"type": "turn/end", "data": {}}})
+        await asyncio.sleep(1.2)   # _turn_done 内含 1s 缓冲
+    run(scenario())
+    assert len(sdk.prompts) == 2
+
+
+# ---------------------------------------------------------------- 暂停/恢复
+def test_pause_resume(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._wake("嘿SPICA", True, 0.9))
+    run(sem._final("长任务"))
+    run(sem._command("pause", "暂停"))
+    assert sdk.paused and sem.state == "paused"
+    run(sem._command("resume", "继续"))
+    assert sdk.resumed == "sess-test-1"
+    assert "继续刚才的任务。" in sdk.prompts
+    assert sem.state == "exec"
+
+
+# ---------------------------------------------------------------- 结束词
+def test_farewell_idle_shuts_down(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._farewell("Bye, SPICA"))
+    assert sdk.stopped
+    assert any(e.get("t") == "_stopped" for e in events)
+    assert any(e.get("t") == "shutdown" for e in events)
+
+
+def test_farewell_exec_asks_confirm(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem._wake("嘿SPICA", True, 0.9))
+    run(sem._final("任务"))
+    run(sem._farewell("拜拜SPICA"))
+    assert sem.state == "confirm_shutdown"
+    assert not sdk.stopped                      # 未确认不关停
+    run(sem._command("confirm", "确定"))
+    assert any(e.get("t") == "_stopped" for e in events)

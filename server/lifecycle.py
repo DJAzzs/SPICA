@@ -42,6 +42,21 @@ def _alive(pid: int) -> bool:
         return False
 
 
+def register(tag: str, pid: int, args: list[str] | None = None) -> None:
+    """注册外部启动的子进程（如 asyncio 子进程）。"""
+    data = _load()
+    data["procs"].append(
+        {
+            "tag": tag,
+            "pid": pid,
+            "pgid": pid,  # 约定：SPICA 派生子进程均 start_new_session
+            "args": args or [],
+            "started": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+    )
+    _save(data)
+
+
 def spawn(tag: str, args: list[str], **kw) -> subprocess.Popen:
     """注册式派生子进程：自成进程组，写入注册表。"""
     proc = subprocess.Popen(
