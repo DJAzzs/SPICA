@@ -965,3 +965,8 @@ html[data-theme="light"] .side-item:hover { background: var(--bg2); }
   text-align: center; padding: 20px 0; }
 
 /* 删除旧覆盖层样式（sidebar-mask, .sidebar 等） */
+.model-sep { height: 1px; margin: 4px 8px;
+  background: var(--hairline); }
+html[data-theme="light"] .model-sep { background: var(--nm-lo); }
+.model-section { font-size: 9px; color: var(--ink-faint);
+  letter-spacing: 0.2em; padding: 6px 12px 3px; text-transform: uppercase; }
