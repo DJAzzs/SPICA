@@ -35,6 +35,24 @@ function ProviderEditor() {
   );
 }
 
+/** 词表编辑器：本地缓冲，blur 时提交（防光标跳变）。 */
+function WordEditor({ initial, field }: { initial: any[]; field: string }) {
+  const [text, setText] = useState(
+    (initial || []).map((w: any) =>
+      `${w.phrase} | ${(w.variants || []).join(",")}`).join("\n"));
+  const commit = () => {
+    const words = text.split("\n").filter(Boolean).map((line: string) => {
+      const [phrase, variants] = line.split("|").map((s) => s.trim());
+      return { phrase, variants: (variants || "").split(",")
+        .map((v: string) => v.trim()).filter(Boolean), enabled: true };
+    });
+    send({ t: "settings_patch", patch: { [field]: words } });
+  };
+  return <textarea value={text}
+    onChange={(e) => setText(e.target.value)}
+    onBlur={commit} />;
+}
+
 /** 身份编辑器：内置身份只读展示；开关开启后可完全覆盖。 */
 function IdentityEditor() {
   const settings = useSpica((s) => s.settings);
@@ -128,28 +146,12 @@ export default function Settings() {
 
         <div className="field">
           <label>唤醒词（每行一条：主词 | 变体1,变体2…）</label>
-          <textarea value={(settings.wake_words || [])
-            .map((w: any) => `${w.phrase} | ${(w.variants || []).join(",")}`).join("\n")}
-            onChange={(e) => {
-              const words = e.target.value.split("\n").filter(Boolean).map((line) => {
-                const [phrase, variants] = line.split("|").map((s) => s.trim());
-                return { phrase, variants: (variants || "").split(",").map((v) => v.trim()).filter(Boolean), enabled: true };
-              });
-              send({ t: "settings_patch", patch: { wake_words: words } });
-            }} />
+          <WordEditor initial={settings.wake_words} field="wake_words" />
         </div>
 
         <div className="field">
           <label>结束词</label>
-          <textarea value={(settings.farewell_words || [])
-            .map((w: any) => `${w.phrase} | ${(w.variants || []).join(",")}`).join("\n")}
-            onChange={(e) => {
-              const words = e.target.value.split("\n").filter(Boolean).map((line) => {
-                const [phrase, variants] = line.split("|").map((s) => s.trim());
-                return { phrase, variants: (variants || "").split(",").map((v) => v.trim()).filter(Boolean), enabled: true };
-              });
-              send({ t: "settings_patch", patch: { farewell_words: words } });
-            }} />
+          <WordEditor initial={settings.farewell_words} field="farewell_words" />
         </div>
 
         <div className="field">

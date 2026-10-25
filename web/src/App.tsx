@@ -153,7 +153,13 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       <div className="chat-scroll" ref={scrollRef}>
         {msgs.length === 0 && (
           <div className="chat-empty">
-            <div className="chat-empty-title">和 SPICA 聊聊</div>
+            <svg className="spica-star" width="28" height="28" viewBox="0 0 64 64"
+  style={{ marginBottom: 12 }}>
+  <path d="M32 8 L36 26 L56 32 L36 38 L32 56 L28 38 L8 32 L28 26 Z"
+    fill="currentColor" opacity="0.9"/>
+  <circle cx="32" cy="32" r="4" fill="var(--sand)"/>
+</svg>
+<div className="chat-empty-title">和 SPICA 聊聊</div>
             <div className="chat-empty-line">
               语音唤醒「Hey, SPICA」 · 点击 <MicIcon size={13} /> 直接说 · 或在下方输入
             </div>
@@ -478,7 +484,11 @@ export default function App() {
               <path d="M4 4h4v4H4zM10 4h4v4h-4zM16 4h4v4h-4zM4 10h4v4H4zM10 10h4v4h-4zM16 10h4v4h-4zM4 16h4v4H4zM10 16h4v4h-4zM16 16h4v4h-4z" />
             </svg>
           </button>
-          <span className="mark" />
+          <svg className="spica-star" width="20" height="20" viewBox="0 0 64 64">
+            <path d="M32 8 L36 26 L56 32 L36 38 L32 56 L28 38 L8 32 L28 26 Z"
+              fill="currentColor" opacity="0.9"/>
+            <circle cx="32" cy="32" r="4" fill="var(--sand)"/>
+          </svg>
           <span className="name">SPICA</span>
           <span className="sub">
             {currentSession?.title
