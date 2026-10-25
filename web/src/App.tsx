@@ -109,7 +109,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       let j: any = {};
       try { j = JSON.parse(text); } catch { /* 500 文本页 */ }
       if (!r.ok || j.error) toastMsg(`上传失败：${j.error || text.slice(0, 80) || r.status}`);
-      else { toastMsg(`已上传 ${j.saved.length} 个文件`); addPendingFiles(j.saved); }
+      else addPendingFiles(j.saved);
     } catch (e: any) {
       toastMsg(`上传失败：${e?.message || e}`);
     }

@@ -55,7 +55,7 @@ def test_music_play_broadcasts_track(sem_music):
     run(sem.music_play("周杰伦 晴天"))
     tr = next(e for e in events if e.get("t") == "music_track")
     assert tr["title"] == "晴天" and tr["id"] == "s1"
-    assert any("♪ 开始播放" in e.get("text", "") for e in events)
+    # 少即是多：不再发"开始播放"文字（音乐卡即反馈）
 
 
 def test_music_play_no_result(sem_music):

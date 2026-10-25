@@ -439,9 +439,6 @@ class Semantics:
             return
         taste.record(keyword, track.get("title", ""), track.get("artist", ""))
         await self.broadcast({"t": "music_track", **track})
-        await self.broadcast({"t": "msg", "role": "system",
-            "text": f"♪ 开始播放：{track['title']} — {track['artist']}"
-                    + (f"（{keyword}）" if query or explored else "")})
         self._log("system", f"播放音乐：{track['title']} — {track['artist']}")
         if source == "voice":
             self.narrator.confirm(f"好，来听{track['title']}。")
@@ -715,8 +712,7 @@ class Semantics:
             notes.append(f"权限已切换：{patch['perm']}，下个任务生效")
         if "cwd" in patch:
             notes.append(f"工作区已切换：{patch['cwd']}")
-        if "title" in patch:
-            notes.append(f"会话已重命名：{patch['title']}")
+
         for note in notes:
             await self.broadcast({"t": "msg", "role": "system", "text": note})
             self._log("system", note)
