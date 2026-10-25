@@ -14,7 +14,7 @@ function relTime(ts: number): string {
   return `${Math.floor(diff / 2592000)}个月`;
 }
 
-const MIN_W = 200, MAX_W = 420, DEFAULT_W = 280;
+const MIN_W = 220, MAX_W = 480, DEFAULT_W = 320;
 
 /** 侧边栏：按工作区分组，可拖拽调宽。 */
 export default function Sidebar({ open }: { open: boolean }) {

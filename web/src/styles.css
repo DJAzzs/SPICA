@@ -1089,7 +1089,7 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
   z-index: 15;
   border-radius: 0 14px 14px 0;
   padding: 0 10px 6px;
-  width: 280px; max-width: 420px;
+  width: 320px; max-width: 420px;
   left: calc(-1 * var(--side-w, 280px) - 60px);
   visibility: hidden;
   transition: left 800ms var(--ease), visibility 0s 800ms;
