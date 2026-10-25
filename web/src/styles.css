@@ -1085,7 +1085,7 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
 .sidebar-inline {
   position: absolute; top: 8px; bottom: 8px;
   display: flex; flex-direction: column;
-  overflow: hidden; z-index: 20;
+  z-index: 20;
   border-radius: var(--radius-sm);
   padding: 0 10px 6px;
   width: 280px; max-width: 420px;
@@ -1100,16 +1100,24 @@ html:not([data-theme="dark"]) .sidebar-inline {
   box-shadow: 8px 0 32px rgba(166,156,138,0.25),
     -3px -3px 12px var(--nm-hi), 3px 3px 12px var(--nm-lo);
 }
-/* 深色：毛玻璃（更透 + 重模糊 + 左缘环境光） */
+/* 深色：毛玻璃（伪元素方案，绕开 Firefox overflow 限制） */
 html[data-theme="dark"] .sidebar-inline {
-  background: rgba(18,20,25,0.12);
+  background: none; border: none; box-shadow: none; }
+html[data-theme="dark"] .sidebar-inline::before {
+  content: ""; position: absolute; inset: 0;
+  background: rgba(18,20,25,0.15);
   border: 1px solid rgba(255,255,255,0.15);
-  border-right: 1px solid rgba(255,255,255,0.2);
+  border-right: 1px solid rgba(255,255,255,0.22);
   backdrop-filter: blur(36px) saturate(1.8) brightness(1.1);
+  -moz-backdrop-filter: blur(36px) saturate(1.8) brightness(1.1);
   box-shadow: 12px 0 48px rgba(0,0,0,0.35),
     inset 0 1px 0 rgba(255,255,255,0.12),
     inset -1px 0 0 rgba(255,255,255,0.08);
-}
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0; }
+html[data-theme="dark"] .sidebar-inline > * {
+  position: relative; z-index: 1; }
 
 .sidebar-inline.open { left: 12px; }
 
@@ -1190,6 +1198,7 @@ html[data-theme="dark"] .side-search {
 
 /* 可滚动 */
 .side-scroll { flex: 1 1 0; overflow-y: auto; overflow-x: hidden;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   min-height: 0; padding-right: 2px; }
 
 /* 工作区分组 */
@@ -1303,8 +1312,8 @@ html[data-theme="dark"] .side-tab:hover {
 /* 侧边栏标题：居中 + 放大 */
 .side-top { justify-content: flex-start !important; padding: 16px 4px 10px;
   display: flex; align-items: center; gap: 8px; }
-.side-top-label { font-size: 15px; font-weight: 600;
-  letter-spacing: 0.18em; color: var(--ink); }
+.side-top-label { font-size: 19px; font-weight: 700;
+  letter-spacing: 0.22em; color: var(--ink); }
 
 /* ---------- 新会话弹窗 ---------- */
 .ns-modal-mask { position: fixed; inset: 0; z-index: 90;
