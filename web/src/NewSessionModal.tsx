@@ -2,14 +2,17 @@ import { useState } from "react";
 import { send } from "./state";
 import DirBrowser from "./DirBrowser";
 
-/** 新会话创建弹窗：工作区浏览 + 权限选择 + 创建。 */
+/** 新会话弹窗：表单优先（路径输入 + 浏览按钮），浏览器按需展开。 */
 export default function NewSessionModal({ onClose }: { onClose: () => void }) {
-  const [cwd, setCwd] = useState("");
-  const [browsing, setBrowsing] = useState(true);
+  const [cwd, setCwd] = useState("/home/dja");
+  const [browsing, setBrowsing] = useState(false);
   const [perm, setPerm] = useState("workspace-write");
 
   const create = () => {
     send({ t: "session_new" });
+    if (cwd.trim()) {
+      send({ t: "session_update", patch: { cwd: cwd.trim(), perm } });
+    }
     onClose();
   };
 
@@ -22,19 +25,22 @@ export default function NewSessionModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="ns-body">
           {browsing ? (
-            <div className="ns-browse">
-              <DirBrowser inline
-                initial={cwd || "/"}
-                onPick={p => { setCwd(p); setBrowsing(false); }}
-                onClose={() => setBrowsing(false)} />
-            </div>
+            <DirBrowser
+              initial={cwd || "/"}
+              onPick={p => setCwd(p)}
+              onClose={() => setBrowsing(false)} />
           ) : (
             <div className="ns-form">
               <div className="ns-field">
-                <label>工作区</label>
-                <button className="ns-cwd" onClick={() => setBrowsing(true)}>
-                  📁 {cwd || "使用默认工作区"}
-                </button>
+                <label>工作区路径</label>
+                <div className="ns-cwd-row">
+                  <input className="ns-cwd-input" value={cwd}
+                    onChange={e => setCwd(e.target.value)}
+                    placeholder="/home/用户名/项目"
+                    onKeyDown={e => { if (e.key === "Enter") create(); }} />
+                  <button className="ns-browse-trigger"
+                    onClick={() => setBrowsing(true)} title="浏览">📁</button>
+                </div>
               </div>
               <div className="ns-field">
                 <label>权限</label>

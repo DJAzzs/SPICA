@@ -1391,3 +1391,81 @@ html[data-theme="light"] .ctx-detail-card { background: var(--bg-raise); }
 .dir-browser.inline { width: 100%; max-height: 100%;
   background: none; border: none; box-shadow: none;
   backdrop-filter: none; animation: none; }
+
+/* ---------- 目录浏览器 v2 ---------- */
+.db2 { display: flex; flex-direction: column; height: 100%; gap: 8px; }
+.db2-path-row { display: flex; gap: 6px; flex: none; }
+.db2-path-input { flex: 1; font: inherit; font-size: 13px;
+  padding: 10px 14px; border-radius: 8px;
+  border: 1px solid var(--bg3); background: var(--bg2); color: var(--ink);
+  outline: none; }
+.db2-path-input:focus { border-color: var(--mist); }
+.db2-go { border: 1px solid var(--mist); background: none;
+  color: var(--mist); font: inherit; font-size: 12px; padding: 8px 16px;
+  border-radius: 8px; cursor: pointer; flex: none; }
+
+.db2-toolbar { display: flex; gap: 6px; flex: none; }
+.db2-tool { border: 1px dashed var(--ink-faint); background: none;
+  color: var(--ink-dim); font: inherit; font-size: 12px; padding: 6px 14px;
+  border-radius: 8px; cursor: pointer;
+  transition: all 300ms var(--ease); }
+.db2-tool:hover { border-color: var(--mist); color: var(--mist); }
+
+.db2-action { display: flex; align-items: center; gap: 8px; flex: none;
+  padding: 8px; border-radius: 8px;
+  background: color-mix(in srgb, var(--mist) 6%, transparent); }
+.db2-action span { font-size: 12px; color: var(--ink-dim); white-space: nowrap; }
+.db2-action input { flex: 1; font: inherit; font-size: 12.5px;
+  padding: 8px 12px; border-radius: 6px;
+  border: 1px solid var(--bg3); background: var(--bg2); color: var(--ink);
+  outline: none; }
+.db2-action input:focus { border-color: var(--mist); }
+.db2-action button { border: 1px solid var(--mist); background: none;
+  color: var(--mist); font: inherit; font-size: 11px; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer; flex: none; }
+.db2-action button:last-child { border-color: var(--ink-faint);
+  color: var(--ink-faint); }
+
+.db2-list { flex: 1; overflow-y: auto; min-height: 0;
+  border: 1px solid var(--hairline); border-radius: 10px; padding: 6px; }
+.db2-item { display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; font-size: 13.5px; color: var(--ink-dim);
+  border-radius: 6px; cursor: default; }
+.db2-item .db2-item-name { display: flex; align-items: center; gap: 8px;
+  cursor: pointer; flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db2-item.dir .db2-item-name { color: var(--ink); }
+html[data-theme="dark"] .db2-item:hover { background: rgba(255,255,255,0.04); }
+html[data-theme="light"] .db2-item:hover { background: var(--bg2); }
+.db2-item.up { color: var(--ink-faint); cursor: pointer; }
+.db2-item-actions { display: flex; gap: 4px; flex: none; opacity: 0;
+  transition: opacity 250ms var(--ease); }
+.db2-item:hover .db2-item-actions { opacity: 1; }
+.db2-item-actions button { width: 22px; height: 22px; border: none;
+  background: none; color: var(--ink-faint); font-size: 11px;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; border-radius: 4px; }
+.db2-item-actions button:hover { color: var(--mist); }
+.db2-item-actions button.del:hover { color: var(--accent); }
+.db2-size { font-size: 10px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; flex: none; }
+.db2-empty { font-size: 12px; color: var(--ink-faint);
+  text-align: center; padding: 24px; }
+.db2-pick { flex: none; border: none; padding: 12px;
+  border-radius: 10px; font: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; color: #fff; background: var(--mist);
+  transition: all 300ms var(--ease); }
+.db2-pick:hover { filter: brightness(1.15); }
+
+/* ---------- 新会话表单（路径 + 浏览按钮） ---------- */
+.ns-cwd-row { display: flex; gap: 6px; }
+.ns-cwd-input { flex: 1; font: inherit; font-size: 14px;
+  padding: 12px 14px; border-radius: 10px;
+  border: 1px solid var(--bg3); background: var(--bg2); color: var(--ink);
+  outline: none; transition: border-color 300ms var(--ease); }
+.ns-cwd-input:focus { border-color: var(--mist); }
+.ns-browse-trigger { width: 46px; border: 1px solid var(--bg3);
+  background: var(--bg2); font-size: 18px; cursor: pointer;
+  border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; transition: all 300ms var(--ease); }
+.ns-browse-trigger:hover { border-color: var(--mist); }

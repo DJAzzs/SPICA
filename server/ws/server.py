@@ -269,6 +269,49 @@ def create_app(boot) -> FastAPI:
         f.unlink(missing_ok=True)
         return {"deleted": safe}
 
+    @app.post("/api/files/mkdir")
+    async def files_mkdir(data: dict):
+        """新建文件夹。"""
+        import os as _os
+        path = data.get("path", "")
+        if not path:
+            return JSONResponse({"error": "路径不能为空"}, status_code=400)
+        try:
+            _os.makedirs(path, exist_ok=True)
+            return {"ok": True, "path": path}
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+
+    @app.post("/api/files/rename")
+    async def files_rename(data: dict):
+        """重命名文件/文件夹。"""
+        import os as _os
+        old = data.get("old", "")
+        new = data.get("new", "")
+        if not old or not new:
+            return JSONResponse({"error": "路径不能为空"}, status_code=400)
+        try:
+            _os.rename(old, new)
+            return {"ok": True}
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+
+    @app.post("/api/files/delete")
+    async def files_delete(data: dict):
+        """删除文件或空文件夹。"""
+        path = data.get("path", "")
+        if not path:
+            return JSONResponse({"error": "路径不能为空"}, status_code=400)
+        import os as _os, shutil as _shutil
+        try:
+            if _os.path.isdir(path):
+                _shutil.rmtree(path)
+            else:
+                _os.unlink(path)
+            return {"ok": True}
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+
     @app.get("/api/music/stream")
     async def music_stream(id: str):
         from server.media.musicfree import MusicFree
