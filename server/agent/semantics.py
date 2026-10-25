@@ -192,6 +192,7 @@ class Semantics:
         if await self._try_voice_command(text):
             return
         if await self._is_chat(text):
+            self._log("user", text)
             await self._chat_reply(text)
             return
         if self._goal_pending:
@@ -1132,6 +1133,7 @@ class Semantics:
         if await self._try_voice_command(text):
             return
         if await self._is_chat(text):
+            self._log("user", text)
             await self.broadcast({"t": "msg", "role": "user", "text": text})
             await self._chat_reply(text)
             return

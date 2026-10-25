@@ -528,3 +528,115 @@
 2026-10-25 21:19:11.868 INFO updating album statistics
 2026-10-25 21:19:11.872 INFO album statistics updated
 2026-10-25 21:19:11.874 INFO incremental scan completed
+2026-10-25 21:39:14.916 INFO | 200 |     270.029µs |      172.17.0.1 | GET     /rest/ping?u=admin&t=9907821ba850f0d3a33d138d26dc9538&s=2WYyAnLq&f=json
+2026-10-25 21:39:18.937 INFO | 200 |        4.002s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=f6115cdda8b2f7a9acf75352af019350&s=AmwP9Ja9&f=json
+2026-10-25 21:39:18.950 INFO remote download runtime plugin resolved requestPlugin=mf-plugin-gomusicdl runtimePlugin=mf-plugin-gomusicdl pluginDir=/app/data/plugins/mf-plugin-gomusicdl wasmPath=/app/data/plugins/mf-plugin-gomusicdl/plugin.wasm wasmModTime=2026-10-25T02:58:43Z
+2026-10-25 21:39:19.818 INFO [mf-plugin-gomusicdl] cover download start: source=migu, song_id=600930000002197829|2|HQ, url=https://d.musicapp.migu.cn/data/oss/service213/00/5c/0k/776f9ce38be147dca44dad7059dba426.jpg plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 21:39:19.988 INFO [mf-plugin-gomusicdl] cover download response: source=migu, song_id=600930000002197829|2|HQ, status=200 plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 21:39:20.001 INFO [mf-plugin-gomusicdl] cover download success: source=migu, song_id=600930000002197829|2|HQ, path=/cache/cover-a1d93af44ed1909c.jpg, bytes=17919 plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 21:39:20.188 INFO remote download plugin output data plugin=mf-plugin-gomusicdl data=map[cachePath:/cache/咪咕用户11 - 说散就散（女烟嗓摇滚）(经典版） [517ca5ac260e].mp3 coverPath:/cache/cover-a1d93af44ed1909c.jpg metadata:map[album:<nil> artist:咪咕用户11 artists:[咪咕用户11] coverUrl:https://d.musicapp.migu.cn/data/oss/service213/00/5c/0k/776f9ce38be147dca44dad7059dba426.jpg lyrics:@migu music@
+干嘛听苦情歌以为多浪漫
+再浪漫都被拆散
+说要平平淡淡
+长路漫漫一起再共患难
+高脚杯在陪伴
+以为决定多果断
+在青春快过半的阶段
+失去了对爱的基本判断
+问我什么是爱
+是当初亚当和夏娃开心咬下苹果
+问我谁在抵赖
+是时间是金钱
+是你解不开的屏锁
+这场战役都没赢过
+航行中你无法停泊
+争吵从没停过
+但是彼此内心在不停祈求停火
+每个起因都有经过
+今后剧情是堂新课
+倔强的看不清回忆那曾经
+一分开就怪给星座
+失落的自己总责怪自己
+在黑夜中怒吼
+如果我是你会说我爱你
+在左转的路口
+说不上爱别说谎
+就一点喜欢
+说不上恨别纠缠
+别装作感叹
+就当作我太麻烦
+不停让自己受伤
+我告诉我自己
+感情就是这样
+怎么一不小心太疯狂
+用哪种方式纪念
+算最好的祭奠
+还会想跟你见面
+虽然只剩这张照片
+有开端就有结尾
+也许是一个机会
+在这匆匆流逝的岁月中
+你是记忆劫匪
+我想说声感谢
+毕竟你是最美好的节目
+多少次哽咽你的温柔
+我还一直记得住
+没有所谓对与错
+直到今天走到这一步
+所有怀疑都陨落
+当回头看走的这一路
+曾经爱过你恨过你想过你演过你骗过你
+不停讲道理找自己搞猫腻深陷这漩涡里
+现在陪你迎风跑
+谁是你的避风岛
+如果不能问嗜好
+就让我来做你至尊宝
+说不上爱别说谎
+就一点喜欢
+说不上恨别纠缠
+别装作感叹
+就当作我太麻烦
+不停让自己受伤
+我告诉我自己
+感情就是这样
+怎么一不小心太疯狂
+别后悔就算错过
+在以后你少不免想起我
+还算不错
+当我不在你会不会难过
+你够不够我这样洒脱
+说不上爱别说谎
+整夜的徘徊是思念在捣乱
+谁先放手谁又将给谁好看
+烛光的对视变一个人的早餐
+酒后的你又在对谁在期盼
+跳出爱的苦与疯
+很痛也必须放你走
+我明白谁都有苦衷
+毕竟我牵过你的手
+长大的过程中会有雷雨暴风
+那就珍惜每一秒每当你在我怀中
+就散 lyricsFormat:text releaseDate:2022-01-01 title:说散就散（女烟嗓摇滚）(经典版）]]
+2026-10-25 21:39:20.200 INFO remote download parsed paths plugin=mf-plugin-gomusicdl cachePath=/cache/咪咕用户11 - 说散就散（女烟嗓摇滚）(经典版） [517ca5ac260e].mp3 coverPath=/cache/cover-a1d93af44ed1909c.jpg hostCachePath=/app/data/plugin_cache/mf-plugin-gomusicdl/咪咕用户11 - 说散就散（女烟嗓摇滚）(经典版） [517ca5ac260e].mp3
+2026-10-25 21:39:20.211 INFO remote download resolving plugin cover path plugin=mf-plugin-gomusicdl coverPath=/cache/cover-a1d93af44ed1909c.jpg hostCoverPath=/app/data/plugin_cache/mf-plugin-gomusicdl/cover-a1d93af44ed1909c.jpg
+2026-10-25 21:39:20.293 INFO remote download plugin cover loaded coverPath=/cache/cover-a1d93af44ed1909c.jpg bytes=9718
+2026-10-25 21:39:20.300 INFO remote download local cover generated coverKey=sha256-6b8c7e72adbda93f3e206c6ef12f8d6a841a54fa084ef6309b8d5a17d131ca18 coverUrl=/rest/getCoverArt?id=sha256-6b8c7e72adbda93f3e206c6ef12f8d6a841a54fa084ef6309b8d5a17d131ca18
+2026-10-25 21:39:20.382 INFO starting scan for source source_name=Default Library source_type=local
+2026-10-25 21:39:20.382 INFO | 200 |        1.433s |      172.17.0.1 | POST    /rest/api/v1/remote-download?u=admin&t=fa36557c78ce39c15f6ca10cfa484663&s=16jgliZE&f=json
+2026-10-25 21:39:20.386 INFO scan completed for source source_name=Default Library files_processed=0 added=0 updated=0 skipped=0 hash_skipped=0 deleted=0
+2026-10-25 21:39:20.399 INFO | 200 |       1.443ms |      172.17.0.1 | GET     /rest/search3?u=admin&t=5ab7e5d47203dda441dacdb5467bed6b&s=31OcWUTN&query=%E8%AF%B4%E6%95%A3%E5%B0%B1%E6%95%A3%EF%BC%88%E5%A5%B3%E7%83%9F%E5%97%93%E6%91%87%E6%BB%9A%EF%BC%89%28%E7%BB%8F%E5%85%B8%E7%89%88%EF%BC%89&songCount=5&albumCount=0&artistCount=0&f=json
+2026-10-25 21:39:35.372 INFO | 200 |     198.620µs |      172.17.0.1 | GET     /rest/ping?u=admin&t=3e941b08d5193f472b7d5efb8a5bd137&s=Keu2Hppr&f=json
+2026-10-25 21:39:37.932 INFO | 200 |        2.541s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=b8b2817fbe19c442d70a0da68d098c82&s=AHrM3rTp&f=json
+2026-10-25 21:39:37.954 INFO remote download runtime plugin resolved requestPlugin=mf-plugin-gomusicdl runtimePlugin=mf-plugin-gomusicdl pluginDir=/app/data/plugins/mf-plugin-gomusicdl wasmPath=/app/data/plugins/mf-plugin-gomusicdl/plugin.wasm wasmModTime=2026-10-25T02:58:43Z
+2026-10-25 21:40:00.403 INFO [mf-plugin-gomusicdl] cover download start: source=netease, song_id=3379716579, url=http://p2.music.126.net/5Yv1ecWyUATA-Hz9VzViqw==/109951173190775822.jpg plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 21:40:00.471 INFO [mf-plugin-gomusicdl] cover download response: source=netease, song_id=3379716579, status=200 plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 21:40:00.474 INFO [mf-plugin-gomusicdl] cover download success: source=netease, song_id=3379716579, path=/cache/cover-299c3823ddd8a364.jpg, bytes=24555 plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 21:40:00.551 INFO remote download plugin output data plugin=mf-plugin-gomusicdl data=map[cachePath:/cache/屿间凉音 - 晴天 (R&B版) [6caae44a3aa1].mp3 coverPath:/cache/cover-299c3823ddd8a364.jpg metadata:map[album:<nil> artist:屿间凉音 artists:[屿间凉音] coverUrl:http://p2.music.126.net/5Yv1ecWyUATA-Hz9VzViqw==/109951173190775822.jpg releaseDate:2022-01-01 title:晴天 (R&B版)]]
+2026-10-25 21:40:00.555 INFO remote download parsed paths plugin=mf-plugin-gomusicdl cachePath=/cache/屿间凉音 - 晴天 (R&B版) [6caae44a3aa1].mp3 coverPath=/cache/cover-299c3823ddd8a364.jpg hostCachePath=/app/data/plugin_cache/mf-plugin-gomusicdl/屿间凉音 - 晴天 (R&B版) [6caae44a3aa1].mp3
+2026-10-25 21:40:00.576 INFO remote download resolving plugin cover path plugin=mf-plugin-gomusicdl coverPath=/cache/cover-299c3823ddd8a364.jpg hostCoverPath=/app/data/plugin_cache/mf-plugin-gomusicdl/cover-299c3823ddd8a364.jpg
+2026-10-25 21:40:00.656 INFO remote download plugin cover loaded coverPath=/cache/cover-299c3823ddd8a364.jpg bytes=19286
+2026-10-25 21:40:00.663 INFO remote download local cover generated coverKey=sha256-c22ad1924a02caf0a96ab051d90362af6c0670756ddf28f078b07c8713f8e961 coverUrl=/rest/getCoverArt?id=sha256-c22ad1924a02caf0a96ab051d90362af6c0670756ddf28f078b07c8713f8e961
+2026-10-25 21:40:00.749 INFO | 200 |       22.795s |      172.17.0.1 | POST    /rest/api/v1/remote-download?u=admin&t=c4d6b07a9315f2079bed688dad21c757&s=Vx2cCzzp&f=json
+2026-10-25 21:40:00.749 INFO starting scan for source source_name=Default Library source_type=local
+2026-10-25 21:40:00.755 INFO scan completed for source source_name=Default Library files_processed=0 added=0 updated=0 skipped=0 hash_skipped=0 deleted=0
+2026-10-25 21:40:00.761 INFO | 200 |     431.659µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=1613b1516bbffced8b42c06113698789&s=DUYspZsF&query=%E6%99%B4%E5%A4%A9+%28R%26B%E7%89%88%29&songCount=5&albumCount=0&artistCount=0&f=json
