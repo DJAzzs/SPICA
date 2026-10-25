@@ -23,6 +23,7 @@ export default function ModelPicker() {
   const settings = useSpica((s) => s.settings);
   const current = useSpica((s) => s.currentSession);
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,8 +47,12 @@ export default function ModelPicker() {
     ? `${model}${effort ? ` · ${effortLabel}` : ""}`
     : "Model: Auto";
 
+  const closeMenu = () => {
+    setClosing(true);
+    setTimeout(() => { setOpen(false); setClosing(false); }, 250);
+  };
   const pickModel = (m: string) => {
-    setOpen(false);
+    closeMenu();
     if (m !== model) {
       send({ t: "session_update", id: current?.id,
         patch: { model_override: m } });
@@ -55,20 +60,20 @@ export default function ModelPicker() {
   };
 
   const pickEffort = (e: string) => {
-    setOpen(false);
+    closeMenu();
     send({ t: "session_update", id: current?.id,
       patch: { reasoning_effort_override: e } });
   };
 
   return (
-    <div className="model-picker" ref={ref}>
+    <div className={`model-picker ${open ? "open" : ""}`} ref={ref}>
       <button className="model-current" onClick={() => setOpen(!open)}
         title="Model & reasoning effort">
         {label}
         <span className={`turn-caret ${open ? "open" : ""}`}>▾</span>
       </button>
 
-      {open && (
+      {(open || closing) && (
         <div className="model-menu">
           {/* 模型列表 */}
           <div className={`model-item ${!model ? "active" : ""}`}
