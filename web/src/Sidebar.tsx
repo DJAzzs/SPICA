@@ -100,13 +100,16 @@ export default function Sidebar({ open }: { open: boolean }) {
       {/* 拖拽手柄 */}
       <div className="side-drag" onMouseDown={startDrag} />
 
-      {/* 关闭按钮 */}
-      <button className="side-close-btn" onClick={() => {
-        localStorage.setItem("spica-side-w", String(width));
-        window.dispatchEvent(new Event("spica-side-close"));
-      }} title="收起侧边栏">◀</button>
+      {/* 顶行：标题 + 关闭 */}
+      <div className="side-top">
+        <span className="side-top-label">会话</span>
+        <button className="side-close-btn" onClick={() => {
+          localStorage.setItem("spica-side-w", String(width));
+          window.dispatchEvent(new Event("spica-side-close"));
+        }} title="收起侧边栏">◀</button>
+      </div>
 
-      {/* 固定头部 */}
+      {/* 新会话 */}
       <button className="side-new-btn" onClick={() => setCreating(!creating)}>
         ＋ 新会话
       </button>
