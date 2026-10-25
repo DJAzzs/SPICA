@@ -21,21 +21,27 @@ up:
 		echo "已在运行 pid=$$(cat run/server.pid)，make log 看日志 / make stop 停止"; exit 0; fi
 	@nohup $(PY) -m server.main >> run/server.log 2>&1 & \
 	echo $$! > run/server.pid; \
-	sleep 1; echo "SPICA 已启动 pid=$$(cat run/server.pid) → http://127.0.0.1:8666 （make log 跟日志）"
+	sleep 3; \
+	if curl -s -m 3 -o /dev/null http://127.0.0.1:8666/ \
+	   && ! grep -q "address already in use" <(tail -5 run/server.log); then \
+		echo "SPICA 已启动 → http://127.0.0.1:8666 （make log 跟日志）"; \
+	else \
+		echo "⚠ 启动失败：端口 8666 可能被旧进程占用。"; \
+		echo "  请在你的终端运行: pkill -f server.main && make up"; 		rm -f run/server.pid; fi
 
 # 前台运行（调试用，Ctrl+C 退出并清理子进程）
 up-fg:
 	$(PY) -m server.main
 
 stop:
-	@if [ -f run/server.pid ]; then kill $$(cat run/server.pid) 2>/dev/null; rm -f run/server.pid; echo stopped; else echo not-running; fi
+	@fuser -k 8666/tcp 2>/dev/null && echo stopped || echo not-running
+	@rm -f run/server.pid
 
 log:
 	tail -f run/server.log | grep -vE "telemetry"
 
 status:
-	@if [ -f run/server.pid ] && kill -0 $$(cat run/server.pid) 2>/dev/null; then \
-		echo "运行中 pid=$$(cat run/server.pid)"; else echo "未运行（make up 启动）"; fi
+	@fuser 8666/tcp 2>/dev/null && echo "运行中（端口 8666）" || echo "未运行（make up 启动）"
 
 # 关停：按进程注册表清扫 + 兜底 pkill
 killall:
