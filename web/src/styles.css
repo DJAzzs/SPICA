@@ -1264,3 +1264,36 @@ html[data-theme="light"] .side-item:hover { background: var(--bg2); }
 .side-group-items { padding-left: 18px; display: flex;
   flex-direction: column; gap: 1px; }
 
+
+/* ---------- 左缘滑出/收起按钮（跟随侧边栏，180° 旋转） ---------- */
+.side-tab { position: absolute; z-index: 30;
+  width: 32px; height: 48px;
+  left: 0; top: 50%; transform: translateY(-50%) rotate(0deg);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: left 800ms var(--ease), transform 800ms var(--ease),
+    border-radius 800ms var(--ease);
+  border-radius: 0 10px 10px 0; }
+.side-tab.open {
+  left: var(--side-w, 280px); /* 跟随侧边栏右缘 */
+  transform: translateY(-50%) rotate(180deg);
+  border-radius: 10px 0 0 10px; }
+
+/* 浅色：新拟物凸起舌片 */
+html:not([data-theme="dark"]) .side-tab {
+  background: var(--bg-raise); color: var(--ink-dim);
+  box-shadow: 4px 2px 12px var(--nm-lo), -2px -2px 8px var(--nm-hi); }
+html:not([data-theme="dark"]) .side-tab:active {
+  box-shadow: inset 2px 2px 5px var(--nm-lo), inset -2px -2px 5px var(--nm-hi); }
+/* 深色：液态玻璃 */
+html[data-theme="dark"] .side-tab {
+  background: rgba(255,255,255,0.08); color: var(--ink-dim);
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(16px) saturate(1.4); }
+html[data-theme="dark"] .side-tab:hover {
+  background: rgba(255,255,255,0.12); color: var(--mist); }
+
+/* 侧边栏标题：居中 + 放大 */
+.side-top { justify-content: center !important; padding: 16px 4px 10px; }
+.side-top-label { font-size: 17px !important; letter-spacing: 0.3em;
+  text-indent: 0.3em; /* 补偿最后一个字的 letter-spacing */ }

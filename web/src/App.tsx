@@ -548,13 +548,6 @@ export default function App() {
       <MusicBar />
       <header className="topbar">
         <div className="brand">
-          <button className="shelf-btn" onClick={() => setSidebarOpen(!sidebarOpen)}
-            title="会话 & 工作区">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M4 4h4v4H4zM10 4h4v4h-4zM16 4h4v4h-4zM4 10h4v4H4zM10 10h4v4h-4zM16 10h4v4h-4zM4 16h4v4H4zM10 16h4v4h-4zM16 16h4v4h-4z" />
-            </svg>
-          </button>
           <svg className="spica-star" width="22" height="22" viewBox="0 0 64 64">
             <path d="M32 6 C42 18 46 26 46 32 C46 38 42 46 32 58 C22 46 18 38 18 32 C18 26 22 18 32 6 Z"
               fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
@@ -585,6 +578,16 @@ export default function App() {
       </header>
 
       <Sidebar open={sidebarOpen} />
+      <button
+        className={`side-tab ${sidebarOpen ? "open" : ""}`}
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        title={sidebarOpen ? "收起侧边栏" : "展开会话 & 工作区"}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+          strokeLinejoin="round">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
       <div className="main-col">
         <Chat st={st} partial={partial} kbdOnly={kbdOnly}
           connected={connected} onEnableVoice={activate} />

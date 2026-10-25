@@ -30,6 +30,11 @@ export default function Sidebar({ open }: { open: boolean }) {
   const [browsing, setBrowsing] = useState(false);
   const [width, setWidth] = useState(() =>
     parseInt(localStorage.getItem("spica-side-w") || String(DEFAULT_W)));
+
+  // 同步宽度到 CSS 变量（side-tab 按钮跟随）
+  useEffect(() => {
+    document.documentElement.style.setProperty("--side-w", `${width + 12}px`);
+  }, [width, open]);
   const dragRef = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -103,10 +108,6 @@ export default function Sidebar({ open }: { open: boolean }) {
       {/* 顶行：标题 + 关闭 */}
       <div className="side-top">
         <span className="side-top-label">会话</span>
-        <button className="side-close-btn" onClick={() => {
-          localStorage.setItem("spica-side-w", String(width));
-          window.dispatchEvent(new Event("spica-side-close"));
-        }} title="收起侧边栏">◀</button>
       </div>
 
       {/* 新会话 */}
