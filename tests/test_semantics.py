@@ -164,7 +164,7 @@ def test_final_dispatches_task(tmp_path, monkeypatch):
     run(sem._wake("嘿SPICA", True, 0.9))
     run(sem._final("帮我写个脚本统计目录大小"))
     assert sdk.started_with == [("glm-5.3", None)]   # 难度路由生效
-    assert sdk.prompts and sdk.prompts[0].startswith("专业版：帮我写个脚本统计目录大小")
+    assert sdk.prompts and "专业版：帮我写个脚本统计目录大小" in sdk.prompts[0]
     assert sem.state == "exec"
     assert any(e.get("t") == "rewrite" and e.get("stage") == "final"
                for e in events)
@@ -387,7 +387,8 @@ def test_persona_prefix(tmp_path, monkeypatch):
                         lambda: {**base, "persona": "你是毒舌但专业的架构师"})
     sem.state = "idle"
     run(sem.on_text_input("看看代码结构"))
-    assert sdk.prompts[-1].startswith("（人设：你是毒舌但专业的架构师）")
+    assert "（用户人设：你是毒舌但专业的架构师）" in sdk.prompts[-1]
+    assert "你是 SPICA" in sdk.prompts[-1]          # 身份也在前缀
 
 
 # ---------------------------------------------------------------- 斜杠命令
@@ -509,7 +510,7 @@ def test_text_input_dispatches_without_rewrite(tmp_path, monkeypatch):
     sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
     run(sem.on_text_input("在 workspace 创建 README.md"))
     assert sem.rewriter.finals == []                      # 未走改写
-    assert sdk.prompts and sdk.prompts[0].startswith("在 workspace 创建 README.md")
+    assert sdk.prompts and "在 workspace 创建 README.md" in sdk.prompts[0]
     assert any(e.get("t") == "msg" and e.get("role") == "user"
                for e in events)
     assert sem.state == "exec"
@@ -648,7 +649,7 @@ def test_task_still_routes_to_dsh(tmp_path, monkeypatch):
     sem.llm = ChatClassifyLLM({"写个脚本": False})
     sem.state = "idle"
     run(sem.on_text_input("写个脚本统计目录"))
-    assert sdk.prompts and sdk.prompts[-1].startswith("写个脚本")  # 走 DSH
+    assert sdk.prompts and "写个脚本" in sdk.prompts[-1]  # 走 DSH（前缀含身份）
 
 
 def test_identity_override(tmp_path, monkeypatch):
@@ -662,3 +663,8 @@ def test_identity_override(tmp_path, monkeypatch):
     monkeypatch.setattr(sem_mod, "load_settings", lambda: base)
     assert sem._identity_prompt().startswith("你是 SPICA")
     assert "DeepSeek Harness" in sem._identity_prompt()
+    # 动态驱动模型：会话 override 优先
+    sem.session["model_override"] = "glm-5.3"
+    assert "由 glm-5.3 模型驱动" in sem._identity_prompt()
+    del sem.session["model_override"]
+    assert "由 glm-5.3-flash 模型驱动" in sem._identity_prompt("glm-5.3-flash")

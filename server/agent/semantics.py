@@ -429,10 +429,18 @@ class Semantics:
                 "text": "用法：/skills list · /skills del <名称>"})
 
     # ================================================== 身份与闲聊
-    def _identity_prompt(self) -> str:
+    def _current_model(self) -> str:
+        """当前驱动模型：会话手动选择 > 最近任务路由 > 服务默认。"""
+        return (self.session.get("model_override")
+                or (self.route_info or {}).get("model")
+                or load_settings().get("llm_model_rewrite")
+                or "glm-5.3-flash")
+
+    def _identity_prompt(self, model: str | None = None) -> str:
         from server.config import SPICA_IDENTITY
-        ident = (load_settings().get("identity_override")
-                 or "").strip() or SPICA_IDENTITY
+        m = model or self._current_model()
+        override = (load_settings().get("identity_override") or "").strip()
+        ident = override if override else SPICA_IDENTITY.replace("{model}", m)
         persona = (load_settings().get("persona") or "").strip()
         return ident + (f"\n（用户人设：{persona}）" if persona else "")
 
@@ -1125,10 +1133,8 @@ class Semantics:
         if self._plan_mode:
             suffix = self.PLAN_SUFFIX
         prompt_out = prompt
-        persona = (self.settings.get("persona")
-                   or load_settings().get("persona") or "").strip()
-        if persona:
-            prompt_out = f"（人设：{persona}）\n\n{prompt_out}"
+        # 身份+人设前缀（含动态驱动模型）
+        prompt_out = f"{self._identity_prompt(route.get('model'))}\n\n{prompt_out}"
         # 自进化记忆快照（冻结注入，有界）
         mem_snap = "\n".join(x for x in (
             self.memory_store.render("memory"),
