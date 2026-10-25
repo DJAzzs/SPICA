@@ -29,7 +29,7 @@ export default function Sidebar({ open }: { open: boolean }) {
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [browsing, setBrowsing] = useState(false);
   const [width, setWidth] = useState(() =>
-    parseInt(localStorage.getItem("spica-side-w") || String(DEFAULT_W)));
+    parseInt(localStorage.getItem("spica-side-w2") || String(DEFAULT_W)));
 
   // 同步宽度到 CSS 变量（side-tab 按钮跟随）
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function Sidebar({ open }: { open: boolean }) {
     const onUp = () => {
       if (dragRef.current) {
         dragRef.current = false;
-        localStorage.setItem("spica-side-w", String(width));
+        localStorage.setItem("spica-side-w2", String(width));
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
       }
