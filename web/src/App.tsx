@@ -7,6 +7,7 @@ import ThemeToggle from "./ThemeToggle";
 import Backdrop from "./Backdrop";
 import MusicBar from "./MusicBar";
 import NavRail from "./NavRail";
+import StatsBar from "./StatsBar";
 import ModelPicker from "./ModelPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
@@ -321,6 +322,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         <button className="send-btn" onClick={submit} disabled={!connected}
           title="发送（Enter）"><SendIcon /></button>
       </div>
+      <StatsBar />
     </div>
   );
 }

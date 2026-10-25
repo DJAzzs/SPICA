@@ -34,6 +34,7 @@ EVENT_TYPES = {
     "session",        # {meta} 当前会话元数据变更
     "history",        # {msgs} 会话历史（打开/刷新时整批替换）
     "trigger_export", # {} 前端自动触发 zip 下载（语音"导出会话"）
+    "stats",          # 运行统计（tokens/上下文/速度/轮步）
     "permission_request",  # {reason, tid} Agent 需要更高权限
     "permission_resolved", # {mode: once|always|deny}
     "music_track",    # {id,title,artist,duration,cover} 前端开始播放

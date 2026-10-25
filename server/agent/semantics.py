@@ -79,8 +79,18 @@ class Semantics:
             else ROOT / "workspace" / "skills")
         self._turn_count = 0          # nudge 节拍
         self._turn_tool_calls = 0     # 本轮工具调用数（技能收获启发）
-        self._turn_web_count = 0      # 本轮浏览网页数
+        self._turn_web_count = 0
         self._last_tool = ""          # 最近工具调用摘要（权限解释用）
+        # 运行统计（tokens/上下文/速度）
+        self._stats = {"total_in": 0, "total_out": 0, "ctx_win": 0,
+                       "ctx_used": 0, "turns": 0, "steps": 0,
+                       "last_speed": 0.0}
+        self._step_started_at = 0.0
+        # 运行统计（tokens/上下文/速度）
+        self._stats = {"total_in": 0, "total_out": 0, "ctx_win": 0,
+                       "ctx_used": 0, "turns": 0, "steps": 0,
+                       "last_speed": 0.0}
+        self._step_started_at = 0.0
         # 长期目标 {active, text, round, max_rounds}
         self.goal: dict = {"active": False, "text": "", "round": 0,
                            "max_rounds": 0}
@@ -485,6 +495,17 @@ class Semantics:
         await self.broadcast({"t": "msg", "role": "assistant", "text": reply})
         self._log("assistant", reply)
         self.narrator.step(reply)
+
+    async def _broadcast_stats(self) -> None:
+        s = self._stats
+        pct = (s["ctx_used"] / s["ctx_win"] * 100) if s["ctx_win"] else 0
+        await self.broadcast({"t": "stats",
+            "total_in": s["total_in"], "total_out": s["total_out"],
+            "total": s["total_in"] + s["total_out"],
+            "ctx_pct": round(pct, 1), "ctx_win": s["ctx_win"],
+            "ctx_used": s["ctx_used"],
+            "turns": s["turns"], "steps": s["steps"],
+            "speed": s["last_speed"]})
 
     # ================================================== 工具过程美化
     @staticmethod
@@ -1226,6 +1247,23 @@ class Semantics:
                                       "tid": self.turn_seq})
                 if self._perm_request is None and _PERM_DENIED.search(out):
                     await self._request_permission(out.strip()[:200])
+        if typ == "step/start":
+            self._step_started_at = time.time()
+        elif typ == "step/end":
+            u = data.get("usage") or {}
+            self._stats["total_in"] += u.get("inputTokens", 0)
+            self._stats["total_out"] += u.get("outputTokens", 0)
+            self._stats["ctx_used"] = u.get("totalTokens",
+                                            self._stats["ctx_used"])
+            self._stats["steps"] += 1
+            elapsed = time.time() - self._step_started_at
+            if elapsed > 0.3 and u.get("outputTokens", 0) > 0:
+                self._stats["last_speed"] = round(
+                    u["outputTokens"] / elapsed, 1)
+            asyncio.create_task(self._broadcast_stats())
+        elif typ == "request/context":
+            self._stats["ctx_win"] = data.get("contextWindow",
+                                              self._stats["ctx_win"])
         if typ in ("tool/call", "tool/use") or "tool_call" in str(
                 (data.get("message", {}) or {}).get("content", "")):
             self._turn_tool_calls += 1
@@ -1244,6 +1282,7 @@ class Semantics:
                               "summary": summary, "seconds": round(seconds),
                               "browsed": self._turn_web_count})
         self._turn_web_count = 0
+        self._stats["turns"] += 1
         self._log("assistant", summary)
         # 任务结束不再语音播报（完成态由界面呈现）
         await self._set_state("idle")
