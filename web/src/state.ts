@@ -35,7 +35,8 @@ export interface State {
   musicTrack: any | null;
   musicStopFlag: number;
   pendingFiles: string[];   // 已上传待任务附带的文件
-  permissionReq: { reason: string; tid: number } | null;
+  permissionReq: { reason: string; tid: number;
+    perm_type?: string; action_desc?: string; detail?: string } | null;
 }
 
 const initial: State = {

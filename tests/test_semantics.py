@@ -588,3 +588,26 @@ def test_web_tool_counted_as_browse(tmp_path, monkeypatch):
     assert len(browses) == 2
     done = next(e for e in events if e.get("t") == "turn_done")
     assert done.get("browsed") == 2
+
+
+def test_perm_request_classify_and_explain(tmp_path, monkeypatch):
+    import asyncio
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+
+    class ExplainLLM:
+        async def chat(self, m, **k):
+            return "把测试域名加进本地解析"
+    sem.llm = ExplainLLM()
+    sem.state = "idle"
+    run(sem.on_text_input("改hosts"))
+    sem._last_tool = 'bash {"command": "echo \"127.0.0.1 test\" >> /etc/hosts"}'
+    async def scenario():
+        await sem.on_sdk_notification("session.event", {
+            "event": {"type": "tool/result",
+                      "data": {"result": "Permission denied"}}})
+        await asyncio.sleep(0.1)
+    run(scenario())
+    req = next(e for e in events if e.get("t") == "permission_request")
+    assert req["perm_type"] == "修改系统文件"
+    assert req["action_desc"] == "把测试域名加进本地解析"
+    assert "/etc/hosts" in req["detail"]

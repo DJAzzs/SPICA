@@ -160,8 +160,16 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         )}
         {permissionReq && (
           <div className="perm-card">
-            <div className="perm-title">⚠ 需要更高权限</div>
-            <div className="perm-reason">{permissionReq.reason}</div>
+            <div className="perm-title">⚠ 申请权限：{permissionReq.perm_type || "更高权限"}</div>
+            <div className="perm-reason">
+              {permissionReq.action_desc || "Agent 的一次受限操作被系统拒绝。"}
+            </div>
+            {permissionReq.detail && (
+              <details className="perm-detail">
+                <summary>技术细节</summary>
+                <code>{permissionReq.detail}</code>
+              </details>
+            )}
             <div className="perm-actions">
               <button className="btn primary" onClick={() =>
                 send({ t: "permission_grant", mode: "once" })}>同意一次</button>

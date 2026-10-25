@@ -80,6 +80,7 @@ class Semantics:
         self._turn_count = 0          # nudge 节拍
         self._turn_tool_calls = 0     # 本轮工具调用数（技能收获启发）
         self._turn_web_count = 0      # 本轮浏览网页数
+        self._last_tool = ""          # 最近工具调用摘要（权限解释用）
         # 长期目标 {active, text, round, max_rounds}
         self.goal: dict = {"active": False, "text": "", "round": 0,
                            "max_rounds": 0}
@@ -466,12 +467,45 @@ class Semantics:
         ("once", [["同意"], ["允许"], ["可以"], ["给它", "权限"]]),
     ]
 
+    @staticmethod
+    def _perm_classify(detail: str) -> str:
+        s = detail.lower()
+        if re.search(r"/etc|/usr/bin|/sys|/boot|chmod|chown", s):
+            return "修改系统文件"
+        if re.search(r"apt|yum|dnf|pacman|systemctl|sudo", s):
+            return "安装软件 / 系统管理"
+        if re.search(r"\brm\b|delete|unlink|drop", s):
+            return "删除文件"
+        if re.search(r"write|>>|tee|echo.*>", s):
+            return "写入工作区外的文件"
+        return "访问受限资源"
+
     async def _request_permission(self, reason: str) -> None:
-        """Agent 操作被权限拒绝 → 对话卡 + 语音请求用户授权。"""
-        self._perm_request = {"tid": self.turn_seq, "reason": reason}
+        """Agent 操作被权限拒绝 → 对话卡（人话解释）+ 语音请求授权。"""
+        detail = (self._last_tool + " → " + reason).strip(" →")
+        perm_type = self._perm_classify(detail)
+        action_desc = ""
+        if self.llm is not None and self._last_tool:
+            try:
+                action_desc = await self.llm.chat(
+                    [{"role": "system",
+                      "content": "用不超过 30 个字的日常中文解释这条命令想做什么"
+                                 "（面向非技术用户，说目的不说术语）。只输出解释。"},
+                     {"role": "user", "content": self._last_tool[:180]}],
+                    max_tokens=64, temperature=0.3,
+                    thinking="disabled", timeout=8.0)
+                action_desc = (action_desc or "").strip()
+            except Exception:
+                action_desc = ""
+        self._perm_request = {"tid": self.turn_seq, "reason": reason,
+                              "perm_type": perm_type,
+                              "action_desc": action_desc, "detail": detail}
         await self.broadcast({"t": "permission_request", "reason": reason,
+                              "perm_type": perm_type,
+                              "action_desc": action_desc, "detail": detail,
                               "tid": self.turn_seq})
-        self.narrator.confirm("有个操作需要更高权限，同意吗？可以说同意一次、永远同意，或拒绝。")
+        self.narrator.confirm(f"需要{perm_type}权限，"
+                              f"{action_desc or 'Agent 的一次受限操作'}。同意吗？")
         self.pipeline.arm_listening(30)
 
     async def grant_permission(self, mode: str) -> None:
