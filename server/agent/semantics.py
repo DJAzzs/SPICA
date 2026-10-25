@@ -904,7 +904,15 @@ class Semantics:
 
     # ================================================== 会话管理
     async def broadcast_sessions(self) -> None:
-        await self.broadcast({"t": "sessions", "list": self.store.list(),
+        from server.dsh_sessions import scan_dsh_sessions
+        spica = self.store.list()
+        # 合并 DSH 原生会话（排除 SPICA 自己创建的重复项）
+        spica_ds_ids = {s.get("dsh_session_id") for s in spica
+                        if s.get("dsh_session_id")}
+        dsh = [d for d in scan_dsh_sessions()
+               if d["id"] not in spica_ds_ids]
+        merged = spica + dsh
+        await self.broadcast({"t": "sessions", "list": merged,
                               "current": self.session.get("id", "")})
 
     async def session_new(self) -> None:
@@ -937,7 +945,17 @@ class Semantics:
     async def session_open(self, sid: str) -> None:
         meta = self.store.get(sid)
         if not meta:
-            return
+            # 尝试从 DSH 会话导入
+            from server.dsh_sessions import scan_dsh_sessions
+            dsh = next((d for d in scan_dsh_sessions() if d["id"] == sid), None)
+            if dsh:
+                meta = self.store.create(cwd=dsh["cwd"], perm=dsh.get("perm", "workspace-write"))
+                meta["title"] = dsh["title"]
+                meta["dsh_session_id"] = dsh["dsh_session_id"]
+                meta["model"] = dsh.get("model", "")
+                self.store.upsert(meta)
+            else:
+                return
         if self.state == "exec":
             await self.broadcast({"t": "msg", "role": "system",
                                   "text": "任务执行中，结束后再切换会话。"})
