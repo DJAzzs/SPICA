@@ -145,9 +145,8 @@ html[data-theme="dark"] .chat-msg:hover {
   white-space: pre-wrap; word-break: break-word; }
 .chat-msg.user { border-left: none; border-right: 3px solid var(--sand);
   border-radius: 10px 3px 3px 10px; margin-left: auto;
-  max-width: 85%; text-align: right; }
-.chat-msg.user .chat-role { color: var(--sand);
-  justify-content: flex-end; }
+  max-width: 100%; text-align: right; }
+.chat-msg.user .chat-role { color: var(--sand); justify-content: flex-end; }
 .chat-msg.user .chat-text { text-align: left; }
 .chat-msg.user .chat-role { color: var(--sand); }
 .chat-msg.assistant { border-left-color: var(--mist); }
@@ -507,7 +506,7 @@ html[data-theme="light"] .turn-head {
 .turn-caret { color: var(--ink-faint); font-size: 10px; flex: none; }
 .turn-label { color: var(--mist); font-weight: 500; letter-spacing: 0.1em; }
 .turn-dur { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-.turn-sum { color: var(--ink-dim); white-space: nowrap;
+.turn-sum { white-space: normal; color: var(--ink-dim); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
 
 .turn-running { display: flex; align-items: center; gap: 9px;
@@ -867,7 +866,7 @@ html[data-theme="light"] .tree-item:hover { background: var(--bg2); }
 /* ---------- 用户消息右对齐 ---------- */
 .chat-msg.user { border-left: none; border-right: 3px solid var(--sand);
   border-radius: 10px 3px 3px 10px; margin-left: auto;
-  max-width: 85%; text-align: right; }
+  width: auto; text-align: right; }
 .chat-msg.user .chat-role { justify-content: flex-end; }
 .chat-msg.user .chat-text { text-align: left; }
 

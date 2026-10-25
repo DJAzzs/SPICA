@@ -79,7 +79,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
     const el = scrollRef.current;
     if (!el) return;
     const onScroll = () => {
-      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
       setAtBottom(near);
     };
     el.addEventListener("scroll", onScroll, { passive: true });

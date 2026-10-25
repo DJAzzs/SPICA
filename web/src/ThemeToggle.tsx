@@ -8,7 +8,6 @@ function resolve(mode: ThemeMode): "light" | "dark" {
   return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-/** 应用主题并广播（单一事实源：document.dataset.theme + 事件刷新）。 */
 let _animTimer: any = null;
 export function applyTheme(mode: ThemeMode) {
   localStorage.setItem("spica-theme-mode", mode);
@@ -20,7 +19,6 @@ export function applyTheme(mode: ThemeMode) {
   dispatchEvent(new Event("spica-theme"));
 }
 
-/** 三态主题开关：图标上下滚动换页式切换动效。 */
 export default function ThemeToggle() {
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -48,11 +46,7 @@ export default function ThemeToggle() {
         onClick={() => applyTheme(isDark ? "light" : "dark")}
         title={isDark ? "切换到浅色" : "切换到深色"} aria-label="主题切换">
         <span className={`theme-knob ${isDark ? "dark" : ""}`}>
-          {/* 图标滚动容器：sun 在上，moon 在下，切换时 translateY */}
-          <span className="theme-icon-scroll">
-            <span className="theme-icon-page"><SunIcon /></span>
-            <span className="theme-icon-page"><MoonIcon /></span>
-          </span>
+          {isDark ? <MoonIcon /> : <SunIcon />}
         </span>
       </button>
       <button className={`theme-auto ${mode === "auto" ? "on" : ""}`}
