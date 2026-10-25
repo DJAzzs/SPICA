@@ -1399,7 +1399,7 @@ html[data-theme="light"] .ctx-detail-card { background: var(--bg-raise); }
   backdrop-filter: none; animation: none; }
 
 /* ---------- 目录浏览器 v2 ---------- */
-.db2 { display: flex; flex-direction: column; height: 100%; gap: 8px; }
+.db2 { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 8px; }
 .db2-path-row { display: flex; gap: 6px; flex: none; }
 .db2-path-input { flex: 1; font: inherit; font-size: 13px;
   padding: 10px 14px; border-radius: 8px;
