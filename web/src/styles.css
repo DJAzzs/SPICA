@@ -1090,7 +1090,6 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
   padding: 0 10px 6px;
   width: 280px; max-width: 420px;
   transform: translateX(-110%);
-  transition: transform 800ms var(--ease);
   box-shadow: 8px 0 32px rgba(0,0,0,0.15);
 }
 /* 浅色：新拟物凸起面板 */
@@ -1110,17 +1109,17 @@ html[data-theme="dark"] .sidebar-inline {
     inset 0 1px 0 rgba(255,255,255,0.12),
     inset -1px 0 0 rgba(255,255,255,0.08);
 }
-/* 深色：左缘环境光（给毛玻璃提供可模糊的内容） */
-html[data-theme="dark"] .stage::after {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0;
-  width: 380px; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(300px 500px at 15% 30%,
-      rgba(90,127,168,0.14), transparent 70%),
-    radial-gradient(280px 400px at 8% 70%,
-      rgba(141,127,163,0.10), transparent 70%);
-  transition: opacity 800ms var(--ease); }
-.sidebar-inline.open { transform: translateX(0); }
+
+.sidebar-inline.open {
+  animation: side-open 800ms var(--ease) forwards; }
+.sidebar-inline:not(.open) {
+  animation: side-close 800ms var(--ease) forwards; }
+@keyframes side-open {
+  from { transform: translateX(-110%); }
+  to { transform: none; } }
+@keyframes side-close {
+  from { transform: none; }
+  to { transform: translateX(-110%); } }
 
 /* 拖拽手柄 */
 .side-drag { position: absolute; right: -3px; top: 0; bottom: 0;
