@@ -108,12 +108,10 @@ export default function Sidebar({ open }: { open: boolean }) {
       {/* 顶行：标题 + 关闭 */}
       <div className="side-top">
         <svg width="28" height="28" viewBox="0 0 64 64" style={{ flex: "none" }}>
-          <circle cx="32" cy="32" r="29" fill="none"
-            stroke="var(--mist)" strokeWidth="1" opacity="0.3"/>
-          <circle cx="21" cy="32" r="14" fill="none"
-            stroke="var(--mist)" strokeWidth="2.5"/>
-          <circle cx="43" cy="32" r="8" fill="var(--sand)" opacity="0.9"/>
-          <circle cx="53" cy="32" r="2" fill="var(--mist)"/>
+          <path d="M32 6 C42 18 46 26 46 32 C46 38 42 46 32 58 C22 46 18 38 18 32 C18 26 22 18 32 6 Z"
+            fill="none" stroke="var(--mist)" strokeWidth="3" strokeLinejoin="round"/>
+          <path d="M32 14 C38 22 41 27 41 32 C41 37 38 42 32 50 C26 42 23 37 23 32 C23 27 26 22 32 14 Z"
+            fill="var(--sand)" opacity="0.85"/>
         </svg>
         <span className="side-top-label">SPICA</span>
       </div>
