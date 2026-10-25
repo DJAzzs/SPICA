@@ -221,6 +221,10 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
                       <div className="chat-msg assistant">
                         <div className="chat-role">{ROLE_LABEL.assistant}</div>
                         <div className="chat-text"><Markdown text={head.text} /></div>
+                        <div className="msg-time">
+                          {new Date(head.ts).toLocaleTimeString("zh-CN",
+                            { hour: "2-digit", minute: "2-digit" })}
+                        </div>
                       </div>
                     )}
                     {head.files && head.files.length > 0 && (
@@ -253,6 +257,12 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
                     )}
                   </div>
                   <div className="chat-text"><Markdown text={m.text} /></div>
+                  {m.role === "user" && (
+                    <div className="msg-time">
+                      {new Date(m.ts).toLocaleTimeString("zh-CN",
+                        { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

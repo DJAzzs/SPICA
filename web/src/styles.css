@@ -848,3 +848,27 @@ html[data-theme="light"] .tree-item:hover { background: var(--bg2); }
   cursor: pointer; padding: 2px 0; }
 .sidebar-toggle .sidebar-label { cursor: pointer; }
 .sidebar-toggle:hover .sidebar-label { color: var(--ink-dim); }
+
+/* ---------- 时间戳（灰色小字） ---------- */
+.msg-time { font-size: 10px; color: var(--ink-faint); margin-top: 4px;
+  font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+
+/* ---------- 用户消息右对齐 ---------- */
+.chat-msg.user { border-left: none; border-right: 3px solid var(--sand);
+  border-radius: 10px 3px 3px 10px; margin-left: auto;
+  max-width: 85%; text-align: right; }
+.chat-msg.user .chat-role { justify-content: flex-end; }
+.chat-msg.user .chat-text { text-align: left; }
+
+/* ---------- 代码块复制按钮 ---------- */
+.md pre { position: relative; cursor: pointer; }
+.md pre::after { content: "复制"; position: absolute; top: 8px; right: 10px;
+  font-size: 10.5px; color: var(--ink-faint);
+  padding: 3px 10px; border-radius: 5px;
+  background: var(--bg2); border: 1px solid var(--hairline);
+  opacity: 0; transition: opacity 350ms var(--ease);
+  pointer-events: none; letter-spacing: 0.05em; }
+.md pre:hover::after { opacity: 1; }
+.md pre:hover { border-color: color-mix(in srgb, var(--mist) 35%, transparent); }
+.md pre[data-copied]::after { content: "已复制"; color: var(--mist);
+  border-color: color-mix(in srgb, var(--mist) 40%, transparent); }
