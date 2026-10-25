@@ -273,9 +273,19 @@ class VoicePipeline:
             pass
         now = time.time()
 
+        # 结束词优先（说"拜拜"不该先触发唤醒）
+        fw = self.matcher.match_anywhere(text, self.farewell_words, "farewell")
+        if fw and not self._gated():
+            score, ok = (1.0, True)
+            if self.settings.get("speaker_gate_enabled", True) and self.speaker.enrolled():
+                score, ok = self.speaker.verify(seg.samples)
+            if ok:
+                self.cb.on_farewell(fw.phrase)
+                return
+
         # DORMANT：唤醒兜底（双引擎文本冗余：SenseVoice 优先，流式排空终稿次之）
         if self.st.mode == "DORMANT":
-            stream_text = self.stream_asr.drain()  # 段已结束：解完所有积压帧取完整文本
+            stream_text = self.stream_asr.drain()
             picked = None
             for t in (text, stream_text):
                 if not t:
@@ -283,8 +293,6 @@ class VoicePipeline:
                 h = self.matcher.match_prefix(t, self.wake_words, "wake")
                 if not h:
                     continue
-                # 精确命中且带指令 → 直接选定；否则保留最优（防空 remainder 的
-                # 模糊命中挤掉后续精确命中）
                 if h.score >= 100 and h.remainder:
                     picked = h
                     break
@@ -295,18 +303,7 @@ class VoicePipeline:
                 self._handle_wake(picked, fast=False, samples=seg.samples)
                 self._after_utterance()
                 return
-            # 未唤醒：暂存待定段（供迟到的 partial 唤醒回收），继续结束词/指令检查
             self._pending = (text, stream_text, time.time())
-
-        # 结束词（任意状态；过声纹门）
-        fw = self.matcher.match_anywhere(text, self.farewell_words, "farewell")
-        if fw and not self._gated():
-            score, ok = (1.0, True)
-            if self.settings.get("speaker_gate_enabled", True) and self.speaker.enrolled():
-                score, ok = self.speaker.verify(seg.samples)
-            if ok:
-                self.cb.on_farewell(fw.phrase)
-                return
 
         # 语义指令（暂停/继续/确认/取消）
         for name, entries in self.commands.items():

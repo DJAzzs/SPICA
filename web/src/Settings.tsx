@@ -35,6 +35,36 @@ function ProviderEditor() {
   );
 }
 
+/** 声纹门控开关（新拟物/玻璃滑块）。 */
+function SpeakerGateToggle() {
+  const settings = useSpica((s) => s.settings);
+  const on = settings?.speaker_gate_enabled !== false;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <button className="theme-toggle" onClick={() =>
+        send({ t: "settings_patch",
+          patch: { speaker_gate_enabled: !on } })}
+        title={on ? "点击关闭声纹验证" : "点击开启声纹验证"}>
+        <span className={"theme-knob " + (on ? "" : "dark")}
+          style={{ background: on ? "var(--mist)" : "var(--ink-faint)" }}>
+          {on
+            ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+              </svg>
+            : <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10" /><path d="M6 6l12 12" />
+              </svg>}
+        </span>
+      </button>
+      <span style={{ fontSize: "12.5px", color: "var(--ink-dim)" }}>
+        {on ? "已开启：只回应你的声音（他人静默）" : "已关闭：任何人都能唤醒"}
+      </span>
+    </div>
+  );
+}
+
 /** 词表编辑器：本地缓冲，blur 时提交（防光标跳变）。 */
 function WordEditor({ initial, field }: { initial: any[]; field: string }) {
   const [text, setText] = useState(
@@ -152,6 +182,11 @@ export default function Settings() {
         <div className="field">
           <label>结束词</label>
           <WordEditor initial={settings.farewell_words} field="farewell_words" />
+        </div>
+
+        <div className="field">
+          <label>声纹门控</label>
+          <SpeakerGateToggle />
         </div>
 
         <div className="field">

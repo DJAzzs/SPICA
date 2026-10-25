@@ -40,6 +40,14 @@ DEFAULT_WAKE_WORDS: list[dict] = [
         ],
         "enabled": True,
     },
+    {
+        "phrase": "嘿，麦星",
+        "variants": [
+            "嘿麦星", "嘿 麦星", "黑麦星", "嗨麦星", "嘿迈星",
+            "嘿卖星", "嘿脉星", "嘿麦心",
+        ],
+        "enabled": True,
+    },
 ]
 
 DEFAULT_FAREWELL_WORDS: list[dict] = [
@@ -56,6 +64,14 @@ DEFAULT_FAREWELL_WORDS: list[dict] = [
         "variants": [
             "拜拜 spica", "拜拜斯必卡", "拜拜丝必卡", "拜拜斯皮卡",
             "白白spica", "白白斯必卡", "拜拜思必卡",
+        ],
+        "enabled": True,
+    },
+    {
+        "phrase": "拜拜，麦星",
+        "variants": [
+            "拜拜麦星", "拜拜 麦星", "白白麦星", "拜拜迈星",
+            "拜拜卖星", "拜拜脉星", "拜拜麦心",
         ],
         "enabled": True,
     },

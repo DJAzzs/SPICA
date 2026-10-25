@@ -96,7 +96,7 @@ class Recorder:
         )
 
 
-def make_pipeline(rec: Recorder, wake="开放时间", farewell="下午5点"):
+def make_pipeline(rec: Recorder, wake="开放时间", farewell="不存在的词"):
     """用夹具转写内容里的词当唤醒/结束词（真实音频端到端）。"""
     from server.voice.pipeline import VoicePipeline
     settings = {
@@ -133,7 +133,6 @@ def test_pipeline_tts_gate_suppresses_wake():
         chunk_feed(p, load_wav("zh.wav"))
         time.sleep(0.5)
         assert not rec.wake.is_set()
-        # 门关（带 hold），hold 过后恢复匹配
         p.set_tts_gate(False, hold_ms=0)
         rec2 = Recorder()
         p.cb = rec2.cb()
@@ -230,7 +229,7 @@ def test_pipeline_dormant_no_wake_for_ordinary_speech():
 def test_pipeline_farewell():
     rec = Recorder()
     # 唤醒词用句中不存在的词，避免夹具句首唤醒优先级压过结束词
-    p = make_pipeline(rec, wake="谢谢观看", farewell="下午5点")
+    p = make_pipeline(rec, wake="谢谢观看", farewell="早上")
     try:
         chunk_feed(p, load_wav("zh.wav"))
         assert rec.farewell.wait(10), f"未触发结束词 events={rec.events}"
