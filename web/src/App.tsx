@@ -158,63 +158,83 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
             </div>
           </div>
         )}
+        {permissionReq && (
+          <div className="perm-card">
+            <div className="perm-title">⚠ 需要更高权限</div>
+            <div className="perm-reason">{permissionReq.reason}</div>
+            <div className="perm-actions">
+              <button className="btn primary" onClick={() =>
+                send({ t: "permission_grant", mode: "once" })}>同意一次</button>
+              <button className="btn" onClick={() =>
+                send({ t: "permission_grant", mode: "always" })}>本会话永远同意</button>
+              <button className="btn" onClick={() =>
+                send({ t: "permission_grant", mode: "deny" })}>拒绝</button>
+            </div>
+            <div className="perm-voice">也可以直接说：同意 / 永远同意 / 拒绝</div>
+          </div>
+        )}
         {msgs.map((m, i) => {
           const tid = m.tid;
-          const isCollapsed = tid !== undefined
-            && turns[tid]?.collapsed && m.role !== "turn-done";
+          const collapsed = tid !== undefined && turns[tid]?.collapsed;
+          const isFirstOfTurn = tid !== undefined
+            && !msgs.slice(0, i).some(
+              (x) => x.tid === tid && x.role !== "turn-done");
+          const head = tid !== undefined
+            ? msgs.find((x) => x.tid === tid && x.role === "turn-done") : null;
           const showRunning = runningTid !== undefined && tid === runningTid
-            && !msgs.slice(0, i).some((x) => x.tid === tid);
+            && isFirstOfTurn;
+          if (m.role === "turn-done") return null;
           return (
             <div key={i}>
-              {permissionReq && (
-                <div className="perm-card">
-                  <div className="perm-title">⚠ 需要更高权限</div>
-                  <div className="perm-reason">{permissionReq.reason}</div>
-                  <div className="perm-actions">
-                    <button className="btn primary" onClick={() =>
-                      send({ t: "permission_grant", mode: "once" })}>同意一次</button>
-                    <button className="btn" onClick={() =>
-                      send({ t: "permission_grant", mode: "always" })}>本会话永远同意</button>
-                    <button className="btn" onClick={() =>
-                      send({ t: "permission_grant", mode: "deny" })}>拒绝</button>
-                  </div>
-                  <div className="perm-voice">也可以直接说：同意 / 永远同意 / 拒绝</div>
-                </div>
-              )}
               {showRunning && (
                 <div className="turn-running">
                   <span className="pulse-dot" />
                   运行中 · 已用时 {fmtDur(elapsed)}
                 </div>
               )}
-              {m.role === "turn-done" ? (
-                <div className="turn-head" onClick={() => toggleTurn(m.tid!)}>
-                  <span className="turn-caret">
-                    {turns[m.tid!]?.collapsed ? "▸" : "▾"}</span>
+              {isFirstOfTurn && head && (
+                <div className="turn-head" onClick={() => toggleTurn(tid!)}>
+                  <span className="turn-caret">{collapsed ? "▸" : "▾"}</span>
                   <span className="turn-label">已完成</span>
-                  <span className="turn-dur">用时 {fmtDur(m.seconds || 0)}</span>
-                  <span className="turn-sum">{m.text.slice(0, 60)}</span>
+                  <span className="turn-dur">用时 {fmtDur(head.seconds || 0)}</span>
+                  {!!head.browsed && (
+                    <span className="turn-web">浏览了 {head.browsed} 个网页</span>
+                  )}
                 </div>
-              ) : !isCollapsed && (
-                m.role === "thinking" ? (
-                  <div className={`chat-msg thinking ${m.thinking ? "live" : ""}`}>
-                    <div className="chat-role think-toggle"
-                      onClick={() => setOpenThinking(
-                        { ...openThinking, [i]: !openThinking[i] })}>
-                      {m.thinking ? "思考中" : `思考 · ${m.text.length} 字`}
-                      <span className="turn-caret">
-                        {openThinking[i] ? "▾" : "▸"}</span>
-                    </div>
-                    {openThinking[i] && (
-                      <div className="think-body">{m.text}</div>
-                    )}
-                  </div>
-                ) : (
-                  <div className={`chat-msg ${m.role}`}>
-                    <div className="chat-role">{ROLE_LABEL[m.role] || m.role}</div>
-                    <div className="chat-text"><Markdown text={m.text} /></div>
+              )}
+              {collapsed ? (
+                isFirstOfTurn && head && head.text && (
+                  <div className="chat-msg assistant">
+                    <div className="chat-role">{ROLE_LABEL.assistant}</div>
+                    <div className="chat-text"><Markdown text={head.text} /></div>
                   </div>
                 )
+              ) : m.role === "thinking" ? (
+                <div className={`chat-msg thinking ${m.thinking ? "live" : ""}`}>
+                  <div className="chat-role think-toggle"
+                    onClick={() => setOpenThinking(
+                      { ...openThinking, [i]: !openThinking[i] })}>
+                    {m.thinking ? "思考中" : `思考 · ${m.text.length} 字`}
+                    <span className="turn-caret">
+                      {openThinking[i] ? "▾" : "▸"}</span>
+                  </div>
+                  {openThinking[i] && (
+                    <div className="think-body">{m.text}</div>
+                  )}
+                </div>
+              ) : (
+                <div className={`chat-msg ${m.role}`}>
+                  <div className="chat-role">
+                    {ROLE_LABEL[m.role] || m.role}
+                    {m.diff && (m.diff.a > 0 || m.diff.r > 0) && (
+                      <span className="diff-badges">
+                        {m.diff.a > 0 && <span className="diff-add">+{m.diff.a}</span>}
+                        {m.diff.r > 0 && <span className="diff-del">-{m.diff.r}</span>}
+                      </span>
+                    )}
+                  </div>
+                  <div className="chat-text"><Markdown text={m.text} /></div>
+                </div>
               )}
             </div>
           );

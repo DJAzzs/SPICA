@@ -24,7 +24,8 @@ export interface State {
   micOn: boolean;
   micError: string;
   msgs: { role: string; text: string; ts: number; tid?: number;
-          seconds?: number; thinking?: boolean }[];
+          seconds?: number; thinking?: boolean; diff?: {a:number;r:number};
+          browsed?: number }[];
   localListen: boolean;   // 手动聆听本地态（不等服务器往返）
   toast: string;          // 顶部轻提示
   sessions: any[];
@@ -141,7 +142,7 @@ function handle(e: SpicaEvent) {
       }
       break;
     case "msg":
-      pushMsg(e.role, e.text, { tid: e.tid });
+      pushMsg(e.role, e.text, { tid: e.tid, diff: e.diff });
       if (e.role === "assistant") closeThinking();
       break;
     case "thinking": {
@@ -163,7 +164,8 @@ function handle(e: SpicaEvent) {
     case "turn_done": {
       closeThinking();
       set({ turns: { ...state.turns, [e.tid]: { collapsed: true } } });
-      pushMsg("turn-done", e.summary || "", { tid: e.tid, seconds: e.seconds });
+      pushMsg("turn-done", e.summary || "",
+        { tid: e.tid, seconds: e.seconds, browsed: e.browsed });
       set({ taskDone: e.summary });
       break;
     }

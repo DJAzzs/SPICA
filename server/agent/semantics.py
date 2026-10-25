@@ -79,6 +79,7 @@ class Semantics:
             else ROOT / "workspace" / "skills")
         self._turn_count = 0          # nudge 节拍
         self._turn_tool_calls = 0     # 本轮工具调用数（技能收获启发）
+        self._turn_web_count = 0      # 本轮浏览网页数
         # 长期目标 {active, text, round, max_rounds}
         self.goal: dict = {"active": False, "text": "", "round": 0,
                            "max_rounds": 0}
@@ -423,6 +424,41 @@ class Semantics:
             await self.broadcast({"t": "msg", "role": "system",
                 "text": "用法：/skills list · /skills del <名称>"})
 
+    # ================================================== 工具过程美化
+    @staticmethod
+    def _diff_meta(name: str, args) -> dict | None:
+        """edit/write 工具的 +/- 行数（无对应项不显示）。"""
+        try:
+            a = args if isinstance(args, dict) else {}
+            if not a and isinstance(args, str) and args.strip().startswith("{"):
+                import json as _j
+                a = _j.loads(args)
+            if name in ("edit", "str_replace_editor"):
+                old, new = a.get("old_string", ""), a.get("new_string", "")
+                if a.get("command") == "create" or old == "" and new:
+                    return {"a": len(str(new).splitlines()) or 1, "r": 0}
+                if not old and not new:
+                    return None
+                return {"a": len(str(new).splitlines()),
+                        "r": len(str(old).splitlines())}
+            if name == "write":
+                return {"a": len(str(a.get("content", "")).splitlines()) or 1,
+                        "r": 0}
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
+    def _web_host(args) -> str:
+        try:
+            a = args if isinstance(args, dict) else {}
+            url = str(a.get("url", ""))
+            if "//" in url:
+                return url.split("//", 1)[1].split("/", 1)[0][:40]
+        except Exception:
+            pass
+        return ""
+
     # ================================================== 权限升级请求
     PERM_VOICE = [
         ("always", [["永远", "同意"], ["总是", "同意"], ["都", "同意"], ["全部", "允许"]]),
@@ -732,9 +768,17 @@ class Semantics:
         self.sdk.reset_identity("")
         self._need_resume = False
         self.session = self.store.create()
+        # 彻底重置执行状态：旧会话的暂停/插话/目标不得泄漏到新会话
+        if self.state not in ("shutdown",):
+            self.state = "idle"
         self.transcript = []
         self.pending_prompts = []
         self.route_info = {}
+        self._perm_request = None
+        self._plan_mode = False
+        self._goal_pending = False
+        self.compact_summary = ""
+        self.goal["active"] = False
         await self.broadcast({"t": "history", "msgs": []})
         await self.broadcast({"t": "session", "meta": self.session})
         await self.broadcast_sessions()
@@ -1039,12 +1083,20 @@ class Semantics:
                                           "text": text, "tid": self.turn_seq})
                     self._log("assistant", text)
                 elif btype in ("tool_call", "tool_use"):
-                    summary = self.narrator.tool_summary(
-                        block.get("name", "tool"),
-                        block.get("arguments") or block.get("input") or "")
-                    await self.broadcast({"t": "msg", "role": "tool",
-                                          "text": summary,
-                                          "tid": self.turn_seq})
+                    name = block.get("name", "tool")
+                    args = block.get("arguments") or block.get("input") or ""
+                    if name in ("web_fetch", "web_search", "websearch"):
+                        host = self._web_host(args)
+                        summary = f"浏览网页{('：' + host) if host else ''}"
+                        self._turn_web_count += 1
+                    else:
+                        summary = self.narrator.tool_summary(name, args)
+                    ev = {"t": "msg", "role": "tool", "text": summary,
+                          "tid": self.turn_seq}
+                    d = self._diff_meta(name, args)
+                    if d:
+                        ev["diff"] = d
+                    await self.broadcast(ev)
                     self._log("tool", summary)
         elif "reasoning" in typ or "thinking" in typ:
             piece = (data.get("text") or data.get("delta")
@@ -1053,12 +1105,21 @@ class Semantics:
                 await self.broadcast({"t": "thinking", "text": piece,
                                       "tid": self.turn_seq})
         elif typ in ("tool/call", "tool/use"):
-            summary = self.narrator.tool_summary(
-                data.get("name") or data.get("tool") or "tool",
-                data.get("arguments") or data.get("input")
-                or data.get("args") or data.get("command") or "")
-            await self.broadcast({"t": "msg", "role": "tool",
-                                  "text": summary, "tid": self.turn_seq})
+            name = data.get("name") or data.get("tool") or "tool"
+            args = (data.get("arguments") or data.get("input")
+                    or data.get("args") or data.get("command") or "")
+            if name in ("web_fetch", "web_search", "websearch"):
+                host = self._web_host(args)
+                summary = f"浏览网页{('：' + host) if host else ''}"
+                self._turn_web_count += 1
+            else:
+                summary = self.narrator.tool_summary(name, args)
+            ev = {"t": "msg", "role": "tool", "text": summary,
+                  "tid": self.turn_seq}
+            d = self._diff_meta(name, args)
+            if d:
+                ev["diff"] = d
+            await self.broadcast(ev)
             self._log("tool", summary)
         elif typ == "tool/result":
             out = (data.get("result") or data.get("output") or "")
@@ -1083,7 +1144,9 @@ class Semantics:
         self.transcript.append({"role": "assistant", "text": summary,
                                 "ts": time.time()})
         await self.broadcast({"t": "turn_done", "tid": self.turn_seq,
-                              "summary": summary, "seconds": round(seconds)})
+                              "summary": summary, "seconds": round(seconds),
+                              "browsed": self._turn_web_count})
+        self._turn_web_count = 0
         self._log("assistant", summary)
         # 任务结束不再语音播报（完成态由界面呈现）
         await self._set_state("idle")

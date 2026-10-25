@@ -541,3 +541,50 @@ def test_farewell_exec_asks_confirm(tmp_path, monkeypatch):
     assert not sdk.stopped                      # 未确认不关停
     run(sem._command("confirm", "确定"))
     assert any(e.get("t") == "_stopped" for e in events)
+
+
+# ---------------------------------------------------------------- 会话残留修复
+def test_delete_session_while_paused_no_leak(tmp_path, monkeypatch):
+    """暂停任务→删除会话→新会话点继续：不得继续旧任务。"""
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.on_text_input("旧会话任务A"))
+    run(sem._command("pause", "暂停"))
+    assert sem.state == "paused"
+    sid = sem.session["id"]
+    run(sem.session_delete(sid))          # 删除 → 自动 session_new
+    assert sem.state == "idle"            # 状态已重置
+    prompts_before = len(sdk.prompts)
+    run(sem._command("resume", "继续"))   # 新会话里点继续
+    # 不应重启 DSH 也不应注入"继续刚才的任务"
+    assert "继续刚才的任务。" not in " ".join(sdk.prompts[prompts_before:])
+    assert sem.state == "idle"
+
+
+def test_diff_meta_edit_write():
+    m = Semantics._diff_meta("edit", {"old_string": "a\nb\nc",
+                                      "new_string": "x"})
+    assert m == {"a": 1, "r": 3}
+    m2 = Semantics._diff_meta("write", {"content": "l1\nl2\nl3"})
+    assert m2 == {"a": 3, "r": 0}
+    assert Semantics._diff_meta("bash", {"command": "ls"}) is None
+
+
+def test_web_tool_counted_as_browse(tmp_path, monkeypatch):
+    import asyncio
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.state = "idle"
+    run(sem.on_text_input("查资料"))
+    async def scenario():
+        for u in ["https://a.com/1", "https://b.com/x"]:
+            await sem.on_sdk_notification("session.event", {
+                "event": {"type": "tool/call",
+                          "data": {"name": "web_fetch", "arguments": {"url": u}}}})
+        await sem.on_sdk_notification("session.event", {
+            "event": {"type": "turn/end", "data": {}}})
+        await asyncio.sleep(0.3)
+    run(scenario())
+    browses = [e for e in events if e.get("t") == "msg"
+               and "浏览网页" in e.get("text", "")]
+    assert len(browses) == 2
+    done = next(e for e in events if e.get("t") == "turn_done")
+    assert done.get("browsed") == 2
