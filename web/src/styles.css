@@ -72,7 +72,8 @@ html.theme-anim *, html.theme-anim *::before, html.theme-anim *::after {
     opacity 800ms var(--ease),
     fill 800ms var(--ease),
     stroke 800ms var(--ease),
-    outline-color 800ms var(--ease) !important;
+    outline-color 800ms var(--ease),
+    transform 800ms var(--ease) !important;
 }
 
 /* 瑞士基线网格装饰（8pt，极淡；两种主题各自的呼吸感） */
