@@ -332,7 +332,7 @@ html[data-theme="dark"] .model-item:hover { background: rgba(255,255,255,0.07); 
   display: flex; align-items: center; justify-content: center;
   background: var(--mustard); color: #fff;
   box-shadow: var(--raise-sm);
-  transition: transform 600ms var(--ease), background 600ms var(--ease); }
+  transition: transform 1000ms var(--ease), background 1000ms var(--ease); }
 .theme-knob.dark { transform: translateX(22px); background: var(--lilac); }
 .theme-auto { background: none; border: none; color: var(--ink-faint);
   font: inherit; font-size: 9.5px; letter-spacing: 0.14em; cursor: pointer;
