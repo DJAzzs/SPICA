@@ -422,6 +422,11 @@ export default function App() {
   useEffect(() => { if (settings) setWizardDone(!!settings.wizard_done); }, [settings]);
   useEffect(() => { if (wakeFlash) localStorage.setItem("spica-waked", "1"); }, [wakeFlash]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    const onClose = () => setSidebarOpen(false);
+    addEventListener("spica-side-close", onClose);
+    return () => removeEventListener("spica-side-close", onClose);
+  }, []);
   const demo = document.documentElement.dataset.demo === "1";
 
   useEffect(() => { if (st === "shutdown") resetPlayback(); }, [st]);
