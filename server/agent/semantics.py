@@ -87,12 +87,14 @@ class Semantics:
                        "ctx_used": 0, "turns": 0, "steps": 0,
                        "last_speed": 0.0}
         self._step_started_at = 0.0
+        self._compacting = False
         # 运行统计（tokens/上下文/速度）
         self._turn_files: dict[str, dict] = {}   # path -> {a, r}
         self._stats = {"total_in": 0, "total_out": 0, "ctx_win": 0,
                        "ctx_used": 0, "turns": 0, "steps": 0,
                        "last_speed": 0.0}
         self._step_started_at = 0.0
+        self._compacting = False
         # 长期目标 {active, text, round, max_rounds}
         self.goal: dict = {"active": False, "text": "", "round": 0,
                            "max_rounds": 0}
@@ -526,6 +528,9 @@ class Semantics:
             "ctx_used": s["ctx_used"],
             "turns": s["turns"], "steps": s["steps"],
             "speed": s["last_speed"]})
+        if pct >= 90 and not self._compacting:
+            self._compacting = True
+            self._bg(self._auto_compact(), "auto-compact")
 
     # ================================================== 工具过程美化
     @staticmethod
@@ -1389,6 +1394,19 @@ class Semantics:
                 await self._goal_next_round()
 
     # ================================================== 语义命令
+    async def _auto_compact(self) -> None:
+        """Context >=90% auto-compact (waits for current task to finish)."""
+        try:
+            for _ in range(120):
+                if self.state not in ("exec", "paused"):
+                    break
+                await asyncio.sleep(1)
+            if self.state in ("exec", "paused"):
+                return
+            await self._do_compact()
+        finally:
+            self._compacting = False
+
     async def _command(self, name: str, text: str) -> None:
         if name == "pause":
             if self.state == "exec":
