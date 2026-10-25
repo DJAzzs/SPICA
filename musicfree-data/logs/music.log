@@ -640,3 +640,12 @@
 2026-10-25 21:40:00.749 INFO starting scan for source source_name=Default Library source_type=local
 2026-10-25 21:40:00.755 INFO scan completed for source source_name=Default Library files_processed=0 added=0 updated=0 skipped=0 hash_skipped=0 deleted=0
 2026-10-25 21:40:00.761 INFO | 200 |     431.659µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=1613b1516bbffced8b42c06113698789&s=DUYspZsF&query=%E6%99%B4%E5%A4%A9+%28R%26B%E7%89%88%29&songCount=5&albumCount=0&artistCount=0&f=json
+2026-10-25 21:45:12.583 INFO | 200 |     114.440µs |      172.17.0.1 | GET     /rest/ping
+2026-10-25 21:45:25.250 INFO | 200 |     218.120µs |      172.17.0.1 | GET     /rest/ping?u=admin&t=def2d7b6abc7f3fff06c068cde1e62c9&s=WAMETIUW&f=json
+2026-10-25 21:45:28.106 INFO | 200 |        2.848s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=7ef797150a92ac95d15d9be68ecd3d09&s=DseXifmV&f=json
+2026-10-25 21:49:11.859 INFO starting scheduled incremental scan
+2026-10-25 21:49:11.872 INFO starting incremental scan since=2026-10-25T13:19:11Z
+2026-10-25 21:49:11.875 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-25 21:49:11.877 INFO updating album statistics
+2026-10-25 21:49:11.881 INFO album statistics updated
+2026-10-25 21:49:11.884 INFO incremental scan completed

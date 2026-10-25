@@ -521,6 +521,10 @@ class Semantics:
         self._log("assistant", reply)
         self.narrator.step(reply)
 
+    async def _send_initial_stats(self) -> None:
+        """连接/切换会话时立即广播当前统计（底边栏常显）。"""
+        await self._broadcast_stats()
+
     async def _broadcast_stats(self) -> None:
         s = self._stats
         pct = (s["ctx_used"] / s["ctx_win"] * 100) if s["ctx_win"] else 0
@@ -949,6 +953,7 @@ class Semantics:
         self.compact_summary = ""
         self.goal["active"] = False
         await self.broadcast({"t": "history", "msgs": []})
+        self._bg(self._send_initial_stats(), "stats-init")
         await self.broadcast({"t": "session", "meta": self.session})
         await self.broadcast_sessions()
 
