@@ -61,7 +61,7 @@ function CtxDetail({ stats }: { stats: any }) {
 
 export default function StatsBar() {
   const stats = useSpica((s) => s.stats);
-  if (!stats || !stats.total) return null;
+  if (!stats) return null;
 
   const fmtK = (n: number) =>
     n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
