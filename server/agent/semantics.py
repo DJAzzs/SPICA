@@ -88,6 +88,7 @@ class Semantics:
                        "last_speed": 0.0}
         self._step_started_at = 0.0
         self._compacting = False
+        self._ctx_breakdown: dict = {}
         # 运行统计（tokens/上下文/速度）
         self._turn_files: dict[str, dict] = {}   # path -> {a, r}
         self._stats = {"total_in": 0, "total_out": 0, "ctx_win": 0,
@@ -95,6 +96,7 @@ class Semantics:
                        "last_speed": 0.0}
         self._step_started_at = 0.0
         self._compacting = False
+        self._ctx_breakdown: dict = {}
         # 长期目标 {active, text, round, max_rounds}
         self.goal: dict = {"active": False, "text": "", "round": 0,
                            "max_rounds": 0}
@@ -527,7 +529,9 @@ class Semantics:
             "ctx_pct": round(pct, 1), "ctx_win": s["ctx_win"],
             "ctx_used": s["ctx_used"],
             "turns": s["turns"], "steps": s["steps"],
-            "speed": s["last_speed"]})
+            "speed": s["last_speed"],
+            **({"breakdown": self._ctx_breakdown}
+               if self._ctx_breakdown else {})})
         if pct >= 90 and not self._compacting:
             self._compacting = True
             self._bg(self._auto_compact(), "auto-compact")
@@ -1339,6 +1343,11 @@ class Semantics:
         elif typ == "request/context":
             self._stats["ctx_win"] = data.get("contextWindow",
                                               self._stats["ctx_win"])
+            # 上下文分解（系统提示/工具/消息）
+            for key in ("systemPrompt", "toolDefinitions", "messages",
+                        "conversation", "turns", "other"):
+                if key in data:
+                    self._ctx_breakdown[key] = data[key]
         if typ in ("tool/call", "tool/use") or "tool_call" in str(
                 (data.get("message", {}) or {}).get("content", "")):
             self._turn_tool_calls += 1
@@ -1406,6 +1415,7 @@ class Semantics:
             await self._do_compact()
         finally:
             self._compacting = False
+        self._ctx_breakdown: dict = {}
 
     async def _command(self, name: str, text: str) -> None:
         if name == "pause":

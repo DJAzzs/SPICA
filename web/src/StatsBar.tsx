@@ -1,6 +1,64 @@
+import { useRef, useState } from "react";
 import { useSpica } from "./state";
 
 /** 底部运行统计栏：IDE 风格极细灰字，hover 浮出详情玻璃卡。 */
+function CtxDetail({ stats }: { stats: any }) {
+  const [show, setShow] = useState(false);
+  const timer = useRef<number>(0);
+
+  const onEnter = () => {
+    timer.current = window.setTimeout(() => setShow(true), 1000);
+  };
+  const onLeave = () => {
+    clearTimeout(timer.current);
+    setShow(false);
+  };
+
+  const bd = stats.breakdown || {};
+  const items = [
+    { label: "系统提示词", key: "systemPrompt", color: "var(--mist)" },
+    { label: "工具定义", key: "toolDefinitions", color: "var(--mustard)" },
+    { label: "对话消息", key: "messages", color: "var(--sand)" },
+    { label: "其他", key: "other", color: "var(--lilac)" },
+  ].filter(i => bd[i.key]);
+  const total = items.reduce((s, i) => s + bd[i.key], 0) || stats.ctx_used || 1;
+
+  const fmtK = (n: number) =>
+    n >= 1000 ? `${(n / 1000).toFixed(1)}K` : `${n}`;
+
+  return (
+    <div className="ctx-detail" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      <div className="ctx-hover-zone" onMouseEnter={onEnter} onMouseLeave={onLeave} />
+      {show && (
+        <div className="ctx-detail-card">
+          {/* 多色占比条 */}
+          <div className="ctx-bar-multi">
+            {items.map(i => (
+              <span key={i.key} style={{
+                width: `${(bd[i.key] / total) * 100}%`,
+                background: i.color }} />
+            ))}
+          </div>
+          {items.map(i => (
+            <div key={i.key} className="ctx-detail-row">
+              <span className="ctx-dot" style={{ background: i.color }} />
+              <span className="ctx-label">{i.label}</span>
+              <span className="ctx-val">~{fmtK(bd[i.key])}</span>
+              <span className="ctx-pct">
+                {((bd[i.key] / total) * 100).toFixed(0)}%
+              </span>
+            </div>
+          ))}
+          <div className="ctx-detail-total">
+            合计 ~{fmtK(total)} / {stats.ctx_win
+              ? fmtK(stats.ctx_win) : "?"}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StatsBar() {
   const stats = useSpica((s) => s.stats);
   if (!stats || !stats.total) return null;
@@ -19,8 +77,7 @@ export default function StatsBar() {
         style={{ visibility: stats.speed > 0 ? "visible" : "hidden" }}>
         <span className="stat-dot speed" />{stats.speed} tok/s
       </span>
-      <span className="stat-item" title={`上下文 ${stats.ctx_used}/${stats.ctx_win}`}
-        style={{ color: ctxColor || undefined }}>
+      <span className="stat-item ctx-hover" style={{ color: ctxColor || undefined }}>
         <span className="stat-dot ctx" style={{ background: ctxColor || undefined }} />
         ctx {stats.ctx_pct}%
         <span className="stat-bar-track">
@@ -28,6 +85,7 @@ export default function StatsBar() {
             width: `${Math.min(100, stats.ctx_pct)}%`,
             background: ctxColor || "var(--mist)" }} />
         </span>
+        <CtxDetail stats={stats} />
       </span>
       <span className="stat-item" title="总轮/步">
         <span className="stat-dot turn" />{stats.turns}轮·{stats.steps}步
