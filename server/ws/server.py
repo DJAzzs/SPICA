@@ -309,7 +309,15 @@ def create_app(boot) -> FastAPI:
             elif t == "mic":
                 pass
             elif t == "settings_patch":
-                merged = save_settings(data.get("patch", {}))
+                patch = data.get("patch", {})
+                # 自动生成唤醒/结束词变体
+                from server.voice.wake import auto_variants
+                for wf in ("wake_words", "farewell_words"):
+                    if wf in patch and isinstance(patch[wf], list):
+                        for w in patch[wf]:
+                            if isinstance(w, dict) and not w.get("variants"):
+                                w["variants"] = auto_variants(w.get("phrase", ""))
+                merged = save_settings(patch)
                 state["settings"] = merged
                 sem.settings = merged
                 sem.pipeline.settings = merged

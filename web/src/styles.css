@@ -1039,3 +1039,19 @@ html:not([data-theme="dark"]) .backdrop-canvas { opacity: 0; }
 .side-confirm-no { border: 1px solid var(--ink-faint); background: none;
   color: var(--ink-dim); font: inherit; font-size: 10px; padding: 3px 10px;
   border-radius: 4px; cursor: pointer; }
+
+/* ---------- 词列 chips ---------- */
+.word-chip { display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 8px 6px 12px; border-radius: 8px; font-size: 12.5px;
+  background: var(--bg2); color: var(--ink-dim);
+  box-shadow: var(--sink-sm); animation: enter 400ms var(--ease); }
+.word-chip .word-text { cursor: pointer; user-select: none;
+  transition: color 300ms var(--ease); }
+.word-chip .word-text:hover { color: var(--mist); }
+.word-chip.off { opacity: 0.4; }
+.word-chip.off .word-text { text-decoration: line-through; }
+.word-chip.add { border: 1px dashed var(--ink-faint); background: none;
+  cursor: pointer; box-shadow: none; color: var(--ink-faint);
+  font-size: 14px; padding: 4px 12px; transition: all 300ms var(--ease); }
+.word-chip.add:hover { border-color: var(--mist); color: var(--mist); }
+.word-chip.adding { border: 1px solid var(--mist); background: var(--bg2); }

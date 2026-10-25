@@ -172,3 +172,62 @@ def command_entries(commands: dict[str, list[str]]) -> dict[str, list[dict]]:
             {"phrase": p, "variants": [], "enabled": True} for p in phrases
         ]
     return out
+
+
+# 常见同音/近音字替换表（ASR 误听）
+_PINYIN_SUBS: dict[str, list[str]] = {
+    "嘿": ["黑", "嗨", "赫"], "嗨": ["嘿", "黑"], "黑": ["嘿", "嗨"],
+    "麦": ["迈", "卖", "脉", "埋"], "迈": ["麦", "卖"],
+    "星": ["心", "兴", "行", "型"], "心": ["星", "新"],
+    "拜": ["白", "败", "百"], "白": ["拜", "败"],
+    "思": ["斯", "丝", "司"], "斯": ["思", "丝"],
+    "必": ["比", "笔"], "比": ["必", "笔"],
+    "卡": ["喀", "咖"], "开": ["凯", "慨"],
+    "小": ["晓", "筱"], "智": ["志", "致", "至"],
+    "来": ["莱", "赖"], "安": ["按", "案"],
+    "好": ["号", "浩"], "你": ["尼", "拟"],
+}
+
+# 常见前缀（可被省略或替换）
+_PREFIXES = ["嘿", "嗨", "黑", "拜拜", "白白", "hey", "bye", "hello", "hi", "ok", "okay"]
+
+
+def auto_variants(phrase: str) -> list[str]:
+    """为自定义词自动生成常见 ASR 误听变体（程序生成，无需 LLM）。"""
+    phrase = phrase.strip()
+    if not phrase:
+        return []
+    variants: set[str] = set()
+    low = phrase.lower()
+
+    # 1) 去掉前缀后的核心词（用户可能省略语气词）
+    for prefix in _PREFIXES:
+        if low.startswith(prefix.lower()):
+            rest = phrase[len(prefix):].strip("，, ")
+            if len(rest) >= 2:
+                variants.add(rest)
+            break
+
+    # 2) 同音/近音字替换
+    for orig, repls in _PINYIN_SUBS.items():
+        if orig in phrase:
+            for r in repls:
+                variants.add(phrase.replace(orig, r))
+
+    # 3) 去标点
+    import re as _re
+    clean = _re.sub(r"[，,。.!！?？\s]+", "", phrase)
+    if clean != phrase and len(clean) >= 2:
+        variants.add(clean)
+
+    # 4) 英文常见误听（元音/辅音替换）
+    en_subs = {"a": "e", "e": "i", "i": "e", "o": "u", "s": "z", "k": "c"}
+    if phrase.isascii():
+        for old, new in en_subs.items():
+            if old in low:
+                variants.add(low.replace(old, new))
+
+    # 5) 大小写变体
+    variants.add(low)
+
+    return sorted(variants - {low, phrase})

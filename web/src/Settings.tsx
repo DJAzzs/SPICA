@@ -65,6 +65,61 @@ function SpeakerGateToggle() {
   );
 }
 
+/** 词列 chips：只展示主词，变体后台自动生成。 */
+function WordChips({ initial, field }: { initial: any[]; field: string }) {
+  const [adding, setAdding] = useState(false);
+  const [newWord, setNewWord] = useState("");
+
+  const addWord = () => {
+    const w = newWord.trim();
+    if (!w) return;
+    const words = [...(initial || []),
+      { phrase: w, variants: [], enabled: true }];
+    send({ t: "settings_patch", patch: { [field]: words } });
+    setNewWord(""); setAdding(false);
+  };
+
+  const removeWord = (phrase: string) => {
+    const words = (initial || []).filter((w: any) => w.phrase !== phrase);
+    send({ t: "settings_patch", patch: { [field]: words } });
+  };
+
+  const toggleWord = (phrase: string) => {
+    const words = (initial || []).map((w: any) =>
+      w.phrase === phrase ? { ...w, enabled: !w.enabled } : w);
+    send({ t: "settings_patch", patch: { [field]: words } });
+  };
+
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {(initial || []).map((w: any) => (
+        <span key={w.phrase}
+          className={"word-chip" + (w.enabled === false ? " off" : "")}>
+          <span className="word-text" onClick={() => toggleWord(w.phrase)}>
+            {w.phrase}
+          </span>
+          <button className="chip-x" onClick={() => removeWord(w.phrase)}>✕</button>
+        </span>
+      ))}
+      {adding ? (
+        <span className="word-chip adding">
+          <input type="text" value={newWord}
+            onChange={e => setNewWord(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") addWord();
+              if (e.key === "Escape") { setAdding(false); setNewWord(""); } }}
+            placeholder="输入新词…" autoFocus
+            style={{ width: 100, border: "none", background: "none",
+              outline: "none", color: "var(--ink)", font: "inherit",
+              fontSize: "12px" }} />
+          <button className="chip-x" onClick={addWord} style={{ color: "var(--mist)" }}>✓</button>
+        </span>
+      ) : (
+        <button className="word-chip add" onClick={() => setAdding(true)}>＋</button>
+      )}
+    </div>
+  );
+}
+
 /** 词表编辑器：本地缓冲，blur 时提交（防光标跳变）。 */
 function WordEditor({ initial, field }: { initial: any[]; field: string }) {
   const [text, setText] = useState(
@@ -175,13 +230,13 @@ export default function Settings() {
         <h1>设置</h1>
 
         <div className="field">
-          <label>唤醒词（每行一条：主词 | 变体1,变体2…）</label>
-          <WordEditor initial={settings.wake_words} field="wake_words" />
+          <label>唤醒词</label>
+          <WordChips initial={settings.wake_words} field="wake_words" />
         </div>
 
         <div className="field">
           <label>结束词</label>
-          <WordEditor initial={settings.farewell_words} field="farewell_words" />
+          <WordChips initial={settings.farewell_words} field="farewell_words" />
         </div>
 
         <div className="field">
