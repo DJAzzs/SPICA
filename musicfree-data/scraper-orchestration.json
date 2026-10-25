@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "defaultProfileId": "default",
+  "profiles": [
+    {
+      "id": "default",
+      "name": "默认编排",
+      "enabled": true,
+      "fields": {
+        "album": null,
+        "artist": null,
+        "basic": null,
+        "cover": null,
+        "lyrics": null
+      }
+    }
+  ],
+  "userConfigured": false
+}

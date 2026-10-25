@@ -31,3 +31,223 @@
 2026-10-25 01:05:21.386 WARN | 404 |       3.550µs |      172.17.0.1 | GET     /api/plugins
 2026-10-25 01:05:21.397 WARN | 404 |       1.240µs |      172.17.0.1 | GET     /api/v1/plugin/registry
 2026-10-25 01:05:21.411 WARN | 404 |       2.710µs |      172.17.0.1 | GET     /api/v1/settings
+2026-10-25 10:49:11.580 INFO Music Free server starting version=1.2.5
+2026-10-25 10:49:11.583 INFO process temp directory tmpdir=/var/tmp
+2026-10-25 10:49:11.804 INFO chromaprint enabled (embedded wasm) algorithm=2 ffmpeg=ffmpeg wasm_memory_limit_mb=256
+2026-10-25 10:49:11.811 INFO sqlite optimized journal_mode=WAL busy_timeout_ms=5000 synchronous=NORMAL max_open_conns=1
+2026-10-25 10:49:11.813 INFO database connected type=sqlite
+2026-10-25 10:49:11.826 INFO duplicate album merge completed
+2026-10-25 10:49:11.828 INFO database schema migrated
+2026-10-25 10:49:11.832 INFO builtin tag cleaning rules synced path=/app/config/tag_cleaning_builtin_rules.json
+2026-10-25 10:49:11.835 INFO applied database config overrides ma_enabled=false ma_server_url=
+2026-10-25 10:49:11.837 INFO starting initial library scan
+2026-10-25 10:49:11.840 INFO starting full library scan
+2026-10-25 10:49:11.840 INFO incremental scan timer started interval_minutes=30
+2026-10-25 10:49:11.840 INFO cleanup timer started interval_hours=24
+2026-10-25 10:49:11.841 INFO server-sdk sync timer started interval=30m0s
+2026-10-25 10:49:11.841 INFO server-sdk playlist sync timer started interval=8h0m0s
+2026-10-25 10:49:11.841 INFO cover service initialized cover_path=/app/data/covers
+2026-10-25 10:49:11.844 INFO full library scan completed files_processed=0 added=0 updated=0 skipped=0
+2026-10-25 10:49:11.857 INFO updating album statistics
+2026-10-25 10:49:11.854 INFO playlist sync timer started interval=6h0m0s
+2026-10-25 10:49:11.854 INFO cast: device discovery started scanInterval=30s
+2026-10-25 10:49:11.859 INFO album statistics updated
+2026-10-25 10:49:11.864 INFO embedded web UI enabled web_root=/app/dist
+2026-10-25 10:49:11.868 INFO HTTP server listening addr=0.0.0.0:14533
+2026-10-25 10:49:11.866 INFO initial library scan completed
+2026-10-25 10:49:11.871 INFO security reminder msg=Change the default admin password after first login if using configured defaults
+2026-10-25 10:54:38.343 INFO | 200 |       4.055ms |      172.17.0.1 | GET     /
+2026-10-25 10:54:38.367 INFO | 200 |     901.666µs |      172.17.0.1 | GET     /fonts/outfit-regular.woff2
+2026-10-25 10:54:38.369 INFO | 200 |     475.443µs |      172.17.0.1 | GET     /assets/typescript-CiFi5c_r.js
+2026-10-25 10:54:38.367 INFO | 200 |     629.331µs |      172.17.0.1 | GET     /fonts/outfit-latin-ext.woff2
+2026-10-25 10:54:38.367 INFO | 200 |     281.046µs |      172.17.0.1 | GET     /fonts/outfit.css
+2026-10-25 10:54:38.368 INFO | 200 |       1.340ms |      172.17.0.1 | GET     /assets/preload-helper-vuKwV25Y.js
+2026-10-25 10:54:38.369 INFO | 200 |       1.726ms |      172.17.0.1 | GET     /assets/index-DjKCQm2H.js
+2026-10-25 10:54:38.371 INFO | 200 |     965.395µs |      172.17.0.1 | GET     /assets/md5-D-a8Q098.js
+2026-10-25 10:54:38.372 INFO | 200 |     125.008µs |      172.17.0.1 | GET     /assets/_flatRest-SQ2oT2Uc.js
+2026-10-25 10:54:38.375 INFO | 200 |     763.159µs |      172.17.0.1 | GET     /assets/runtime-core.esm-bundler-DAoE1BYO.js
+2026-10-25 10:54:38.378 INFO | 200 |       1.106ms |      172.17.0.1 | GET     /assets/raf-CDkweY-v.js
+2026-10-25 10:54:38.380 INFO | 200 |     527.702µs |      172.17.0.1 | GET     /assets/icon-DP8zNxSD.js
+2026-10-25 10:54:38.381 INFO | 200 |     106.538µs |      172.17.0.1 | GET     /assets/useApi-BPuI6ZR9-BK2x7v1Z.js
+2026-10-25 10:54:38.385 INFO | 200 |     582.032µs |      172.17.0.1 | GET     /assets/clamp-B1bt948V.js
+2026-10-25 10:54:38.387 INFO | 200 |       1.114ms |      172.17.0.1 | GET     /assets/message-Dc5KeJIn.js
+2026-10-25 10:54:38.389 INFO | 200 |     164.257µs |      172.17.0.1 | GET     /assets/event-D9fn0uQ2.js
+2026-10-25 10:54:38.392 INFO | 200 |       1.060ms |      172.17.0.1 | GET     /assets/isUndefined-BB8dIdo-.js
+2026-10-25 10:54:38.394 INFO | 200 |     539.282µs |      172.17.0.1 | GET     /assets/use-deprecated-CQkha2X8.js
+2026-10-25 10:54:38.397 INFO | 200 |     996.835µs |      172.17.0.1 | GET     /assets/use-form-item-BchV_LwB.js
+2026-10-25 10:54:38.399 INFO | 200 |     584.361µs |      172.17.0.1 | GET     /assets/http-BQkRfEO0.js
+2026-10-25 10:54:38.400 INFO | 200 |      96.518µs |      172.17.0.1 | GET     /assets/constants-hkEcNdL1.js
+2026-10-25 10:54:38.404 INFO | 200 |     529.482µs |      172.17.0.1 | GET     /assets/_flatRest-cyJZB4WD.css
+2026-10-25 10:54:38.407 INFO | 200 |       1.543ms |      172.17.0.1 | GET     /assets/index-Dw2ujd1B.css
+2026-10-25 10:54:38.479 INFO | 200 |     265.776µs |      172.17.0.1 | GET     /logo.svg
+2026-10-25 10:54:38.489 INFO | 200 |     173.907µs |      172.17.0.1 | GET     /assets/LoginView-BPY2ZcW1.js
+2026-10-25 10:54:50.541 INFO | 200 |       1.158ms |      172.17.0.1 | POST    /rest/api/v1/auth/login
+2026-10-25 10:54:50.583 INFO | 200 |     856.348µs |      172.17.0.1 | GET     /rest/getStarred2?v=1.16.1&c=music-web&f=json&u=admin&t=f4321a37e478683d7dd4b13ad009ec32&s=wgitxy8y
+2026-10-25 10:54:50.583 INFO | 200 |     791.558µs |      172.17.0.1 | GET     /assets/HomeView-BHj5LsCx.js
+2026-10-25 10:54:50.638 INFO | 200 |     817.128µs |      172.17.0.1 | GET     /rest/getRandomSongs?v=1.16.1&c=music-web&f=json&u=admin&t=e0ef7b3b9e42931d61d6fb1be1ff1741&s=wsk0sj27&size=20
+2026-10-25 10:54:50.640 INFO | 200 |       1.936ms |      172.17.0.1 | GET     /rest/api/v1/play-history?v=1.16.1&c=music-web&f=json&u=admin&t=8e7e71a695a6f9780495242e2d6e02e3&s=lrycfnl9&limit=10
+2026-10-25 10:54:50.651 INFO | 200 |     414.334µs |      172.17.0.1 | GET     /rest/api/v1/stats/top-songs?v=1.16.1&c=music-web&f=json&u=admin&t=153e85ea3d83ff496d68ba73ca64a3b8&s=pevgj886&period=week&limit=10
+2026-10-25 10:54:51.962 INFO | 200 |     114.838µs |      172.17.0.1 | GET     /rest/ping?f=json
+2026-10-25 10:54:52.087 INFO | 200 |     104.899µs |      172.17.0.1 | GET     /rest/ping?u=admin&t=9bd8476f189c0ea0222fd956c780f333&s=0yfXycYs&f=json
+2026-10-25 10:54:52.095 INFO | 200 |     601.151µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=46cf9c4488374a82e7f098d2dd667eb4&s=Dl0cOxwm&query=%E6%99%B4%E5%A4%A9&songCount=12&albumCount=0&artistCount=0&f=json
+2026-10-25 10:54:53.755 INFO | 200 |       9.537ms |      172.17.0.1 | GET     /assets/scraper-BcwkULuj.js
+2026-10-25 10:54:53.755 INFO | 200 |       7.546ms |      172.17.0.1 | GET     /assets/Pagination-BdMNkgmj.js
+2026-10-25 10:54:53.755 INFO | 200 |       5.882ms |      172.17.0.1 | GET     /assets/usePageSkeleton-Bb9Cr2pS.js
+2026-10-25 10:54:53.755 INFO | 200 |       9.843ms |      172.17.0.1 | GET     /assets/SongsView-CDIpj-rW.js
+2026-10-25 10:54:53.756 INFO | 200 |       5.760ms |      172.17.0.1 | GET     /assets/SongCard-GzxKtUOQ.js
+2026-10-25 10:54:53.783 INFO | 200 |     589.355µs |      172.17.0.1 | GET     /rest/api/v1/songs?v=1.16.1&c=music-web&f=json&u=admin&t=32dcc5ca47c4e76bd5ba352f7ceac42e&s=mtr7htwo&offset=0&limit=20&sort=created&order=desc
+2026-10-25 10:54:55.075 INFO | 200 |     590.265µs |      172.17.0.1 | GET     /rest/getRandomSongs?v=1.16.1&c=music-web&f=json&u=admin&t=5995f12b38cdb4484e9211170d73fc87&s=8yahkhra&size=20
+2026-10-25 10:54:55.075 INFO | 200 |     342.644µs |      172.17.0.1 | GET     /rest/api/v1/play-history?v=1.16.1&c=music-web&f=json&u=admin&t=1af1df6d8ffd3c30b1fea462600fc06d&s=660m712k&limit=10
+2026-10-25 10:54:55.093 INFO | 200 |     322.686µs |      172.17.0.1 | GET     /rest/api/v1/stats/top-songs?v=1.16.1&c=music-web&f=json&u=admin&t=d2c5bc77e61d7a89c3b53503b04966c4&s=dz0jpofa&period=week&limit=10
+2026-10-25 10:55:05.054 INFO | 200 |       9.737ms |      172.17.0.1 | GET     /assets/AdminShellView-CNX6_wNo.js
+2026-10-25 10:55:05.054 INFO | 200 |       8.710ms |      172.17.0.1 | GET     /assets/AdminMusicManageView-CEiGjRPL.js
+2026-10-25 10:55:05.054 INFO | 200 |       7.845ms |      172.17.0.1 | GET     /assets/strings-Bg3pRwgr.js
+2026-10-25 10:55:05.054 INFO | 200 |       7.683ms |      172.17.0.1 | GET     /assets/vnode-DarwQgEJ.js
+2026-10-25 10:55:05.054 INFO | 200 |       8.230ms |      172.17.0.1 | GET     /assets/css-BqzIsvNe.js
+2026-10-25 10:55:05.054 INFO | 200 |       7.398ms |      172.17.0.1 | GET     /assets/css-BAqbG0fR.css
+2026-10-25 10:55:05.077 INFO | 200 |     303.607µs |      172.17.0.1 | GET     /assets/RemoteMusicView-CLDYIK5R.js
+2026-10-25 10:55:05.077 INFO | 200 |     246.571µs |      172.17.0.1 | GET     /assets/css-DqV27kgQ.js
+2026-10-25 10:55:05.078 INFO | 200 |     578.696µs |      172.17.0.1 | GET     /assets/css-Bcg6nIgn.js
+2026-10-25 10:55:05.078 INFO | 200 |     214.324µs |      172.17.0.1 | GET     /assets/css-Ch9UvQsW.js
+2026-10-25 10:55:05.081 INFO | 200 |     213.703µs |      172.17.0.1 | GET     /assets/css-CiUvAR8P.css
+2026-10-25 10:55:05.085 INFO | 200 |     797.279µs |      172.17.0.1 | GET     /assets/css-BG2Se6n6.css
+2026-10-25 10:55:05.085 INFO | 200 |     217.934µs |      172.17.0.1 | GET     /assets/TextOverflowTooltip-C6lqN61w.js
+2026-10-25 10:55:05.087 INFO | 200 |     370.552µs |      172.17.0.1 | GET     /assets/TextOverflowTooltip-CiQRVr-3.css
+2026-10-25 10:55:05.089 INFO | 200 |     133.689µs |      172.17.0.1 | GET     /assets/_baseIteratee-BwXIefvK.js
+2026-10-25 10:55:05.091 INFO | 200 |     106.972µs |      172.17.0.1 | GET     /assets/remoteMusic-D4_ju1rp.js
+2026-10-25 10:55:05.094 INFO | 200 |     154.158µs |      172.17.0.1 | GET     /assets/css-B7gvwdWB.css
+2026-10-25 10:55:05.097 INFO | 200 |       1.035ms |      172.17.0.1 | GET     /assets/RemoteMusicView-CsuDMRbF.css
+2026-10-25 10:55:05.125 INFO | 200 |     611.934µs |      172.17.0.1 | GET     /rest/api/v1/scrapers?v=1.16.1&c=music-web&f=json&u=admin&t=50c966ad958651da36737425fcad2db9&s=oermfhnn
+2026-10-25 10:55:07.974 INFO | 200 |       8.966ms |      172.17.0.1 | GET     /assets/css-Cz7BKkeG.js
+2026-10-25 10:55:07.974 INFO | 200 |       7.655ms |      172.17.0.1 | GET     /assets/validator-D5-Tb35P.js
+2026-10-25 10:55:07.974 INFO | 200 |       8.759ms |      172.17.0.1 | GET     /assets/css-B6UgayC7.css
+2026-10-25 10:55:07.974 INFO | 200 |       7.504ms |      172.17.0.1 | GET     /assets/css-Cp4UpsmO.js
+2026-10-25 10:55:07.974 INFO | 200 |       9.876ms |      172.17.0.1 | GET     /assets/AdminPluginView-Fqc4EW-H.js
+2026-10-25 10:55:07.974 INFO | 200 |       8.396ms |      172.17.0.1 | GET     /assets/message-box-DKaI33X_.js
+2026-10-25 10:55:07.978 INFO | 200 |     646.571µs |      172.17.0.1 | GET     /assets/css-4sOBTGxz.css
+2026-10-25 10:55:07.987 INFO | 200 |     182.286µs |      172.17.0.1 | GET     /assets/ImportPluginOptionIcon-TpHrHd0H.js
+2026-10-25 10:55:07.989 INFO | 200 |     144.459µs |      172.17.0.1 | GET     /assets/scraperView.helpers-CT_h52TM.js
+2026-10-25 10:55:08.018 INFO | 200 |     425.628µs |      172.17.0.1 | GET     /rest/api/v1/scrapers?v=1.16.1&c=music-web&f=json&u=admin&t=6b8c86d3f2d135bc238cb77dc1fea2a1&s=hlh3dpa2
+2026-10-25 10:55:08.019 INFO | 200 |     493.202µs |      172.17.0.1 | GET     /rest/api/v1/scrapers/orchestration?v=1.16.1&c=music-web&f=json&u=admin&t=406ced787290470b72dbc0156e1c6bdc&s=8s6jj1sa
+2026-10-25 10:55:09.827 INFO | 200 |     422.548µs |      172.17.0.1 | GET     /rest/api/v1/plugin-registries?v=1.16.1&c=music-web&f=json&u=admin&t=3827760fa4312da86d0478591a05207e&s=oym9br6c
+2026-10-25 10:55:11.060 INFO | 200 |        1.233s |      172.17.0.1 | GET     /rest/api/v1/plugin-store/catalog?v=1.16.1&c=music-web&f=json&u=admin&t=b408042fb71625d6868cf62528002ca9&s=61c7fvch
+2026-10-25 10:55:17.493 INFO | 200 |       1.295ms |      172.17.0.1 | GET     /rest/api/v1/plugin-registries?v=1.16.1&c=music-web&f=json&u=admin&t=80536b69d8ea918c4ddc7bcda82d565a&s=fsyemdl0
+2026-10-25 10:56:05.517 INFO | 200 |     445.160µs |      172.17.0.1 | GET     /rest/api/v1/plugin-registries?v=1.16.1&c=music-web&f=json&u=admin&t=3d43b25a6e0f6cc0683c9ae73b517302&s=iiex3bt3
+2026-10-25 10:56:21.784 INFO | 200 |     763.620µs |      172.17.0.1 | POST    /rest/api/v1/plugin-registries?v=1.16.1&c=music-web&f=json&u=admin&t=9273f35e59d55a66f9bd18d47bfb5cbf&s=990kbd7d
+2026-10-25 10:56:21.802 INFO | 200 |     241.030µs |      172.17.0.1 | GET     /rest/api/v1/plugin-registries?v=1.16.1&c=music-web&f=json&u=admin&t=c9cf7a55289b1f74be09aeb304e7fc45&s=e89x5zvp
+2026-10-25 10:56:31.377 INFO | 200 |     739.432ms |      172.17.0.1 | GET     /rest/api/v1/plugin-store/catalog?v=1.16.1&c=music-web&f=json&u=admin&t=839da6c753c0b5b1f9c72051f598fa8d&s=oqf30zob
+2026-10-25 10:56:53.844 INFO | 200 |        3.260s |      172.17.0.1 | POST    /rest/api/v1/plugin-store/install?v=1.16.1&c=music-web&f=json&u=admin&t=4f2fea573f1317a677b98da5df8dada7&s=4mh8qaoq
+2026-10-25 10:56:54.276 INFO | 200 |     413.535ms |      172.17.0.1 | GET     /rest/api/v1/plugin-store/catalog?v=1.16.1&c=music-web&f=json&u=admin&t=4448866e16559467821fccfed28a48d2&s=tdwnzjjq
+2026-10-25 10:56:54.294 INFO | 200 |     663.389µs |      172.17.0.1 | GET     /rest/api/v1/scrapers?v=1.16.1&c=music-web&f=json&u=admin&t=46112561988ee1be35773c2565a5a524&s=ll3zpzin
+2026-10-25 10:56:54.318 INFO | 200 |     208.190µs |      172.17.0.1 | GET     /rest/api/v1/scrapers/mf-plugin-qqmusic/icon?v=1.16.1&c=music-web&f=json&u=admin&t=bae2f2f3a3aef9c1d8e6bca013adea53&s=x6xalrov
+2026-10-25 10:57:31.890 INFO | 200 |     625.547µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=3d5d22a836e8f28c214406b2cddf7b45&s=Jwreolpt&query=%E6%99%B4%E5%A4%A9&songCount=12&albumCount=0&artistCount=0&f=json
+2026-10-25 10:57:31.904 INFO | 200 |     452.778µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=c9b40124672a47e8064ae378c5aa72c8&s=vPYQkCUk&query=%E5%91%A8%E6%9D%B0%E4%BC%A6&songCount=12&albumCount=0&artistCount=0&f=json
+2026-10-25 10:57:31.914 INFO | 200 |     353.428µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=072559c22db849c287f465f74bd99615&s=1RfyiFHs&query=love+story&songCount=12&albumCount=0&artistCount=0&f=json
+2026-10-25 10:58:46.563 INFO | 200 |        8.090s |      172.17.0.1 | POST    /rest/api/v1/plugin-store/install?v=1.16.1&c=music-web&f=json&u=admin&t=8d433fe3ca692b8a5ac162ec2bc5f4f5&s=astckxiy
+2026-10-25 10:58:47.221 INFO | 200 |     634.703ms |      172.17.0.1 | GET     /rest/api/v1/plugin-store/catalog?v=1.16.1&c=music-web&f=json&u=admin&t=d1825e22b20f2df07ef3afb681c0e4be&s=47tww533
+2026-10-25 10:58:47.239 INFO | 200 |     630.300µs |      172.17.0.1 | GET     /rest/api/v1/scrapers?v=1.16.1&c=music-web&f=json&u=admin&t=c0b682b3a9a174649e2758c7610072db&s=vge7nxas
+2026-10-25 10:59:05.592 INFO | 200 |     620.710µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=f4200259134ce1c0bc5a069b8557721c&s=63n0u7qi&query=%E6%99%B4%E5%A4%A9&songCount=12&albumCount=0&artistCount=0&f=json
+2026-10-25 10:59:05.601 INFO | 200 |     416.830µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=c419ae1492c586c76af96978c6a2fcca&s=gSKSVZ4s&query=love+story&songCount=12&albumCount=0&artistCount=0&f=json
+2026-10-25 10:59:34.145 WARN | 404 |       3.880µs |      172.17.0.1 | GET     /api/v1/search
+2026-10-25 10:59:34.165 WARN | 404 |       3.670µs |      172.17.0.1 | GET     /api/v1/search/remote
+2026-10-25 10:59:34.175 WARN | 404 |       3.210µs |      172.17.0.1 | GET     /api/v1/remote-search
+2026-10-25 10:59:34.184 WARN | 404 |       2.140µs |      172.17.0.1 | GET     /rest/api/v1/search
+2026-10-25 10:59:34.195 WARN | 404 |       3.250µs |      172.17.0.1 | GET     /api/v1/music/search
+2026-10-25 10:59:34.204 WARN | 404 |       3.160µs |      172.17.0.1 | GET     /api/search
+2026-10-25 10:59:34.214 INFO | 200 |     138.263µs |      172.17.0.1 | GET     /
+2026-10-25 10:59:53.119 INFO | 200 |     386.878µs |      172.17.0.1 | GET     /assets/index-DjKCQm2H.js
+2026-10-25 11:03:44.860 WARN | 404 |       3.440µs |      172.17.0.1 | GET     /rest/api/v1/remote-search?u=admin&t=f330acca54cfa5ea999dc1d84541bc84&s=bvRTYWFx&query=%E6%99%B4%E5%A4%A9&keyword=%E6%99%B4%E5%A4%A9
+2026-10-25 11:03:50.611 INFO | 200 |        5.747s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=f330acca54cfa5ea999dc1d84541bc84&s=bvRTYWFx
+2026-10-25 11:04:19.533 INFO | 200 |        2.023s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=dec32fd8d3d73a4683be03551b2997ab&s=BTPpKCYO&f=json
+2026-10-25 11:04:19.547 WARN | 404 |       3.160µs |      172.17.0.1 | POST    /api/v1/remote-download?u=admin&t=dec32fd8d3d73a4683be03551b2997ab&s=BTPpKCYO
+2026-10-25 11:04:44.047 INFO | 200 |        1.413s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=afbdc9ebc3943f21804adc986a44c027&s=qfWvOxSB&f=json
+2026-10-25 11:04:44.062 INFO | 200 |     383.620µs |      172.17.0.1 | POST    /rest/api/v1/remote-download?u=admin&t=afbdc9ebc3943f21804adc986a44c027&s=qfWvOxSB&f=json
+2026-10-25 11:05:09.768 INFO | 200 |        2.055s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=665a3111a0164c9c8a9a3f3b3a87e56e&s=pJKxyRND&f=json
+2026-10-25 11:05:09.783 INFO remote download runtime plugin resolved requestPlugin=mf-plugin-gomusicdl runtimePlugin=mf-plugin-gomusicdl pluginDir=/app/data/plugins/mf-plugin-gomusicdl wasmPath=/app/data/plugins/mf-plugin-gomusicdl/plugin.wasm wasmModTime=2026-10-25T02:58:43Z
+2026-10-25 11:05:10.107 INFO [mf-plugin-gomusicdl] cover download start: source=netease, song_id=3440441479, url=http://p2.music.126.net/gRjIWVVpJu_ogi5hsqotXw==/109951172952456016.jpg plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 11:05:10.215 INFO [mf-plugin-gomusicdl] cover download response: source=netease, song_id=3440441479, status=200 plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 11:05:10.221 INFO [mf-plugin-gomusicdl] cover download success: source=netease, song_id=3440441479, path=/cache/cover-4f967682578d79ad.jpg, bytes=271788 plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 11:05:10.296 INFO remote download plugin output data plugin=mf-plugin-gomusicdl data=map[cachePath:/cache/Jay - 晴天 [68e06e94936b].mp3 coverPath:/cache/cover-4f967682578d79ad.jpg metadata:map[album:晴天 artist:Jay artists:[Jay] coverUrl:http://p2.music.126.net/gRjIWVVpJu_ogi5hsqotXw==/109951172952456016.jpg lyrics:[ti:晴天]
+[ar:Jay]
+[al:晴天]
+
+[00:02.15]你坐在窗边看云走散[00:05.90]
+[00:05.90]我假装翻书心却慌乱[00:10.05]
+[00:10.05]想说的话在嘴边打转[00:13.96]
+[00:13.96]最后只问你暖不暖[00:20.58]
+[00:20.58]我不敢问 你眼里的安静算不算回音[00:27.92]
+[00:27.92]我不敢问 开口就弄丢你的亲近[00:35.34]
+[00:35.34]我不敢问 你每次停留是习惯或真心[00:42.84]
+[00:42.84]我只能收起喜欢藏得更紧[00:52.42]
+[00:52.42]你随手递来一半的伞[00:55.37]
+[00:55.37]我心跳声盖过雨声潺潺[00:59.20]
+[00:59.20]你笑着说起周末的打算[01:01.99]
+[01:01.99]我却猜你话里有没有隐瞒[01:06.86]
+[01:06.86]我不敢问 你眼里的安静算不算回音[01:13.96]
+[01:13.96]我不敢问 开口就弄丢你的亲近[01:19.78]
+[01:19.78]我不敢问 你每次停留是习惯或真心[01:28.88]
+[01:28.88]我只能收起喜欢藏得更紧 lyricsFormat:lrc releaseDate:2022-01-01 title:晴天]]
+2026-10-25 11:05:10.299 INFO remote download parsed paths plugin=mf-plugin-gomusicdl cachePath=/cache/Jay - 晴天 [68e06e94936b].mp3 coverPath=/cache/cover-4f967682578d79ad.jpg hostCachePath=/app/data/plugin_cache/mf-plugin-gomusicdl/Jay - 晴天 [68e06e94936b].mp3
+2026-10-25 11:05:10.488 INFO remote download resolving plugin cover path plugin=mf-plugin-gomusicdl coverPath=/cache/cover-4f967682578d79ad.jpg hostCoverPath=/app/data/plugin_cache/mf-plugin-gomusicdl/cover-4f967682578d79ad.jpg
+2026-10-25 11:05:10.742 INFO remote download plugin cover loaded coverPath=/cache/cover-4f967682578d79ad.jpg bytes=78765
+2026-10-25 11:05:10.756 INFO remote download local cover generated coverKey=sha256-bdaca2432dac39f3d0cbeb476e4071a318808165c0ba815a5eeacf0469d9d80b coverUrl=/rest/getCoverArt?id=sha256-bdaca2432dac39f3d0cbeb476e4071a318808165c0ba815a5eeacf0469d9d80b
+2026-10-25 11:05:10.992 INFO | 200 |        1.210s |      172.17.0.1 | POST    /rest/api/v1/remote-download?u=admin&t=665a3111a0164c9c8a9a3f3b3a87e56e&s=pJKxyRND&f=json
+2026-10-25 11:05:10.993 INFO starting scan for source source_name=Default Library source_type=local
+2026-10-25 11:05:11.008 INFO scan completed for source source_name=Default Library files_processed=0 added=0 updated=0 skipped=0 hash_skipped=0 deleted=0
+2026-10-25 11:05:11.008 INFO | 200 |       1.219ms |      172.17.0.1 | GET     /rest/search3?u=admin&t=665a3111a0164c9c8a9a3f3b3a87e56e&s=pJKxyRND&f=json&query=%E6%99%B4%E5%A4%A9&songCount=5
+2026-10-25 11:06:03.537 INFO | 200 |        1.357s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=63d82c3a2d3dabeeb4c3fd306c03b6e5&s=8X2j4dME&f=json
+2026-10-25 11:06:03.558 INFO remote download runtime plugin resolved requestPlugin=mf-plugin-gomusicdl runtimePlugin=mf-plugin-gomusicdl pluginDir=/app/data/plugins/mf-plugin-gomusicdl wasmPath=/app/data/plugins/mf-plugin-gomusicdl/plugin.wasm wasmModTime=2026-10-25T02:58:43Z
+2026-10-25 11:06:04.113 INFO [mf-plugin-gomusicdl] cover download start: source=migu, song_id=600902000005313620|E|SQ, url=https://d.musicapp.migu.cn/data/oss/resource/00/5a/69/1f3186d01f7041bdacc7dea21c817cc9.webp plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 11:06:04.156 INFO [mf-plugin-gomusicdl] cover download response: source=migu, song_id=600902000005313620|E|SQ, status=200 plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 11:06:04.159 INFO [mf-plugin-gomusicdl] cover download success: source=migu, song_id=600902000005313620|E|SQ, path=/cache/cover-999a34c7681e4c36.webp, bytes=18232 plugin_id=mf-plugin-gomusicdl stream=stdout function=RemoteDownload
+2026-10-25 11:06:04.280 INFO remote download plugin output data plugin=mf-plugin-gomusicdl data=map[cachePath:/cache/朱孝天 - 晴天 [9c48bdd5e4a4].mp3 coverPath:/cache/cover-999a34c7681e4c36.webp metadata:map[album:F4 360度定番精选 辉煌五年全记录 artist:朱孝天 artists:[朱孝天] coverUrl:https://d.musicapp.migu.cn/data/oss/resource/00/5a/69/1f3186d01f7041bdacc7dea21c817cc9.webp lyrics:[ti:晴天]
+[ar:朱孝天]
+[00:00.00]歌曲名 晴天 歌手名 朱孝天
+[00:02.00]作词：BESSHO YUJI / MATSUGASHITA HIROYUKI
+[00:03.00]作曲：BESSHO YUJI / MATSUGASHITA HIROYUKI
+[00:07.59]我看着那片晴天用你和我的昨天
+[00:13.54]风慢慢吹吹干脸上的雨水
+[00:23.19]我走在那片晴天把你再好好想一遍
+[00:30.49]我身边温暖的感觉没改变
+[00:37.14]再遥远再多变
+[00:39.14]你的爱一直跟着我
+[00:44.29]在我的耳朵小声说你爱我
+[01:00.38]你的信还留在铁灰色信箱里
+[01:06.68]但是我需要雨季后窗外空气
+[01:13.08]我拿着你握过的伞想念你的手心
+[01:19.33]失去你的难过这次我不会带着走
+[01:25.13]就沿着城市中我们曾牵手经过的每个街头
+[01:31.38]那些欢笑那些拥抱
+[01:34.18]让我们这份爱走到哪里都有阳光
+[01:40.03]我看着那片晴天用你和我的昨天
+[01:46.18]风慢慢吹吹干脸上的雨水
+[01:52.13]我走在那片晴天把你再好好想一遍
+[01:58.93]我身边温暖的感觉没改变
+[02:05.43]再遥远再多变
+[02:08.23]你的爱一直跟着我
+[02:13.88]在我的耳朵小声说你爱我
+[02:41.74]你爱的咖啡店蓝天一大片
+[02:45.39]就好像我的想念
+[02:48.44]那些红绿灯那些路口
+[02:51.89]还是一点没变
+[02:54.74]我们怎么可以改变
+[03:00.39]我看着那片晴天用你和我的昨天
+[03:06.54]风慢慢吹吹干脸上的雨水
+[03:12.29]我走在那片晴天把你再好好想一遍
+[03:18.94]我身边温暖的感觉
+[03:23.94]没改变不会变
+[03:27.64]我看着那片晴天用你和我的昨天
+[03:34.34]风慢慢吹吹走眼底的落叶
+[03:40.34]我走在那片晴天重温你靠在我的肩
+[03:46.64]我身边温暖的感觉没改变
+[03:53.09]再遥远再多变
+[03:55.39]你的爱一直跟着我
+[04:01.10]在我的耳朵小声说你爱我 lyricsFormat:lrc releaseDate:2022-01-01 title:晴天]]
+2026-10-25 11:06:04.292 INFO remote download parsed paths plugin=mf-plugin-gomusicdl cachePath=/cache/朱孝天 - 晴天 [9c48bdd5e4a4].mp3 coverPath=/cache/cover-999a34c7681e4c36.webp hostCachePath=/app/data/plugin_cache/mf-plugin-gomusicdl/朱孝天 - 晴天 [9c48bdd5e4a4].mp3
+2026-10-25 11:06:04.300 INFO remote download resolving plugin cover path plugin=mf-plugin-gomusicdl coverPath=/cache/cover-999a34c7681e4c36.webp hostCoverPath=/app/data/plugin_cache/mf-plugin-gomusicdl/cover-999a34c7681e4c36.webp
+2026-10-25 11:06:04.399 INFO remote download plugin cover loaded coverPath=/cache/cover-999a34c7681e4c36.webp bytes=14695
+2026-10-25 11:06:04.404 INFO remote download local cover generated coverKey=sha256-b95b46b4be8edbc5e1b17c8d2274de020206591a9b15849c0396f5a8c2ab9794 coverUrl=/rest/getCoverArt?id=sha256-b95b46b4be8edbc5e1b17c8d2274de020206591a9b15849c0396f5a8c2ab9794
+2026-10-25 11:06:04.484 INFO | 200 |     926.314ms |      172.17.0.1 | POST    /rest/api/v1/remote-download?u=admin&t=e4ff869f16ea8ddf529ef557b74251b8&s=XaZtqelK&f=json
+2026-10-25 11:06:04.484 INFO starting scan for source source_name=Default Library source_type=local
+2026-10-25 11:06:04.491 INFO scan completed for source source_name=Default Library files_processed=0 added=0 updated=0 skipped=0 hash_skipped=0 deleted=0
+2026-10-25 11:06:04.496 INFO | 200 |     893.711µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=5902e4e45fe1b8e14db02e8d0ae3770f&s=BzAr5juO&query=%E6%99%B4%E5%A4%A9&songCount=5&albumCount=0&artistCount=0&f=json

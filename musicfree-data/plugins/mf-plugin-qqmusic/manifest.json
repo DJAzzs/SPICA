@@ -1,0 +1,32 @@
+{
+  "name": "mf-plugin-qqmusic",
+  "title": "QQ Music (Go)",
+  "version": "0.1.0",
+  "author": "tinynas",
+  "repo": "https://www.npmjs.com/package/musicfree-plugin",
+  "icon": "icon.svg",
+  "description": "QQ Music scraper plugin implemented with Go PDK",
+  "entry": {
+    "wasmPath": "plugin.wasm",
+    "exportedFunctions": {
+      "scraperSong": "ScraperSong",
+      "getCover": "GetCover",
+      "getLyrics": "GetLyrics",
+      "getAlbumInfo": "GetAlbumInfo",
+      "getArtistInfo": "GetArtistInfo",
+      "fetchPlaylist": "FetchPlay"
+    }
+  },
+  "config": {
+    "fields": {
+      "limit": {
+        "type": "number",
+        "default": 5
+      },
+      "lyrics_with_trans": {
+        "type": "boolean",
+        "default": true
+      }
+    }
+  }
+}

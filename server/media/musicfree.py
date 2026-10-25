@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import random
 import string
 from typing import AsyncIterator
@@ -56,31 +57,108 @@ class MusicFree:
             return False, repr(e)[:100]
 
     @staticmethod
-    async def search(keyword: str, count: int = 12) -> list[dict]:
-        """搜索歌曲（本地库 + 远程插件），返回 [{id,title,artist,duration,cover}]。"""
+    async def _remote_search(keyword: str, count: int = 12) -> list[dict]:
+        """远程插件搜索（NDJSON 流聚合），返回前端同构 song 对象。"""
         h, p = MusicFree._auth()
-        async with httpx.AsyncClient(timeout=12) as c:
+        songs: list[dict] = []
+        async with httpx.AsyncClient(timeout=20) as c:
+            async with c.stream("POST",
+                    f"{MusicFree._base()}/rest/api/v1/remote-search",
+                    params={**p, "f": "json"},
+                    json={"keyword": keyword, "pluginNames": []},
+                    headers=h) as r:
+                if r.status_code != 200:
+                    return []
+                buf = ""
+                async for chunk in r.aiter_text():
+                    buf += chunk
+                    while "\n" in buf:
+                        line, buf = buf.split("\n", 1)
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            d = json.loads(line)
+                        except Exception:
+                            continue
+                        for s in d.get("songs") or []:
+                            if len(songs) < count:
+                                songs.append(s)
+        return songs
+
+    @staticmethod
+    async def search(keyword: str, count: int = 12) -> list[dict]:
+        """搜索：远程插件优先，空则回退本地库。"""
+        try:
+            remote = await MusicFree._remote_search(keyword, count)
+        except Exception:
+            remote = []
+        if remote:
+            return remote
+        # 本地库
+        h, p = MusicFree._auth()
+        async with httpx.AsyncClient(timeout=10) as c:
             r = await c.get(f"{MusicFree._base()}/rest/search3", params={
                 **p, "query": keyword, "songCount": count,
                 "albumCount": 0, "artistCount": 0, "f": "json"}, headers=h)
             body = r.json().get("subsonic-response", {})
             songs = (body.get("searchResult3") or {}).get("song") or []
-            out = []
-            for s in (songs if isinstance(songs, list) else [songs]):
-                out.append({
-                    "id": s.get("id", ""),
-                    "title": s.get("title", "?"),
-                    "artist": s.get("artist", "?"),
-                    "duration": int(s.get("duration", 0) or 0),
-                    "cover": s.get("coverArt", ""),
-                })
-            return [x for x in out if x["id"]]
+            return [{"id": s.get("id", ""), "title": s.get("title", "?"),
+                     "artist": s.get("artist", "?"),
+                     "duration": int(s.get("duration", 0) or 0),
+                     "cover": s.get("coverArt", ""), "local": True}
+                    for s in (songs if isinstance(songs, list) else [songs])]
 
     @staticmethod
     async def pick(keyword: str) -> dict | None:
-        """按关键词随机挑一首（Agent 自动配乐用）。"""
+        """挑一首并确保可播：远程结果先下载入库，再定位本地流 id。"""
+        import random as _r
         songs = await MusicFree.search(keyword)
-        return random.choice(songs) if songs else None
+        if not songs:
+            return None
+        song = _r.choice(songs)
+        if song.get("local"):
+            return song
+        # 下载入库（record 需整个 song 对象）
+        h, p = MusicFree._auth()
+        try:
+            async with httpx.AsyncClient(timeout=300) as c:
+                r = await c.post(
+                    f"{MusicFree._base()}/rest/api/v1/remote-download",
+                    params={**p, "f": "json"},
+                    json={"pluginName": song.get("plugin")
+                          or "mf-plugin-gomusicdl",
+                          "record": song},
+                    headers=h)
+                body = r.json().get("subsonic-response", {})
+                meta = (body.get("metadata") or {})
+                cover = meta.get("coverUrl", "")
+                cover_id = cover.split("id=")[-1] if "id=" in cover else ""
+        except Exception:
+            cover_id = song.get("raw", {}).get("cover", "")
+        # 本地定位流 id
+        h, p = MusicFree._auth()
+        try:
+            async with httpx.AsyncClient(timeout=10) as c:
+                r = await c.get(f"{MusicFree._base()}/rest/search3", params={
+                    **p, "query": song.get("title", ""), "songCount": 5,
+                    "albumCount": 0, "artistCount": 0, "f": "json"}, headers=h)
+                found = ((r.json().get("subsonic-response", {})
+                          .get("searchResult3") or {}).get("song") or [])
+                fl = found if isinstance(found, list) else [found]
+                # 先 歌名+歌手 双匹配，再退歌名单匹配
+                match = next((s for s in fl if s.get("title") == song.get("title")
+                              and s.get("artist") == song.get("artist")), None) \
+                    or next((s for s in fl if s.get("title") == song.get("title")), None)
+                if match:
+                    return {"id": match.get("id", ""),
+                            "title": song.get("title", "?"),
+                            "artist": song.get("artist", "?"),
+                            "duration": int(song.get("durationSec", 0) or 0),
+                            "cover": match.get("coverArt", "") or cover_id}
+        except Exception:
+            pass
+        return None
 
     @staticmethod
     async def stream(id: str) -> tuple[AsyncIterator[bytes], str]:
