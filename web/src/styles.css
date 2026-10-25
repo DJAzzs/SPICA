@@ -63,12 +63,16 @@ html[data-demo="1"] body { cursor: none; }
 /* 主题切换：全局同步过渡（800ms 统一时长，消除分层感） */
 html.theme-anim, html.theme-anim body,
 html.theme-anim *, html.theme-anim *::before, html.theme-anim *::after {
-  transition: background-color 800ms var(--ease) !important,
-    background 800ms var(--ease) !important,
-    color 800ms var(--ease) !important,
-    border-color 800ms var(--ease) !important,
-    box-shadow 800ms var(--ease) !important,
-    opacity 800ms var(--ease) !important;
+  transition:
+    background-color 800ms var(--ease),
+    background-image 800ms var(--ease),
+    color 800ms var(--ease),
+    border-color 800ms var(--ease),
+    box-shadow 800ms var(--ease),
+    opacity 800ms var(--ease),
+    fill 800ms var(--ease),
+    stroke 800ms var(--ease),
+    outline-color 800ms var(--ease) !important;
 }
 
 /* 瑞士基线网格装饰（8pt，极淡；两种主题各自的呼吸感） */
@@ -992,4 +996,6 @@ html[data-theme="light"] .scroll-bottom {
   from { opacity: 0; transform: translateY(8px) scale(0.9); }
   to { opacity: 1; transform: translateY(0) scale(1); } }
 
-html:not([data-theme="dark"]) .backdrop-canvas { display: none !important; }
+/* Three.js 背景：浅色渐隐（不是硬切） */
+.backdrop-canvas { transition: opacity 1000ms var(--ease); }
+html:not([data-theme="dark"]) .backdrop-canvas { opacity: 0; }
