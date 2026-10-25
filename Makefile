@@ -19,11 +19,12 @@ up:
 	@mkdir -p run
 	@if [ -f run/server.pid ] && kill -0 $$(cat run/server.pid) 2>/dev/null; then \
 		echo "已在运行 pid=$$(cat run/server.pid)，make log 看日志 / make stop 停止"; exit 0; fi
+	@: > run/server.log
 	@nohup $(PY) -m server.main >> run/server.log 2>&1 & \
 	echo $$! > run/server.pid; \
-	sleep 3; \
+	sleep 6; \
 	if curl -s -m 3 -o /dev/null http://127.0.0.1:8666/ \
-	   && ! grep -q "address already in use" <(tail -5 run/server.log); then \
+	   && ! grep -q "address already in use" run/server.log; then \
 		echo "SPICA 已启动 → http://127.0.0.1:8666 （make log 跟日志）"; \
 	else \
 		echo "⚠ 启动失败：端口 8666 可能被旧进程占用。"; \
