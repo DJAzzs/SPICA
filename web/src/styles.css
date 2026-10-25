@@ -680,10 +680,12 @@ html[data-theme="light"] .rail-tip { background: var(--bg-raise); }
   opacity: 1; transform: translateY(-50%) translateX(0); }
 
 /* ---------- 底部运行统计栏（IDE 风格极细） ---------- */
-.stats-bar { flex: none; display: flex; align-items: center; gap: 18px;
+.stats-bar { flex: none; display: flex; align-items: center; gap: 14px;
   padding: 6px 4px 0; font-size: 10.5px; color: var(--ink-faint);
   letter-spacing: 0.04em; font-variant-numeric: tabular-nums;
-  user-select: none; position: relative; height: 22px; overflow: visible; }
+  user-select: none; position: relative; height: 22px;
+  overflow: hidden; white-space: nowrap;
+  max-width: 100%; }
 .stat-item { display: inline-flex; align-items: center; gap: 5px;
   white-space: nowrap; }
 .stat-dot { width: 5px; height: 5px; border-radius: 50%; flex: none; }
@@ -938,8 +940,8 @@ html[data-theme="light"] .model-sep { background: var(--nm-lo); }
   letter-spacing: 0.2em; padding: 6px 12px 3px; text-transform: uppercase; }
 
 /* ---------- 发送/暂停切换按钮 ---------- */
-.send-btn.pause { background: var(--mustard); }
-html[data-theme="light"] .send-btn.pause { color: #333; }
+.send-btn.pause { background: var(--accent); }
+html[data-theme="light"] .send-btn.pause { color: #fff; }
 
 /* ---------- 滚动到底按钮 ---------- */
 .scroll-bottom { position: absolute; right: 16px; bottom: 140px;
@@ -1535,3 +1537,5 @@ html[data-theme="dark"] .theme-icon-scroll {
 .todo-item.in_progress .todo-status { color: var(--mustard); }
 .todo-text { color: var(--ink-dim); }
 .model-current.perm { min-width: 100px; gap: 5px; }
+
+.stat-item { white-space: nowrap !important; }
