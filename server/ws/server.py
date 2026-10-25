@@ -384,6 +384,7 @@ def create_app(boot) -> FastAPI:
                 sem.pipeline.farewell_words = merged.get("farewell_words", [])
                 sem.narrator.engine.settings = merged
                 await hub.broadcast({"t": "settings", **_safe_settings()})
+                await hub.broadcast({"t": "settings", **_safe_settings()})
             elif t == "wake_test":
                 from server.voice.wake import Matcher
                 m = Matcher()
