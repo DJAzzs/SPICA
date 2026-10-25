@@ -997,7 +997,26 @@ class Semantics:
         await self.broadcast_sessions()
 
     async def session_delete(self, sid: str) -> None:
+        # 读取元数据（含 dsh_session_id）
+        meta = self.store.get(sid)
         self.store.delete(sid)
+        # 同时删除 DSH 会话文件
+        dsh_id = (meta or {}).get("dsh_session_id") or (
+            sid if sid.startswith(("session-", "spica-")) else "")
+        if dsh_id:
+            import shutil as _shutil
+            dsh_root = Path.home() / ".dsh" / "sessions"
+            if dsh_root.exists():
+                for ws in dsh_root.iterdir():
+                    d = ws / dsh_id
+                    if d.exists():
+                        try:
+                            _shutil.rmtree(d)
+                        except Exception:
+                            pass
+        # 清缓存
+        from server.dsh_sessions import scan_dsh_sessions
+        scan_dsh_sessions(force=True)
         if self.session.get("id") == sid:
             await self.session_new()
         else:
