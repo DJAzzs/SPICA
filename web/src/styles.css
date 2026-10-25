@@ -1139,7 +1139,7 @@ html[data-theme="light"] .side-close-btn:hover {
 
 /* 新会话 */
 .side-new-btn { width: 100%; border: none; border-radius: 10px;
-  padding: 14px 16px; font: inherit; font-size: 15px; font-weight: 500;
+  padding: 10px 16px; font: inherit; font-size: 14px; font-weight: 500;
   letter-spacing: 0.08em; cursor: pointer; margin-bottom: 8px;
   transition: all 400ms var(--ease); flex: none;
   display: flex; align-items: center; justify-content: center; gap: 8px;
