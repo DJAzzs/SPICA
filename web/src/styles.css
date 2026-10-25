@@ -777,7 +777,7 @@ html[data-theme="dark"] .shelf-btn {
   border: 1px solid rgba(255,255,255,0.14);
   box-shadow: 0 4px 16px rgba(0,0,0,0.3),
     inset 0 1px 0 rgba(255,255,255,0.1);
-  backdrop-filter: blur(16px) saturate(1.4); }
+  backdrop-filter: blur(8px) saturate(1.2); }
 html[data-theme="dark"] .shelf-btn:hover {
   background: rgba(255,255,255,0.1); }
 
@@ -1107,7 +1107,7 @@ html[data-theme="dark"] .sidebar-inline {
   background: rgba(18,20,25,0.12);
   border: none;
   border-right: 1px solid rgba(255,255,255,0.2);
-  backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(8px) saturate(1.2);
   box-shadow: 12px 0 48px rgba(0,0,0,0.35),
     inset 0 1px 0 rgba(255,255,255,0.12); }
 
