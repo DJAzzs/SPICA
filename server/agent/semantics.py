@@ -1001,6 +1001,7 @@ class Semantics:
         await self.broadcast({"t": "history", "msgs": self.transcript})
         await self.broadcast({"t": "session", "meta": meta})
         await self.broadcast_sessions()
+        self._bg(self._send_initial_stats(), "stats-open")
 
     async def session_delete(self, sid: str) -> None:
         # 读取元数据（含 dsh_session_id）

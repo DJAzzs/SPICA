@@ -347,6 +347,11 @@ def create_app(boot) -> FastAPI:
                     await ws.send_text(json.dumps(
                         {"t": "session", "meta": sem.session},
                         ensure_ascii=False))
+                # 底边栏：连接即发送当前统计（不等任务）
+                try:
+                    await sem._send_initial_stats()
+                except Exception:
+                    pass
             while True:
                 msg = await ws.receive()
                 if msg.get("type") == "websocket.receive":
