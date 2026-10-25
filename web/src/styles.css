@@ -106,7 +106,7 @@ html[data-theme="dark"] .topbar { background: rgba(21, 23, 28, 0.55); }
 
 /* ---------- 主面板：新拟物凸起 / 液态玻璃卡 ---------- */
 .main-col { position: absolute; left: 0; right: 0; top: 108px; bottom: 36px;
-  width: 58%; max-width: 940px; margin: 0 auto; z-index: 2;
+  width: 94%; max-width: 1100px; margin: 0 auto; z-index: 2;
   display: flex; flex-direction: column;
   background: var(--panel);
   backdrop-filter: var(--blur);
@@ -1089,7 +1089,7 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
   border-radius: var(--radius-sm);
   padding: 0 10px 6px;
   width: 280px; max-width: 420px;
-  left: -320px;
+  left: calc(-1 * var(--side-w, 280px) - 40px);
   transition: left 800ms var(--ease);
   box-shadow: 8px 0 32px rgba(0,0,0,0.15);
 }
@@ -1140,7 +1140,8 @@ html[data-theme="light"] .side-close-btn:hover {
   padding: 14px 16px; font: inherit; font-size: 15px; font-weight: 500;
   letter-spacing: 0.08em; cursor: pointer; margin-bottom: 8px;
   transition: all 400ms var(--ease); flex: none;
-  display: flex; align-items: center; gap: 8px; text-align: left; }
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  text-align: center; }
 html:not([data-theme="dark"]) .side-new-btn {
   background: var(--bg-raise); color: var(--ink-dim);
   box-shadow: 3px 3px 8px var(--nm-lo), -3px -3px 8px var(--nm-hi); }
