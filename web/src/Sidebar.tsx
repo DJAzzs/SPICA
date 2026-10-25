@@ -98,10 +98,10 @@ export default function Sidebar({ open }: { open: boolean }) {
     setCreating(false); setNewCwd("");
   };
 
-  if (!open) return null;
-
   return (
-    <div ref={sidebarRef} className="sidebar-inline" style={{ width }}>
+    <div ref={sidebarRef}
+      className={`sidebar-inline ${open ? "open" : ""}`}
+      style={{ width }}>
       {/* 拖拽手柄 */}
       <div className="side-drag" onMouseDown={startDrag} />
 
