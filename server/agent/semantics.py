@@ -448,13 +448,31 @@ class Semantics:
                 or load_settings().get("llm_model_rewrite")
                 or "glm-5.3-flash")
 
+    @staticmethod
+    def _time_context() -> str:
+        """当前时间（含星期、时段），注入 prompt 让 Agent 有时间观念。"""
+        from datetime import datetime
+        now = datetime.now()
+        weekdays = ["一","二","三","四","五","六","日"]
+        hour = now.hour
+        if hour < 6: period = "深夜"
+        elif hour < 9: period = "早晨"
+        elif hour < 12: period = "上午"
+        elif hour < 14: period = "中午"
+        elif hour < 18: period = "下午"
+        elif hour < 22: period = "晚上"
+        else: period = "深夜"
+        return (f"当前时间：{now.year}年{now.month}月{now.day}日 "
+                f"星期{weekdays[now.weekday()]} {now.strftime('%H:%M')}（{period}）")
+
     def _identity_prompt(self, model: str | None = None) -> str:
         from server.config import SPICA_IDENTITY
         m = model or self._current_model()
         override = (load_settings().get("identity_override") or "").strip()
         ident = override if override else SPICA_IDENTITY.replace("{model}", m)
         persona = (load_settings().get("persona") or "").strip()
-        return ident + (f"\n（用户人设：{persona}）" if persona else "")
+        out = ident + (f"\n（用户人设：{persona}）" if persona else "")
+        return out + f"\n（{self._time_context()}）"
 
     CHAT_CLASSIFY_SYSTEM = (
         "判断用户输入是【闲聊/问答】还是【需要执行的任务】。"
@@ -1100,10 +1118,13 @@ class Semantics:
         # 现读磁盘设置：改模型不用重启服务
         route = self.router.route(difficulty)
         self.settings = load_settings()
-        # 会话级模型覆盖（UI 下拉选择）
+        # 会话级模型覆盖 + 思考深度覆盖（UI 下拉选择）
         override = (self.session or {}).get("model_override")
         if override:
             route = {**route, "model": override}
+        effort_override = (self.session or {}).get("reasoning_effort_override")
+        if effort_override and override:
+            route = {**route, "reasoning_effort": effort_override}
         self.route_info = route
         await self.broadcast({"t": "route", **route})
         # 自动模式才播报路由；手动选定时模型是用户决定的，不再报

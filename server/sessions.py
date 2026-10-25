@@ -80,9 +80,9 @@ class SessionStore:
         if not meta:
             return None
         # 允许空串清空的字段（如 model_override="" 切回自动路由）
-        nullable = {"model_override", "title"}
+        nullable = {"model_override", "reasoning_effort_override", "title"}
         for k in ("title", "cwd", "perm", "model", "model_override",
-                  "dsh_session_id"):
+                  "reasoning_effort_override", "dsh_session_id"):
             if k in patch and (patch[k] or k in nullable):
                 meta[k] = patch[k]
         return self.upsert(meta)
