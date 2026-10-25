@@ -492,3 +492,9 @@
 2026-10-25 18:19:11.859 INFO updating album statistics
 2026-10-25 18:19:11.863 INFO album statistics updated
 2026-10-25 18:19:11.865 INFO incremental scan completed
+2026-10-25 18:49:11.859 INFO starting scheduled incremental scan
+2026-10-25 18:49:11.871 INFO starting incremental scan since=2026-10-25T10:19:11Z
+2026-10-25 18:49:11.874 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=6
+2026-10-25 18:49:11.877 INFO updating album statistics
+2026-10-25 18:49:11.881 INFO album statistics updated
+2026-10-25 18:49:11.883 INFO incremental scan completed
