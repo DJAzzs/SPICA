@@ -64,6 +64,8 @@ def create_app(boot) -> FastAPI:
         s = json.loads(json.dumps(state["settings"]))
         s["has_key"] = bool(s.pop("llm_api_key", None))
         s.pop("speaker_embeddings", None)
+        from server.config import SPICA_IDENTITY
+        s["spica_identity"] = SPICA_IDENTITY
         return s
 
     @app.get("/")

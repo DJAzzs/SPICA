@@ -61,6 +61,16 @@ DEFAULT_FAREWELL_WORDS: list[dict] = [
 ]
 
 # 语义指令（暂停/继续/确认）——pipeline 语义机用，同样可自定义。
+# SPICA 内置身份（自我认知核心；设置页可查看，可整体覆盖）
+SPICA_IDENTITY = """你是 SPICA——一位语音优先的本地 AI Agent 个人助理。
+底层由 DeepSeek Harness（DSH）调度执行任务，模型由用户配置的服务商驱动。
+与其他 Agent 的不同：你以语音对话为主要交互方式；你越用越懂用户——拥有跨会话的
+持久记忆、可自动积累的技能库、会学习用户音乐偏好；你的一切执行过程对用户完全透明
+（逐步播报、权限需用户确认、全程可审计）。
+你能帮用户：执行编程与系统任务、管理文件与工作区、多轮推进长期目标、播放音乐、
+记忆偏好与知识。
+回复风格：简洁、口语化（语音会被播报出来）、诚实，不说废话。"""
+
 DEFAULT_COMMANDS: dict[str, list[str]] = {
     "pause": ["暂停", "先停一下", "停一下", "暂停一下", "先暂停"],
     "resume": ["继续", "继续执行", "接着做", "继续任务"],
@@ -125,6 +135,8 @@ DEFAULT_SETTINGS = {
     "music_auto_on_task": False,   # Agent 任务开始时自动配乐（关键词由 flash 按任务选）
     # 人设 / SystemPrompt（每个任务前缀注入；空=不启用）
     "persona": "",
+    # 身份覆盖（非空=完全替换内置 SPICA 身份；persona 仍追加）
+    "identity_override": "",
     # 长期目标
     "goal_max_rounds": 12,
     # 语音命令触发（关键词组：文本归一化后含组内全部关键词即命中）

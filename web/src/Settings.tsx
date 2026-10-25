@@ -35,6 +35,37 @@ function ProviderEditor() {
   );
 }
 
+/** 身份编辑器：内置身份只读展示；开关开启后可完全覆盖。 */
+function IdentityEditor() {
+  const settings = useSpica((s) => s.settings);
+  const builtin: string = settings?.spica_identity || "（连接后显示内置身份）";
+  const [override, setOverride] = useState(settings?.identity_override || "");
+  const on = (settings?.identity_override || "") !== "";
+  return (
+    <>
+      <div className="hint" style={{ marginBottom: 8 }}>
+        内置身份（{on ? "已被覆盖" : "生效中"}，闲聊回复与任务均以此自我认知）：
+      </div>
+      <textarea value={on ? override : builtin} readOnly={!on}
+        onChange={(e) => setOverride(e.target.value)}
+        style={{ opacity: on ? 1 : 0.75, minHeight: 130 }} />
+      <div className="btn-row" style={{ marginTop: 12 }}>
+        <button className="btn" onClick={() =>
+          send({ t: "settings_patch", patch: {
+            identity_override: on ? "" : builtin } })}>
+          {on ? "恢复内置身份" : "覆盖内置身份（可编辑）"}
+        </button>
+        {on && (
+          <button className="btn primary" onClick={() =>
+            send({ t: "settings_patch", patch: {
+              identity_override: override } })}>保存覆盖</button>
+        )}
+      </div>
+      <div className="hint">覆盖后内置身份不再使用；下方“人设”始终追加生效。</div>
+    </>
+  );
+}
+
 /** 人设编辑器：SystemPrompt/角色设定，任务级注入。 */
 function PersonaEditor() {
   const settings = useSpica((s) => s.settings);
@@ -138,8 +169,9 @@ export default function Settings() {
         </div>
 
         <div className="field">
-          <label>人设 / SystemPrompt（每个任务前缀注入，留空不启用）</label>
-          <PersonaEditor />
+          <label>身份与人设</label>
+          <IdentityEditor />
+          <div style={{ marginTop: 16 }}><PersonaEditor /></div>
         </div>
 
         <div className="field">

@@ -175,6 +175,9 @@ class Semantics:
                 return
         if await self._try_voice_command(text):
             return
+        if await self._is_chat(text):
+            await self._chat_reply(text)
+            return
         if self._goal_pending:
             self._goal_pending = False
             await self._goal_start(text)
@@ -424,6 +427,56 @@ class Semantics:
         else:
             await self.broadcast({"t": "msg", "role": "system",
                 "text": "用法：/skills list · /skills del <名称>"})
+
+    # ================================================== 身份与闲聊
+    def _identity_prompt(self) -> str:
+        from server.config import SPICA_IDENTITY
+        ident = (load_settings().get("identity_override")
+                 or "").strip() or SPICA_IDENTITY
+        persona = (load_settings().get("persona") or "").strip()
+        return ident + (f"\n（用户人设：{persona}）" if persona else "")
+
+    CHAT_CLASSIFY_SYSTEM = (
+        "判断用户输入是【闲聊/问答】还是【需要执行的任务】。"
+        "闲聊：问候、关于你自身的问题、常识问答、简单讨论、一句话翻译。"
+        "任务：需要写代码、操作文件、联网查询、多步执行、修改任何东西。"
+        "只输出 JSON：{\"chat\": true} 或 {\"chat\": false}"
+    )
+
+    async def _is_chat(self, text: str) -> bool:
+        """廉价分类：闲聊直接回复，任务走完整管线。"""
+        if self.llm is None:
+            return False
+        try:
+            out = await self.llm.chat(
+                [{"role": "system", "content": self.CHAT_CLASSIFY_SYSTEM},
+                 {"role": "user", "content": text[:200]}],
+                max_tokens=24, temperature=0.0,
+                thinking="disabled", timeout=6.0)
+            m = re.search(r'"chat"\s*:\s*(true|false)', out or "")
+            return bool(m and m.group(1) == "true")
+        except Exception:
+            return False
+
+    async def _chat_reply(self, text: str) -> None:
+        """闲聊：身份+记忆直接回复，不走 DSH。"""
+        mem_snap = "\n".join(x for x in (
+            self.memory_store.render("memory"),
+            self.memory_store.render("user")) if x)
+        try:
+            reply = await self.llm.chat(
+                [{"role": "system",
+                  "content": self._identity_prompt()
+                  + ("\n" + mem_snap if mem_snap else "")},
+                 {"role": "user", "content": text}],
+                max_tokens=300, temperature=0.6,
+                thinking="disabled", timeout=15.0)
+        except Exception as e:
+            reply = f"（回复失败：{e}）"
+        reply = (reply or "").strip()
+        await self.broadcast({"t": "msg", "role": "assistant", "text": reply})
+        self._log("assistant", reply)
+        self.narrator.step(reply)
 
     # ================================================== 工具过程美化
     @staticmethod
@@ -957,6 +1010,10 @@ class Semantics:
             await self._goal_start(text)
             return
         if await self._try_voice_command(text):
+            return
+        if await self._is_chat(text):
+            await self.broadcast({"t": "msg", "role": "user", "text": text})
+            await self._chat_reply(text)
             return
         self.transcript.append({"role": "user", "text": text, "ts": time.time()})
         await self.broadcast({"t": "final", "text": text})

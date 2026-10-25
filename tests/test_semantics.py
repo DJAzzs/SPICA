@@ -611,3 +611,54 @@ def test_perm_request_classify_and_explain(tmp_path, monkeypatch):
     assert req["perm_type"] == "修改系统文件"
     assert req["action_desc"] == "把测试域名加进本地解析"
     assert "/etc/hosts" in req["detail"]
+
+
+# ---------------------------------------------------------------- 闲聊分流
+class ChatClassifyLLM:
+    def __init__(self, chat_map, reply="我是SPICA，语音优先的本地助理。"):
+        self.chat_map = chat_map
+        self.reply = reply
+    async def chat(self, messages, **kw):
+        sys = messages[0]["content"]
+        if "闲聊/问答" in sys:
+            for k, v in self.chat_map.items():
+                if k in messages[-1]["content"]:
+                    return '{"chat": %s}' % ("true" if v else "false")
+            return '{"chat": false}'
+        return self.reply
+
+
+def test_chat_short_circuits_dsh(tmp_path, monkeypatch):
+    """"你是谁"→直接身份回复，不进 DSH 不喊"收到，开始"。"""
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.llm = ChatClassifyLLM({"你是谁": True})
+    sem.state = "idle"
+    prompts_before = len(sdk.prompts)
+    run(sem.on_text_input("你是谁？"))
+    assert len(sdk.prompts) == prompts_before          # 未走 DSH
+    assert not any("收到" in t for _, t in narrator.said)
+    reply = [e for e in events if e.get("t") == "msg"
+             and e.get("role") == "assistant"]
+    assert reply and "SPICA" in reply[-1]["text"]      # 身份回复入列
+    assert any("SPICA" in t for _, t in narrator.said)  # 且播报
+
+
+def test_task_still_routes_to_dsh(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.llm = ChatClassifyLLM({"写个脚本": False})
+    sem.state = "idle"
+    run(sem.on_text_input("写个脚本统计目录"))
+    assert sdk.prompts and sdk.prompts[-1].startswith("写个脚本")  # 走 DSH
+
+
+def test_identity_override(tmp_path, monkeypatch):
+    import server.agent.semantics as sem_mod
+    from server.config import SPICA_IDENTITY, load_settings
+    base = load_settings()
+    monkeypatch.setattr(sem_mod, "load_settings",
+                        lambda: {**base, "identity_override": "我是瓦力"})
+    sem, _, _, _ = make_sem(tmp_path, monkeypatch)
+    assert sem._identity_prompt().startswith("我是瓦力")
+    monkeypatch.setattr(sem_mod, "load_settings", lambda: base)
+    assert sem._identity_prompt().startswith("你是 SPICA")
+    assert "DeepSeek Harness" in sem._identity_prompt()
