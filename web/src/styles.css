@@ -970,3 +970,24 @@ html[data-theme="light"] .side-item:hover { background: var(--bg2); }
 html[data-theme="light"] .model-sep { background: var(--nm-lo); }
 .model-section { font-size: 9px; color: var(--ink-faint);
   letter-spacing: 0.2em; padding: 6px 12px 3px; text-transform: uppercase; }
+
+/* ---------- 发送/暂停切换按钮 ---------- */
+.send-btn.pause { background: var(--mustard); }
+html[data-theme="light"] .send-btn.pause { color: #333; }
+
+/* ---------- 滚动到底按钮 ---------- */
+.scroll-bottom { position: absolute; right: 16px; bottom: 140px;
+  width: 36px; height: 36px; z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  border: var(--glass-bd); border-radius: 50%;
+  background: var(--panel); color: var(--ink-dim);
+  box-shadow: var(--raise-sm); backdrop-filter: var(--blur);
+  cursor: pointer;
+  animation: scroll-btn-in 400ms var(--ease);
+  transition: all 400ms var(--ease); }
+html[data-theme="light"] .scroll-bottom {
+  background: var(--bg-raise); }
+.scroll-bottom:hover { color: var(--sand); transform: translateY(2px); }
+@keyframes scroll-btn-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); } }

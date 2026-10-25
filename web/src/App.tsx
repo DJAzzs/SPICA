@@ -41,6 +41,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const [dragOn, setDragOn] = useState(false);
   const [openThinking, setOpenThinking] = useState<Record<number, boolean>>({});
   const [now, setNow] = useState(Date.now());
+  const [atBottom, setAtBottom] = useState(true);
   const pendingFiles = useSpica((s) => s.pendingFiles);
   const permissionReq = useSpica((s) => s.permissionReq);
   const [cmdIdx, setCmdIdx] = useState(0);
@@ -66,8 +67,21 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el && atBottom) el.scrollTop = el.scrollHeight;
   }, [msgs.length, partial]);
+
+  // 滚动位置检测（是否在底部）
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const near = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+      setAtBottom(near);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   const submit = () => {
     const text = input.trim();
@@ -282,6 +296,19 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
           </div>
         ) : null}
       </div>
+      {!atBottom && (
+        <button className="scroll-bottom" onClick={() => {
+          const el = scrollRef.current;
+          if (el) el.scrollTo({ top: el.scrollHeight,
+            behavior: "smooth" });
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M12 5v14M5 12l7 7 7-7" />
+          </svg>
+        </button>
+      )}
       {kbdOnly ? (
         <div className="kbd-hint" onClick={onEnableVoice}>
           语音未启用 —— 点击这里重新开启麦克风
@@ -345,8 +372,23 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
             ? "输入任务，回车发送 · / 唤起命令"
             : "未连接服务 —— 请在终端运行 make up 后自动重连"}
         />
-        <button className="send-btn" onClick={submit} disabled={!connected}
-          title="发送（Enter）"><SendIcon /></button>
+        <button className={`send-btn ${(st === "exec" || st === "paused") ? "pause" : ""}`}
+          onClick={() => {
+            if (st === "exec") send({ t: "command", name: "pause" });
+            else if (st === "paused") send({ t: "command", name: "resume" });
+            else submit();
+          }}
+          disabled={!connected && st !== "exec" && st !== "paused"}
+          title={st === "exec" ? "暂停任务" : st === "paused" ? "继续任务" : "发送（Enter）"}>
+          {(st === "exec" || st === "paused") ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {st === "exec"
+                ? <><path d="M8 5v14"/><path d="M16 5v14"/></>
+                : <path d="M6 4l14 8-14 8z" fill="currentColor" stroke="none" />}
+            </svg>
+          ) : <SendIcon />}
+        </button>
       </div>
       <StatsBar />
     </div>
@@ -503,13 +545,6 @@ export default function App() {
           <div className="tools">
             <ThemeToggle />
             <ModelPicker />
-            {(st === "exec" || st === "paused") && (
-              <button className="btn"
-                onClick={() => send({ t: "command",
-                  name: st === "exec" ? "pause" : "resume" })}>
-                {st === "exec" ? "⏸ 暂停任务" : "▶ 继续任务"}
-              </button>
-            )}
             {ttsSpeaking ? <span>播报中</span> : null}
             <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
             <a href="#/diagnose">诊断</a>
