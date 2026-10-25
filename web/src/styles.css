@@ -999,3 +999,43 @@ html[data-theme="light"] .scroll-bottom {
 /* Three.js 背景：浅色渐隐（不是硬切） */
 .backdrop-canvas { transition: opacity 1000ms var(--ease); }
 html:not([data-theme="dark"]) .backdrop-canvas { opacity: 0; }
+
+/* ---------- 侧边栏删除 + 时间 ---------- */
+.side-group-head-row { display: flex; align-items: center; gap: 0; }
+.side-group-head-row .side-group-head { flex: 1; }
+.side-group-del { width: 22px; height: 22px; border: none; background: none;
+  color: var(--ink-faint); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; border-radius: 4px;
+  opacity: 0; transition: all 300ms var(--ease); flex: none; }
+.side-group-head-row:hover .side-group-del { opacity: 0.7; }
+.side-group-del:hover { color: var(--accent); opacity: 1 !important;
+  background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.side-item { position: relative; }
+.side-item-del { position: absolute; right: 6px; top: 50%;
+  transform: translateY(-50%);
+  width: 18px; height: 18px; border: none; background: none;
+  color: var(--ink-faint); font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; opacity: 0; transition: all 250ms var(--ease); }
+.side-item:hover .side-item-del { opacity: 0.7; }
+.side-item-del:hover { color: var(--accent); opacity: 1;
+  background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.side-item-time { font-size: 9.5px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; margin-right: 4px; }
+.side-item-meta em { font-style: normal; font-size: 8.5px;
+  color: var(--lilac); letter-spacing: 0.05em; }
+
+/* 确认删除条 */
+.side-confirm { display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; margin: 2px 0 4px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-radius: 6px; animation: enter 300ms var(--ease); }
+.side-confirm span { font-size: 11px; color: var(--ink-dim); flex: 1; }
+.side-confirm-yes { border: 1px solid var(--accent); background: none;
+  color: var(--accent); font: inherit; font-size: 10px; padding: 3px 10px;
+  border-radius: 4px; cursor: pointer; }
+.side-confirm-no { border: 1px solid var(--ink-faint); background: none;
+  color: var(--ink-dim); font: inherit; font-size: 10px; padding: 3px 10px;
+  border-radius: 4px; cursor: pointer; }
