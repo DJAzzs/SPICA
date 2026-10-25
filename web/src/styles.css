@@ -1336,7 +1336,8 @@ html[data-theme="dark"] .ns-modal {
 .ns-close { border: none; background: none; color: var(--ink-faint);
   font-size: 16px; cursor: pointer; }
 .ns-close:hover { color: var(--accent); }
-.ns-body { flex: 1; overflow: hidden; padding: 0 20px; }
+.ns-body { flex: 1; overflow: hidden; padding: 0 20px;
+  display: flex; flex-direction: column; min-height: 0; }
 .ns-browse { height: 100%; }
 .ns-form { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
 .ns-field label { font-size: 11px; color: var(--ink-faint);
@@ -1486,3 +1487,8 @@ html[data-theme="dark"] .file-chip {
   box-shadow: 0 4px 16px rgba(0,0,0,0.3),
     inset 0 1px 0 rgba(255,255,255,0.1);
   backdrop-filter: blur(16px) saturate(1.4); }
+
+html[data-theme="dark"] .ns-create {
+  background: var(--sand); color: #1a1d22; }
+html[data-theme="dark"] .ns-create:hover {
+  filter: brightness(1.1); }
