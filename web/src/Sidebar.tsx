@@ -107,30 +107,21 @@ export default function Sidebar({ open }: { open: boolean }) {
 
       {/* 顶行：标题 + 关闭 */}
       <div className="side-top">
-        <span className="side-top-label">会话</span>
+        <svg width="18" height="18" viewBox="0 0 64 64" style={{ flex: "none" }}>
+          <path d="M32 6 C42 18 46 26 46 32 C46 38 42 46 32 58 C22 46 18 38 18 32 C18 26 22 18 32 6 Z"
+            fill="none" stroke="var(--mist)" strokeWidth="3" strokeLinejoin="round"/>
+          <path d="M32 14 C38 22 41 27 41 32 C41 37 38 42 32 50 C26 42 23 37 23 32 C23 27 26 22 32 14 Z"
+            fill="var(--sand)" opacity="0.85"/>
+        </svg>
+        <span className="side-top-label">SPICA</span>
       </div>
 
       {/* 新会话 */}
-      <button className="side-new-btn" onClick={() => setCreating(!creating)}>
+      <button className="side-new-btn" onClick={() =>
+        window.dispatchEvent(new Event("spica-new-session"))}>
         ＋ 新会话
       </button>
-      {creating && (
-        <div className="side-create">
-          <button className="side-browse-btn" onClick={() => setBrowsing(true)}>
-            📁 {newCwd || "选择工作区目录…"}
-          </button>
-          {browsing && <DirBrowser
-            initial={newCwd || "/"}
-            onPick={p => setNewCwd(p)}
-            onClose={() => setBrowsing(false)} />}
-          <select value={newPerm} onChange={e => setNewPerm(e.target.value)}>
-            <option value="read-only">只读</option>
-            <option value="workspace-write">工作区写入</option>
-            <option value="danger-full-access">完全访问</option>
-          </select>
-          <button className="side-create-btn" onClick={createSession}>创建</button>
-        </div>
-      )}
+
       <div className="side-ws-header">
         <span className="side-ws-label">工作区</span>
         <div className="side-ws-actions">

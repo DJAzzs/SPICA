@@ -1102,7 +1102,7 @@ html:not([data-theme="dark"]) .sidebar-inline {
 }
 /* 深色：毛玻璃（更透 + 重模糊 + 左缘环境光） */
 html[data-theme="dark"] .sidebar-inline {
-  background: rgba(18,20,25,0.35);
+  background: rgba(18,20,25,0.12);
   border: 1px solid rgba(255,255,255,0.15);
   border-right: 1px solid rgba(255,255,255,0.2);
   backdrop-filter: blur(36px) saturate(1.8) brightness(1.1);
@@ -1292,7 +1292,7 @@ html:not([data-theme="dark"]) .side-tab:active {
   box-shadow: inset 2px 2px 5px var(--nm-lo), inset -2px -2px 5px var(--nm-hi); }
 /* 深色：液态玻璃 */
 html[data-theme="dark"] .side-tab {
-  background: rgba(18,20,25,0.35); color: var(--ink-dim);
+  background: rgba(18,20,25,0.12); color: var(--ink-dim);
   border: 1px solid rgba(255,255,255,0.18);
   backdrop-filter: blur(36px) saturate(1.8) brightness(1.05);
   box-shadow: 4px 0 20px rgba(0,0,0,0.3),
@@ -1301,6 +1301,57 @@ html[data-theme="dark"] .side-tab:hover {
   background: rgba(255,255,255,0.12); color: var(--mist); }
 
 /* 侧边栏标题：居中 + 放大 */
-.side-top { justify-content: center !important; padding: 16px 4px 10px; }
-.side-top-label { font-size: 17px !important; letter-spacing: 0.3em;
-  text-indent: 0.3em; /* 补偿最后一个字的 letter-spacing */ }
+.side-top { justify-content: flex-start !important; padding: 16px 4px 10px;
+  display: flex; align-items: center; gap: 8px; }
+.side-top-label { font-size: 15px; font-weight: 600;
+  letter-spacing: 0.18em; color: var(--ink); }
+
+/* ---------- 新会话弹窗 ---------- */
+.ns-modal-mask { position: fixed; inset: 0; z-index: 90;
+  background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  animation: panel-in 300ms var(--ease); }
+.ns-modal { width: 520px; max-height: 75vh; display: flex;
+  flex-direction: column; border-radius: 16px;
+  animation: enter 450ms var(--ease); overflow: hidden; }
+html:not([data-theme="dark"]) .ns-modal {
+  background: var(--bg-raise); border: 2px solid var(--nm-lo);
+  box-shadow: 8px 8px 32px rgba(166,156,138,0.3); }
+html[data-theme="dark"] .ns-modal {
+  background: rgba(20,22,28,0.92);
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(28px) saturate(1.5);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5); }
+.ns-head { display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 12px; }
+.ns-title { font-size: 16px; font-weight: 600; letter-spacing: 0.1em; }
+.ns-close { border: none; background: none; color: var(--ink-faint);
+  font-size: 16px; cursor: pointer; }
+.ns-close:hover { color: var(--accent); }
+.ns-body { flex: 1; overflow: hidden; padding: 0 20px; }
+.ns-browse { height: 100%; }
+.ns-form { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
+.ns-field label { font-size: 11px; color: var(--ink-faint);
+  letter-spacing: 0.15em; display: block; margin-bottom: 8px; }
+.ns-cwd { width: 100%; border: 1px solid var(--bg3);
+  background: var(--bg2); color: var(--ink); font: inherit;
+  font-size: 14px; padding: 14px 16px; border-radius: 10px;
+  cursor: pointer; text-align: left;
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: all 300ms var(--ease); }
+.ns-cwd:hover { border-color: var(--mist); }
+.ns-perms { display: flex; gap: 8px; }
+.ns-perm { flex: 1; border: 1px solid var(--bg3);
+  background: var(--bg2); color: var(--ink-dim); font: inherit;
+  font-size: 13px; padding: 12px; border-radius: 10px;
+  cursor: pointer; text-align: center;
+  transition: all 300ms var(--ease); }
+.ns-perm.on { border-color: var(--mist); color: var(--mist);
+  background: color-mix(in srgb, var(--mist) 8%, transparent); }
+.ns-create { flex: none; border: none; margin: 12px 20px 16px;
+  padding: 14px; border-radius: 12px; font: inherit;
+  font-size: 15px; font-weight: 500; cursor: pointer;
+  color: #fff; background: var(--mist);
+  transition: all 300ms var(--ease); }
+.ns-create:hover { filter: brightness(1.15); }

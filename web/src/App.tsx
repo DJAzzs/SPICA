@@ -10,6 +10,7 @@ import NavRail from "./NavRail";
 import StatsBar from "./StatsBar";
 import FileChangeCard from "./FileChangeCard";
 import Sidebar from "./Sidebar";
+import NewSessionModal from "./NewSessionModal";
 import ModelPicker from "./ModelPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
@@ -445,6 +446,12 @@ export default function App() {
   useEffect(() => { if (settings) setWizardDone(!!settings.wizard_done); }, [settings]);
   useEffect(() => { if (wakeFlash) localStorage.setItem("spica-waked", "1"); }, [wakeFlash]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [newSession, setNewSession] = useState(false);
+  useEffect(() => {
+    const onNew = () => setNewSession(true);
+    addEventListener("spica-new-session", onNew);
+    return () => removeEventListener("spica-new-session", onNew);
+  }, []);
   useEffect(() => {
     const onClose = () => setSidebarOpen(false);
     addEventListener("spica-side-close", onClose);
@@ -578,6 +585,7 @@ export default function App() {
       </header>
 
       <Sidebar open={sidebarOpen} />
+      {newSession && <NewSessionModal onClose={() => setNewSession(false)} />}
       <button
         className={`side-tab ${sidebarOpen ? "open" : ""}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}
