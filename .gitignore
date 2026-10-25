@@ -29,3 +29,8 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+build/
+dist/
+*.AppImage
+*.dmg
+*.exe

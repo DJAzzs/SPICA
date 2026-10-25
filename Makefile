@@ -4,7 +4,7 @@ PIP  := .venv/bin/pip
 export PIP_INDEX_URL := https://pypi.tuna.tsinghua.edu.cn/simple
 export PIP_CACHE_DIR := $(CURDIR)/.cache/pip
 
-.PHONY: deps venv deps-dsh up up-fg stop log status killall check test models tts-smoke
+.PHONY: deps venv deps-dsh up up-fg stop log status killall check test models tts-smoke package
 
 venv:
 	python3.12 -m venv .venv
@@ -73,3 +73,17 @@ models:
 # TTS 冒烟：合成一句到 assets/voices/_smoke.wav
 tts-smoke:
 	$(PY) -m server.tts.smoke
+
+
+# ===== 打包 =====
+package:
+	@echo "检测平台..."
+	@if [ "$(uname)" = "Darwin" ]; then \
+		echo "▸ macOS: 构建 .app + .dmg"; \
+		bash packaging/macos/build-dmg.sh; \
+	elif [ "$(uname)" = "Linux" ]; then \
+		echo "▸ Linux: 构建 AppImage"; \
+		bash packaging/linux/build-appimage.sh; \
+	else \
+		echo "▸ Windows: 请运行 packaging/windows/build.bat"; \
+	fi
