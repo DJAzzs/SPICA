@@ -14,7 +14,7 @@ function relTime(ts: number): string {
   return `${Math.floor(diff / 2592000)}个月`;
 }
 
-const MIN_W = 200, MAX_W = 420, DEFAULT_W = 300;
+const MIN_W = 200, MAX_W = 420, DEFAULT_W = 280;
 
 /** 侧边栏：按工作区分组，可拖拽调宽。 */
 export default function Sidebar({ open }: { open: boolean }) {
@@ -29,7 +29,7 @@ export default function Sidebar({ open }: { open: boolean }) {
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [browsing, setBrowsing] = useState(false);
   const [width, setWidth] = useState(() =>
-    parseInt(localStorage.getItem("spica-side-w3") || String(DEFAULT_W)));
+    parseInt(localStorage.getItem("spica-side-w4") || String(DEFAULT_W)));
 
   // 同步宽度到 CSS 变量（side-tab 按钮跟随）
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function Sidebar({ open }: { open: boolean }) {
     const onUp = () => {
       if (dragRef.current) {
         dragRef.current = false;
-        localStorage.setItem("spica-side-w3", String(width));
+        localStorage.setItem("spica-side-w4", String(width));
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
       }
