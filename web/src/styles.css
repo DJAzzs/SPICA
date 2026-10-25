@@ -1269,17 +1269,23 @@ html[data-theme="light"] .side-item:hover { background: var(--bg2); }
 
 /* ---------- 左缘滑出/收起按钮（跟随侧边栏，180° 旋转） ---------- */
 .side-tab { position: absolute; z-index: 30;
-  width: 32px; height: 48px;
-  left: 0; top: 50%; transform: translateY(-50%) rotate(0deg);
+  width: 36px; height: 56px;
+  left: 0; top: 50%;
+  transform: translateY(-50%) rotateY(0deg);
   border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: left 800ms var(--ease), transform 800ms var(--ease),
-    border-radius 800ms var(--ease);
-  border-radius: 0 10px 10px 0; }
+  transition: left 800ms var(--ease), transform 800ms var(--ease);
+  border-radius: 0 12px 12px 0;
+  transform-style: preserve-3d;
+  perspective: 200px; }
 .side-tab.open {
-  left: var(--side-w, 280px); /* 跟随侧边栏右缘 */
-  transform: translateY(-50%) rotate(180deg);
-  border-radius: 10px 0 0 10px; }
+  left: var(--side-w, 280px);
+  transform: translateY(-50%) rotateY(180deg);
+  /* 3D 翻转后 border-radius 镜像自动成立 */ }
+.side-tab svg {
+  transition: transform 800ms var(--ease); }
+.side-tab.open svg {
+  transform: rotate(180deg); }
 
 /* 浅色：新拟物凸起舌片 */
 html:not([data-theme="dark"]) .side-tab {
