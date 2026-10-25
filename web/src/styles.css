@@ -1145,12 +1145,12 @@ html[data-theme="light"] .side-close-btn:hover {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   text-align: center; }
 html:not([data-theme="dark"]) .side-new-btn {
-  background: var(--mist); color: #1a1d22;
+  background: var(--mist); color: #fff;
   box-shadow: 2px 3px 8px var(--nm-lo), -2px -2px 6px var(--nm-hi); }
 html:not([data-theme="dark"]) .side-new-btn:active {
   box-shadow: inset 2px 2px 5px var(--nm-lo), inset -2px -2px 5px var(--nm-hi); }
 html[data-theme="dark"] .side-new-btn {
-  background: var(--sand); color: #fff; border: none; }
+  background: var(--sand); color: #1a1d22; border: none; }
 html[data-theme="dark"] .side-new-btn:hover {
   filter: brightness(1.1); }
 
