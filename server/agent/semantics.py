@@ -189,11 +189,23 @@ class Semantics:
             if mode:
                 await self.grant_permission(mode)
                 return
-        if await self._try_voice_command(text):
-            return
-        if await self._is_chat(text):
+        intent = await self._classify_intent(text)
+        if intent["intent"] == "chat":
             self._log("user", text)
             await self._chat_reply(text)
+            return
+        if intent["intent"] == "music_play":
+            self._log("user", text)
+            await self.music_play(intent.get("query", text)[:40], source="voice")
+            return
+        if intent["intent"] == "music_stop":
+            await self.music_stop(quiet=False)
+            return
+        if intent["intent"] == "pause":
+            await self._command("pause", text)
+            return
+        if intent["intent"] == "resume":
+            await self._command("resume", text)
             return
         if self._goal_pending:
             self._goal_pending = False
@@ -485,6 +497,46 @@ class Semantics:
         "任务：需要写代码、操作文件、联网查询、多步执行、修改任何东西。"
         "只输出 JSON：{\"chat\": true} 或 {\"chat\": false}"
     )
+
+    INTENT_SYSTEM = (
+        "判断用户输入的意图。返回 JSON（只输出 JSON）：\n"
+        '{"intent": "chat"} —— 闲聊、问答、关于你自身、讨论\n'
+        '{"intent": "task"} —— 需要执行的任务（写代码、操作文件、搜索资料、多步操作）\n'
+        '{"intent": "music_play", "query": "搜索词"} —— 播放音乐（提取歌名/歌手/风格）\n'
+        '{"intent": "music_stop"} —— 停止/关闭音乐\n'
+        '{"intent": "pause"} —— 暂停当前任务（等一下/先停/等等/稍等）\n'
+        '{"intent": "resume"} —— 继续任务\n'
+        '{"intent": "export"} —— 导出会话\n'
+        '{"intent": "compact"} —— 压缩上下文\n'
+        '{"intent": "memory_add", "content": "要记住的内容"} —— 记住某事\n'
+        "示例：\n"
+        '"放一首周杰伦的晴天" → {"intent": "music_play", "query": "周杰伦 晴天"}\n'
+        '"来点BGM" → {"intent": "music_play", "query": ""}\n'
+        '"等一下先别跑" → {"intent": "pause"}\n'
+        '"你好呀" → {"intent": "chat"}\n'
+        '"帮我看下这个代码" → {"intent": "task"}'
+    )
+
+    async def _classify_intent(self, text: str) -> dict:
+        """统一意图分类：chat/task/music/pause/resume/export/compact/memory。"""
+        if self.llm is None:
+            return {"intent": "task"}  # 无 LLM 时全部走任务
+        try:
+            out = await self.llm.chat(
+                [{"role": "system", "content": self.INTENT_SYSTEM},
+                 {"role": "user", "content": text[:300]}],
+                max_tokens=80, temperature=0.0,
+                thinking="disabled", timeout=6.0)
+            import json as _json
+            m = re.search(r"\{[\s\S]*?\}", out or "")
+            if m:
+                d = _json.loads(m.group())
+                return {"intent": d.get("intent", "chat"),
+                        **({"query": d.get("query", "")} if d.get("query") else {}),
+                        **({"content": d.get("content", "")} if d.get("content") else {})}
+        except Exception:
+            pass
+        return {"intent": "task"}  # 解析失败走任务（安全兜底）
 
     async def _is_chat(self, text: str) -> bool:
         """廉价分类：闲聊直接回复，任务走完整管线。"""
@@ -1136,12 +1188,37 @@ class Semantics:
                                   "tid": self.turn_seq})
             await self._goal_start(text)
             return
-        if await self._try_voice_command(text):
-            return
-        if await self._is_chat(text):
+        intent = await self._classify_intent(text)
+        if intent["intent"] == "chat":
             self._log("user", text)
             await self.broadcast({"t": "msg", "role": "user", "text": text})
             await self._chat_reply(text)
+            return
+        if intent["intent"] == "music_play":
+            self._log("user", text)
+            await self.broadcast({"t": "msg", "role": "user", "text": text})
+            await self.music_play(intent.get("query", text)[:40])
+            return
+        if intent["intent"] == "music_stop":
+            await self.music_stop(quiet=False)
+            return
+        if intent["intent"] == "pause":
+            await self._command("pause", text)
+            return
+        if intent["intent"] == "resume":
+            await self._command("resume", text)
+            return
+        if intent["intent"] == "export":
+            await self._do_export()
+            return
+        if intent["intent"] == "compact":
+            await self._do_compact()
+            return
+        if intent["intent"] == "memory_add" and intent.get("content"):
+            ok, msg = self.memory_store.add("memory", intent["content"], source="text")
+            if ok:
+                await self.broadcast({"t": "msg", "role": "system",
+                                      "text": f"🧠 已记住：{intent['content'][:60]}"})
             return
         self.transcript.append({"role": "user", "text": text, "ts": time.time()})
         await self.broadcast({"t": "final", "text": text})

@@ -621,11 +621,11 @@ class ChatClassifyLLM:
         self.reply = reply
     async def chat(self, messages, **kw):
         sys = messages[0]["content"]
-        if "闲聊/问答" in sys:
+        if "意图" in sys or "闲聊/问答" in sys:
             for k, v in self.chat_map.items():
                 if k in messages[-1]["content"]:
-                    return '{"chat": %s}' % ("true" if v else "false")
-            return '{"chat": false}'
+                    return '{"intent": "%s"}' % ("chat" if v else "task")
+            return '{"intent": "task"}'
         return self.reply
 
 
