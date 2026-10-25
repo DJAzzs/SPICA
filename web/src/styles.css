@@ -1084,7 +1084,7 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
    侧边栏 v6：浮层（叠在对话区上，不挤偏；不与顶栏重叠）
    ================================================================ */
 .sidebar-inline {
-  position: absolute; top: 92px; bottom: 8px;
+  position: absolute; top: 0; bottom: 0;
   display: flex; flex-direction: column;
   z-index: 15;
   border-radius: 0 14px 14px 0;
