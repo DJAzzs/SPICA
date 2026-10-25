@@ -9,6 +9,7 @@ import MusicBar from "./MusicBar";
 import NavRail from "./NavRail";
 import StatsBar from "./StatsBar";
 import FileChangeCard from "./FileChangeCard";
+import Sidebar from "./Sidebar";
 import ModelPicker from "./ModelPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
@@ -361,6 +362,7 @@ export default function App() {
   const [skipWizard, setSkipWizard] = useState(false);
   useEffect(() => { if (settings) setWizardDone(!!settings.wizard_done); }, [settings]);
   useEffect(() => { if (wakeFlash) localStorage.setItem("spica-waked", "1"); }, [wakeFlash]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const demo = document.documentElement.dataset.demo === "1";
 
   useEffect(() => { if (st === "shutdown") resetPlayback(); }, [st]);
@@ -457,8 +459,16 @@ export default function App() {
       <Backdrop />
       <NavRail />
       <MusicBar />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <header className="topbar">
         <div className="brand">
+          <button className="shelf-btn" onClick={() => setSidebarOpen(!sidebarOpen)}
+            title="会话 & 工作区">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M4 4h4v4H4zM10 4h4v4h-4zM16 4h4v4h-4zM4 10h4v4H4zM10 10h4v4h-4zM16 10h4v4h-4zM4 16h4v4H4zM10 16h4v4h-4zM16 16h4v4h-4z" />
+            </svg>
+          </button>
           <span className="mark" />
           <span className="name">SPICA</span>
           <span className="sub">
@@ -481,8 +491,6 @@ export default function App() {
             )}
             {ttsSpeaking ? <span>播报中</span> : null}
             <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
-            <a href="#/sessions">会话</a>
-            <a href="#/files">文件</a>
             <a href="#/diagnose">诊断</a>
             <a href="#/wizard">向导</a>
             <a href="#/settings">设置</a>
