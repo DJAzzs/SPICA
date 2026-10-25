@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { FolderIcon, FileIcon } from "./icons";
 
 /** 目录浏览器：选工作区用（模态弹层）。 */
-export default function DirBrowser({ initial = "/", onPick, onClose }: {
+export default function DirBrowser({ initial = "/", onPick, onClose, inline }: {
   initial?: string; onPick: (path: string) => void; onClose: () => void;
+  inline?: boolean;
 }) {
   const [path, setPath] = useState(initial);
   const [data, setData] = useState<{ path: string; parent: string;
@@ -16,13 +17,12 @@ export default function DirBrowser({ initial = "/", onPick, onClose }: {
       .catch(() => setData(null));
   }, [path]);
 
-  return (
-    <div className="dir-browser-mask" onClick={onClose}>
-      <div className="dir-browser" onClick={e => e.stopPropagation()}>
-        <div className="db-head">
+  const panel = (
+      <>
+        {!inline && <div className="db-head">
           <span className="db-title">选择工作区</span>
           <button className="db-close" onClick={onClose}>✕</button>
-        </div>
+        </div>}
         <div className="db-path">{data?.path || path}</div>
         <div className="db-list">
           {path !== "/" && (
@@ -52,7 +52,13 @@ export default function DirBrowser({ initial = "/", onPick, onClose }: {
         <button className="db-pick" onClick={() => { onPick(data?.path || path); onClose(); }}>
           选定此目录
         </button>
-      </div>
+      </>
+  );
+
+  if (inline) return <div className="dir-browser inline">{panel}</div>;
+  return (
+    <div className="dir-browser-mask" onClick={onClose}>
+      <div className="dir-browser" onClick={e => e.stopPropagation()}>{panel}</div>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default function NewSessionModal({ onClose }: { onClose: () => void }) {
         <div className="ns-body">
           {browsing ? (
             <div className="ns-browse">
-              <DirBrowser
+              <DirBrowser inline
                 initial={cwd || "/"}
                 onPick={p => { setCwd(p); setBrowsing(false); }}
                 onClose={() => setBrowsing(false)} />
