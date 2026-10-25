@@ -1086,7 +1086,6 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
 .sidebar-inline {
   position: absolute; top: 8px; bottom: 8px;
   display: flex; flex-direction: column;
-  z-index: 20;
   border-radius: 0 14px 14px 0;
   padding: 0 10px 6px;
   width: 280px; max-width: 420px;
@@ -1104,10 +1103,10 @@ html:not([data-theme="dark"]) .sidebar-inline {
 }
 /* 深色：毛玻璃（直接放本体，无 overflow 冲突） */
 html[data-theme="dark"] .sidebar-inline {
-  background: rgba(18,20,25,0.15);
+  background: rgba(18,20,25,0.25);
   border: none;
   border-right: 1px solid rgba(255,255,255,0.2);
-  backdrop-filter: blur(36px) saturate(1.8) brightness(1.1);
+  backdrop-filter: blur(16px) saturate(1.4);
   box-shadow: 12px 0 48px rgba(0,0,0,0.35),
     inset 0 1px 0 rgba(255,255,255,0.12); }
 
