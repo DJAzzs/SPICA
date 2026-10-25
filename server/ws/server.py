@@ -192,9 +192,6 @@ def create_app(boot) -> FastAPI:
             (updir / name).write_bytes(data)
             saved.append(name)
         if saved:
-            await hub.broadcast({"t": "msg", "role": "system",
-                                 "text": f"已上传 {len(saved)} 个文件到 uploads/："
-                                         f"{'、'.join(saved)}（可直接让 Agent 处理）"})
             sem._log("system", f"上传文件：{'、'.join(saved)}")
         return {"saved": saved}
 
