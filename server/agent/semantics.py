@@ -967,10 +967,16 @@ class Semantics:
         self.session = meta
         self.sdk.reset_identity(meta.get("dsh_session_id", ""))
         self._need_resume = bool(meta.get("dsh_session_id"))
+
+        # 优先读 SPICA 自己的事件；空则读 DSH 原生历史
+        events = self.store.events(sid)
+        if not events and meta.get("dsh_session_id"):
+            from server.dsh_sessions import read_dsh_history
+            events = read_dsh_history(meta["dsh_session_id"])
         self.transcript = [
             {"role": e.get("role", ""), "text": e.get("text", ""),
              "ts": e.get("ts", 0)}
-            for e in self.store.events(sid)
+            for e in events
         ]
         self.pending_prompts = []
         await self.broadcast({"t": "history", "msgs": self.transcript})

@@ -113,3 +113,82 @@ def scan_dsh_sessions(force: bool = False) -> list[dict]:
     items.sort(key=lambda x: -x.get("updated", 0))
     _cache.update({"at": now, "items": items})
     return items
+
+
+def read_dsh_history(session_id: str, max_events: int = 100) -> list[dict]:
+    """读取 DSH 会话的完整对话历史，转为 SPICA 消息格式。"""
+    if not DSH_SESSIONS.exists():
+        return []
+
+    # 查找会话文件
+    for ws_dir in DSH_SESSIONS.iterdir():
+        if not ws_dir.is_dir():
+            continue
+        sess_dir = ws_dir / session_id
+        zstd = sess_dir / "session.v4.jsonl.zstd"
+        if not zstd.exists():
+            continue
+
+        # 解压全部
+        try:
+            out = subprocess.run(
+                ["zstdcat", "-q", str(zstd)],
+                capture_output=True, text=True, timeout=15,
+            )
+        except Exception:
+            return []
+
+        messages: list[dict] = []
+        for line in out.stdout.splitlines():
+            try:
+                e = json.loads(line)
+            except Exception:
+                continue
+            typ = e.get("type", "")
+            data = e.get("data") or {}
+
+            if typ == "user/message":
+                # user 消息的 content 在 data.content 或 data.message.content
+                content = data.get("content") or \
+                    (data.get("message") or {}).get("content", [])
+                for b in (content if isinstance(content, list) else []):
+                    if b.get("type") == "text" and b.get("text", "").strip():
+                        txt = b["text"].strip()
+                        # 过滤 DSH 内部注入
+                        if txt.startswith("Current runtime context") or \
+                           txt.startswith("Time sampled") or \
+                           txt.startswith("[exit code"):
+                            break
+                        messages.append({"role": "user",
+                                         "text": txt,
+                                         "ts": e.get("time", 0) / 1000})
+                        break
+
+            elif typ == "assistant/message":
+                msg = data.get("message") or data
+                content = msg.get("content", [])
+                for b in (content if isinstance(content, list) else []):
+                    if b.get("type") == "text" and b.get("text", "").strip():
+                        messages.append({"role": "assistant",
+                                         "text": b["text"].strip(),
+                                         "ts": e.get("time", 0) / 1000})
+                        break
+                    elif b.get("type") in ("tool_call", "tool_use"):
+                        messages.append({"role": "tool",
+                                         "text": f"{b.get('name','')}: "
+                                                 f"{str(b.get('arguments',''))[:80]}",
+                                         "ts": e.get("time", 0) / 1000})
+
+            elif typ == "session/title":
+                title = (data.get("title") or "").strip()
+                if title:
+                    messages.append({"role": "system",
+                                     "text": f"〔会话：{title}〕",
+                                     "ts": e.get("time", 0) / 1000})
+
+            if len(messages) >= max_events:
+                break
+
+        return messages
+
+    return []
