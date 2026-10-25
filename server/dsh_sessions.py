@@ -89,6 +89,11 @@ def scan_dsh_sessions(force: bool = False) -> list[dict]:
                     if first_msg:
                         break
 
+            # 过滤：子代理(dd>0)不显示；spica-* 已在 SPICA 自己的会话列表，不重复
+            dd = meta.get("delegationDepth", 0)
+            if dd > 0 or sid.startswith("spica-"):
+                continue
+
             items.append({
                 "id": sid,
                 "dsh_session_id": sid,
