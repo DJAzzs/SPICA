@@ -1,110 +1,108 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSpica, send } from "./state";
-import { FolderIcon, FileIcon } from "./icons";
+import { FolderIcon } from "./icons";
 
-/** 侧边栏：会话列表 + 工作区文件树。
- *  由左上角按钮触发，从左侧滑入。 */
-export default function Sidebar({ open, onClose }: {
-  open: boolean; onClose: () => void;
-}) {
+/** 侧边栏：按工作区分组的会话树（内嵌布局）。 */
+export default function Sidebar({ open }: { open: boolean }) {
   const sessions = useSpica((s) => s.sessions);
   const current = useSpica((s) => s.currentSession);
-  const [tree, setTree] = useState<{ dir: boolean; name: string }[]>([]);
-  const [sessOpen, setSessOpen] = useState(false);
-  const [treePath, setTreePath] = useState("");
-  const [loadingTree, setLoadingTree] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newCwd, setNewCwd] = useState("");
+  const [newPerm, setNewPerm] = useState("workspace-write");
 
-  // 加载文件树根目录
-  useEffect(() => {
-    if (open && !tree.length && !loadingTree) {
-      loadDir("");
-    }
-  }, [open]);
+  const groups = useMemo(() => {
+    const map = new Map<string, any[]>();
+    (sessions || []).forEach((s: any) => {
+      const cwd = s.cwd || "默认";
+      if (!map.has(cwd)) map.set(cwd, []);
+      map.get(cwd)!.push(s);
+    });
+    return [...map.entries()].map(([cwd, ss]) => ({
+      cwd, name: cwd.split("/").pop() || cwd, sessions: ss,
+    })).sort((a, b) =>
+      a.cwd === current?.cwd ? -1 : b.cwd === current?.cwd ? 1 : 0);
+  }, [sessions, current]);
 
-  const loadDir = async (sub: string) => {
-    setLoadingTree(true);
-    try {
-      const r = await fetch(`/api/files/list?sub=${encodeURIComponent(sub)}`);
-      const j = await r.json();
-      if (!j.error) { setTree(j.entries || []); setTreePath(sub); }
-    } catch { /* silent */ }
-    setLoadingTree(false);
+  const filtered = search.trim()
+    ? groups.map(g => ({ ...g,
+        sessions: g.sessions.filter((s: any) =>
+          (s.title || "").toLowerCase().includes(search.toLowerCase())),
+      })).filter(g => g.sessions.length > 0)
+    : groups;
+
+  const openSession = (id: string) => send({ t: "session_open", id });
+  const createSession = () => {
+    send({ t: "session_new" });
+    setCreating(false); setNewCwd("");
   };
 
-  const openSession = (id: string) => {
-    send({ t: "session_open", id });
-  };
+  if (!open) return null;
 
   return (
-    <>
-      {open && <div className="sidebar-mask" onClick={onClose} />}
-      <div className={`sidebar ${open ? "open" : ""}`}>
-        <div className="sidebar-head">
-          <span className="sidebar-title">会话 & 工作区</span>
-          <button className="sidebar-close" onClick={onClose}>✕</button>
+    <div className="sidebar-inline">
+      <button className="side-new-btn" onClick={() => setCreating(!creating)}>
+        ＋ 新会话
+      </button>
+      {creating && (
+        <div className="side-create">
+          <input type="text" placeholder="工作区路径（默认 workspace）"
+            value={newCwd} onChange={e => setNewCwd(e.target.value)} />
+          <select value={newPerm} onChange={e => setNewPerm(e.target.value)}>
+            <option value="read-only">只读</option>
+            <option value="workspace-write">工作区写入</option>
+            <option value="danger-full-access">完全访问</option>
+          </select>
+          <button className="side-create-btn" onClick={createSession}>创建</button>
         </div>
-
-        {/* 会话列表 */}
-        <div className="sidebar-section">
-          <button className="sidebar-toggle" onClick={() => setSessOpen(!sessOpen)}>
-            <span className="sidebar-label">会话（{sessions?.length || 0}）</span>
-            <span className="turn-caret" style={{
-              transform: sessOpen ? "rotate(90deg)" : "rotate(0)" }}>▸</span>
+      )}
+      <div className="side-ws-header">
+        <span className="side-ws-label">工作区</span>
+        <div className="side-ws-actions">
+          <button className="side-icon-btn" title="搜索"
+            onClick={() => setSearchOpen(!searchOpen)}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
+            </svg>
           </button>
-          {sessOpen && (
-            <>
-              <button className="sidebar-new" onClick={() => {
-                send({ t: "session_new" });
-              }}>＋ 新会话</button>
-              <div className="sidebar-sessions">
-            {(sessions || []).slice(0, 12).map((s: any) => (
-              <div key={s.id}
-                className={`side-sess ${current?.id === s.id ? "on" : ""}`}
-                onClick={() => openSession(s.id)}>
-                <span className="side-sess-title">
-                  {s.title || "未命名"}
-                  {current?.id === s.id && <em>当前</em>}
-                </span>
-                <span className="side-sess-meta">{s.model || "auto"}</span>
-              </div>
-            ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* 工作区文件树 */}
-        <div className="sidebar-section">
-          <div className="sidebar-label">工作区</div>
-          <div className="sidebar-tree">
-            {treePath && (
-              <div className="tree-item back" onClick={() => {
-                const parts = treePath.split("/");
-                parts.pop();
-                loadDir(parts.join("/"));
-              }}>
-                <FolderIcon size={12} /> ..
-              </div>
-            )}
-            {tree.map((e: any, i: number) => (
-              <div key={i} className="tree-item"
-                onClick={() => e.dir ? loadDir(treePath
-                  ? `${treePath}/${e.name}` : e.name) : undefined}>
-                {e.dir ? <FolderIcon size={12} /> : <FileIcon size={12} />}
-                <span className="tree-name">{e.name}</span>
-                {!e.dir && (
-                  <span className="tree-size">
-                    {e.size > 1024 ? `${(e.size / 1024).toFixed(0)}K` : `${e.size}B`}
-                  </span>
-                )}
-              </div>
-            ))}
-            {!tree.length && !loadingTree && (
-              <div className="tree-empty">空目录</div>
-            )}
-          </div>
         </div>
       </div>
-    </>
+      {searchOpen && (
+        <input type="text" className="side-search" placeholder="搜会话…"
+          value={search} onChange={e => setSearch(e.target.value)} autoFocus />
+      )}
+      <div className="side-groups">
+        {filtered.map(g => (
+          <div key={g.cwd} className="side-group">
+            <button className="side-group-head"
+              onClick={() => setCollapsed({ ...collapsed,
+                [g.cwd]: !collapsed[g.cwd] })}>
+              <span className={`turn-caret ${collapsed[g.cwd] ? "" : "open"}`}>▸</span>
+              <FolderIcon size={12} />
+              <span className="side-group-name" title={g.cwd}>{g.name}</span>
+              <span className="side-group-count">{g.sessions.length}</span>
+            </button>
+            {!collapsed[g.cwd] && (
+              <div className="side-group-items">
+                {g.sessions.map((s: any) => (
+                  <div key={s.id}
+                    className={`side-item ${current?.id === s.id ? "on" : ""}`}
+                    onClick={() => openSession(s.id)}>
+                    <span className="side-item-title">{s.title || "未命名"}</span>
+                    <span className="side-item-meta">{s.model || "auto"}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {!filtered.length && (
+          <div className="side-empty">{search ? "无匹配" : "暂无会话"}</div>
+        )}
+      </div>
+    </div>
   );
 }

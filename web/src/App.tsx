@@ -469,7 +469,6 @@ export default function App() {
       <Backdrop />
       <NavRail />
       <MusicBar />
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <header className="topbar">
         <div className="brand">
           <button className="shelf-btn" onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -510,7 +509,8 @@ export default function App() {
         )}
       </header>
 
-      <div className="main-col">
+      <Sidebar open={sidebarOpen} />
+      <div className={sidebarOpen ? "main-col with-side" : "main-col"}>
         <Chat st={st} partial={partial} kbdOnly={kbdOnly}
           connected={connected} onEnableVoice={activate} />
       </div>
