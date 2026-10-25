@@ -79,7 +79,7 @@ export default function ModelPicker() {
           <div className={`model-item ${!model ? "active" : ""}`}
             onClick={() => pickModel("")}>
             <span>Auto</span>
-            <span className="model-sub">按难度路由</span>
+            <span className="model-sub">by difficulty</span>
           </div>
           <div className="model-sep" />
           {models.map(m => (
