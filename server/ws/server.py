@@ -324,6 +324,8 @@ def create_app(boot) -> FastAPI:
                 await sem.cancel_listen()
             elif t == "command":
                 await sem._command(str(data.get("name", "")), "手动")
+            elif t == "permission_grant":
+                await sem.grant_permission(str(data.get("mode", "once")))
             elif t == "music_ctrl":
                 action = str(data.get("action", ""))
                 if action == "play":

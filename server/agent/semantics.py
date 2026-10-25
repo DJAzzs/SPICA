@@ -29,6 +29,12 @@ from server.tts.narrator import Narrator
 
 CONFIRM_WINDOW_S = 20.0
 
+# 工具结果中的权限拒绝特征
+import re as _re
+_PERM_DENIED = _re.compile(
+    r"permission denied|EACCES|operation not permitted|read-only "
+    r"filesystem|权限不足|没有权限", _re.I)
+
 
 class Semantics:
     def __init__(self, pipeline, sdk, rewriter, router, narrator, packs,
@@ -64,6 +70,8 @@ class Semantics:
         # turn 跟踪（前端分组折叠 + 计时）
         self.turn_seq: int = 0
         self.turn_started_at: float = 0.0
+        # 权限升级请求 {tid, reason}；None=无待决
+        self._perm_request: dict | None = None
         # 自进化
         self.memory_store = memory_store or MemoryStore()
         self.skill_store = skill_store or SkillStore(
@@ -158,6 +166,11 @@ class Semantics:
         self._log("user", text)
         if self.enroll_mode:
             return  # 注册模式只收音频
+        if self._perm_request:
+            mode = self._try_perm_voice(text)
+            if mode:
+                await self.grant_permission(mode)
+                return
         if await self._try_voice_command(text):
             return
         if self._goal_pending:
@@ -409,6 +422,68 @@ class Semantics:
         else:
             await self.broadcast({"t": "msg", "role": "system",
                 "text": "用法：/skills list · /skills del <名称>"})
+
+    # ================================================== 权限升级请求
+    PERM_VOICE = [
+        ("always", [["永远", "同意"], ["总是", "同意"], ["都", "同意"], ["全部", "允许"]]),
+        ("deny", [["拒绝"], ["不允许"], ["不同意"], ["不要", "给"]]),
+        ("once", [["同意"], ["允许"], ["可以"], ["给它", "权限"]]),
+    ]
+
+    async def _request_permission(self, reason: str) -> None:
+        """Agent 操作被权限拒绝 → 对话卡 + 语音请求用户授权。"""
+        self._perm_request = {"tid": self.turn_seq, "reason": reason}
+        await self.broadcast({"t": "permission_request", "reason": reason,
+                              "tid": self.turn_seq})
+        self.narrator.confirm("有个操作需要更高权限，同意吗？可以说同意一次、永远同意，或拒绝。")
+        self.pipeline.arm_listening(30)
+
+    async def grant_permission(self, mode: str) -> None:
+        """mode: once | always | deny。once/always 重启进程提权并续跑。"""
+        req = self._perm_request
+        self._perm_request = None
+        if not req:
+            return
+        await self.broadcast({"t": "permission_resolved", "mode": mode})
+        if mode == "deny":
+            if self.sdk.proc:
+                try:
+                    await self.sdk.prompt("用户拒绝了权限提升。请在当前权限范围内"
+                                          "换一种方式完成该步骤。")
+                except Exception:
+                    pass
+            self.narrator.confirm("已拒绝。")
+            return
+        perm = "danger-full-access"
+        if mode == "always" and self.session.get("id"):
+            self.store.update(self.session["id"], {"perm": perm})
+            self.session["perm"] = perm
+        self.narrator.confirm("权限已提升，继续。")
+        # 以更高权限重启 DSH 会话并续跑（会话已持久化）
+        route = self.route_info or {}
+        try:
+            self.sdk.pause()
+        except Exception:
+            pass
+        async def _resume():
+            await self.sdk.start(route.get("model") or "glm-5.3-flash",
+                                 route.get("reasoning_effort"),
+                                 cwd=self.session.get("cwd"),
+                                 permission=perm)
+            await self.sdk.resume(self.sdk.session_id)
+            await self.sdk.prompt(
+                "用户已授权更高权限。请继续刚才的任务，重试因权限失败的操作。")
+        self._bg(_resume(), "perm-upgrade")
+
+    def _try_perm_voice(self, text: str) -> str | None:
+        """权限请求期间的语音应答：once/always/deny。"""
+        from server.voice.wake import normalize
+        n = normalize(text)
+        for mode, groups in self.PERM_VOICE:
+            for group in groups:
+                if all(w in n for w in group):
+                    return mode
+        return None
 
     # ================================================== 音乐（MusicFree/OpenSubsonic）
     async def music_play(self, query: str, source: str = "manual") -> None:
@@ -991,6 +1066,8 @@ class Semantics:
                 await self.broadcast({"t": "msg", "role": "tool",
                                       "text": f"结果：{out.strip()[:120]}",
                                       "tid": self.turn_seq})
+                if self._perm_request is None and _PERM_DENIED.search(out):
+                    await self._request_permission(out.strip()[:200])
         if typ in ("tool/call", "tool/use") or "tool_call" in str(
                 (data.get("message", {}) or {}).get("content", "")):
             self._turn_tool_calls += 1

@@ -34,6 +34,8 @@ EVENT_TYPES = {
     "session",        # {meta} 当前会话元数据变更
     "history",        # {msgs} 会话历史（打开/刷新时整批替换）
     "trigger_export", # {} 前端自动触发 zip 下载（语音"导出会话"）
+    "permission_request",  # {reason, tid} Agent 需要更高权限
+    "permission_resolved", # {mode: once|always|deny}
     "music_track",    # {id,title,artist,duration,cover} 前端开始播放
     "music_stop",     # {} 停止播放
     "error",          # {message, fatal: bool}
@@ -52,6 +54,7 @@ CLIENT_TYPES = {
     "command",        # {name: pause|resume|confirm|cancel} 手动触发语义命令
     "slash",          # {cmd, arg} 斜杠命令：plan/compact
     "music_ctrl",     # {action: play|stop|pause|resume|next, q?} 前端播放器控制
+    "permission_grant",  # {mode: once|always|deny}
     "session_new", "session_open", "session_delete", "session_update",
     "settings_patch", # {…} 设置更新
     "enroll_start", "enroll_add", "enroll_finish",  # 声纹注册流程

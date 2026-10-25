@@ -443,6 +443,66 @@ def test_model_override_shows_in_route(tmp_path, monkeypatch):
     assert sdk.started_with[-1][0] == "glm-5.3"  # 且模型确实生效
 
 
+# ---------------------------------------------------------------- 权限升级
+def test_perm_request_on_denied_tool(tmp_path, monkeypatch):
+    import asyncio
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.state = "idle"
+    run(sem.on_text_input("任务"))
+    async def scenario():
+        await sem.on_sdk_notification("session.event", {
+            "event": {"type": "tool/result",
+                      "data": {"result": "bash: /etc/hosts: Permission denied"}}})
+        await asyncio.sleep(0.1)
+    run(scenario())
+    assert sem._perm_request is not None
+    assert any(e.get("t") == "permission_request" for e in events)
+
+
+def test_perm_grant_once_upgrades_and_resumes(tmp_path, monkeypatch):
+    import asyncio
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem._perm_request = {"tid": 1, "reason": "denied"}
+    async def scenario():
+        await sem.grant_permission("once")
+        await asyncio.sleep(0.2)
+    run(scenario())
+    assert sem._perm_request is None
+    assert sdk.paused and sdk.resumed == "sess-test-1"
+    assert "更高权限" in sdk.prompts[-1]
+    assert sem.session.get("perm") != "danger-full-access"  # once 不持久化
+
+
+def test_perm_grant_always_persists(tmp_path, monkeypatch):
+    import asyncio
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    run(sem.session_new())
+    sem._perm_request = {"tid": 1, "reason": "denied"}
+    async def scenario():
+        await sem.grant_permission("always")
+        await asyncio.sleep(0.2)
+    run(scenario())
+    assert sem.session.get("perm") == "danger-full-access"
+
+
+def test_perm_deny_notifies_agent(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem.state = "idle"
+    run(sem.on_text_input("任务"))
+    sem._perm_request = {"tid": 1, "reason": "denied"}
+    run(sem.grant_permission("deny"))
+    assert "拒绝" in sdk.prompts[-1]
+
+
+def test_perm_voice_answers(tmp_path, monkeypatch):
+    sem, sdk, narrator, events = make_sem(tmp_path, monkeypatch)
+    sem._perm_request = {"tid": 1, "reason": "denied"}
+    run(sem._final("永远同意"))
+    assert sem._perm_request is None
+    assert any(e.get("t") == "permission_resolved"
+               and e.get("mode") == "always" for e in events)
+
+
 # ---------------------------------------------------------------- 键盘输入
 def test_text_input_dispatches_without_rewrite(tmp_path, monkeypatch):
     """键盘输入：跳过改写、直接路由执行（FakeRewriter 不该被调用）。"""

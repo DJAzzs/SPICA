@@ -34,6 +34,7 @@ export interface State {
   musicTrack: any | null;
   musicStopFlag: number;
   pendingFiles: string[];   // 已上传待任务附带的文件
+  permissionReq: { reason: string; tid: number } | null;
 }
 
 const initial: State = {
@@ -43,7 +44,7 @@ const initial: State = {
   rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
   micOn: false, micError: "", msgs: [], localListen: false, toast: "",
   sessions: [], currentSession: null, turns: {}, execSince: 0,
-  musicTrack: null, musicStopFlag: 0, pendingFiles: [],
+  musicTrack: null, musicStopFlag: 0, pendingFiles: [], permissionReq: null,
 };
 
 let state: State = initial;
@@ -188,6 +189,9 @@ function handle(e: SpicaEvent) {
       set({ msgs: (e.msgs || []).map((m: any) => ({
         role: m.role, text: m.text, ts: m.ts || Date.now() })) });
       break;
+    case "permission_request":
+      set({ permissionReq: { reason: e.reason || "", tid: e.tid || 0 } }); break;
+    case "permission_resolved": set({ permissionReq: null }); break;
     case "music_track": set({ musicTrack: e, musicStopFlag: 0 }); break;
     case "music_stop": set({ musicTrack: null }); break;
     case "trigger_export": {

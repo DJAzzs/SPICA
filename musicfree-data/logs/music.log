@@ -408,3 +408,9 @@
 2026-10-25 11:44:04.770 INFO | 200 |     521.749µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=e286e31993cbd32cdbc20f3603da07e7&s=t4BYK3Uj&query=The+Word+Becomes+Flesh&songCount=5&albumCount=0&artistCount=0&f=json
 2026-10-25 11:44:11.406 INFO | 200 |       2.437ms |      172.17.0.1 | GET     /rest/getCoverArt?u=admin&t=a95deca2e5c2108d3d90caae13b1cbe3&s=Fe43Kt1d&id=so-0c803f74-9319-4972-a742-dec18388054c
 2026-10-25 11:44:11.410 INFO | 200 |       6.321ms |      172.17.0.1 | GET     /rest/stream?u=admin&t=0a9de666d9d93a470eae5afa2d2f23f2&s=ChIR1G1U&id=0c803f74-9319-4972-a742-dec18388054c&format=raw
+2026-10-25 11:49:11.859 INFO starting scheduled incremental scan
+2026-10-25 11:49:11.871 INFO starting incremental scan since=2026-10-25T03:19:11Z
+2026-10-25 11:49:11.874 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=6
+2026-10-25 11:49:11.876 INFO updating album statistics
+2026-10-25 11:49:11.880 INFO album statistics updated
+2026-10-25 11:49:11.882 INFO incremental scan completed

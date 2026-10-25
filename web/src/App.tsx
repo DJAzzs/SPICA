@@ -38,6 +38,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const [openThinking, setOpenThinking] = useState<Record<number, boolean>>({});
   const [now, setNow] = useState(Date.now());
   const pendingFiles = useSpica((s) => s.pendingFiles);
+  const permissionReq = useSpica((s) => s.permissionReq);
   const [cmdIdx, setCmdIdx] = useState(0);
   const cmdMatches = input.startsWith("/")
     ? SLASH_COMMANDS.filter((c) => ("/" + c.cmd).startsWith(input.toLowerCase())
@@ -165,6 +166,21 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
             && !msgs.slice(0, i).some((x) => x.tid === tid);
           return (
             <div key={i}>
+              {permissionReq && (
+                <div className="perm-card">
+                  <div className="perm-title">⚠ 需要更高权限</div>
+                  <div className="perm-reason">{permissionReq.reason}</div>
+                  <div className="perm-actions">
+                    <button className="btn primary" onClick={() =>
+                      send({ t: "permission_grant", mode: "once" })}>同意一次</button>
+                    <button className="btn" onClick={() =>
+                      send({ t: "permission_grant", mode: "always" })}>本会话永远同意</button>
+                    <button className="btn" onClick={() =>
+                      send({ t: "permission_grant", mode: "deny" })}>拒绝</button>
+                  </div>
+                  <div className="perm-voice">也可以直接说：同意 / 永远同意 / 拒绝</div>
+                </div>
+              )}
               {showRunning && (
                 <div className="turn-running">
                   <span className="pulse-dot" />
