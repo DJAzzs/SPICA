@@ -1145,15 +1145,15 @@ html[data-theme="light"] .side-close-btn:hover {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   text-align: center; }
 html:not([data-theme="dark"]) .side-new-btn {
-  background: var(--bg-raise); color: var(--ink-dim);
-  box-shadow: 3px 3px 8px var(--nm-lo), -3px -3px 8px var(--nm-hi); }
+  background: #ffffff; color: var(--ink-dim);
+  box-shadow: 2px 2px 6px var(--nm-lo), -2px -2px 6px rgba(255,255,255,0.8); }
 html:not([data-theme="dark"]) .side-new-btn:active {
   box-shadow: inset 2px 2px 5px var(--nm-lo), inset -2px -2px 5px var(--nm-hi); }
 html[data-theme="dark"] .side-new-btn {
-  background: rgba(255,255,255,0.06); color: var(--ink-dim);
-  border: 1px solid rgba(255,255,255,0.12); }
+  background: rgba(255,255,255,0.9); color: #1a1d22;
+  border: none; }
 html[data-theme="dark"] .side-new-btn:hover {
-  background: rgba(255,255,255,0.1); color: var(--mist); }
+  background: #ffffff; color: #000; }
 
 /* 工作区标签 */
 .side-ws-header { display: flex; align-items: center;
