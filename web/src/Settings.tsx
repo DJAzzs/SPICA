@@ -183,13 +183,15 @@ function FontEditor() {
       const fmtMap: Record<string, string> = {
         ttf: "truetype", otf: "opentype", woff: "woff", woff2: "woff2" };
       const fmt = fmtMap[ext] || "truetype";
+      const sizeRule = size > 0
+        ? `:root { font-size: ${size}px !important; }` : "";
       el.textContent = `
         @font-face {
           font-family: 'SPICA Custom';
           src: url('/api/fonts/file/${encodeURIComponent(active)}') format('${fmt}');
         }
         :root { --custom-font: 'SPICA Custom', sans-serif; }
-        ${size > 0 ? `:root { font-size: ${size}px !important; }` : ""}
+        ${sizeRule}
       `;
     } else if (el) {
       el.remove();
@@ -227,6 +229,15 @@ function FontEditor() {
             </option>
           ))}
         </select>
+        {active && (
+          <button className="btn" onClick={async () => {
+            if (!confirm(`删除字体「${active}」？`)) return;
+            await fetch(`/api/fonts/file/${encodeURIComponent(active)}`,
+              { method: "DELETE" });
+            send({ t: "settings_patch", patch: { custom_font: "" } });
+            await loadFonts();
+          }}>🗑</button>
+        )}
         <label className="btn" style={{ cursor: "pointer" }}>
           {uploading ? "上传中…" : "＋ 上传字体"}
           <input type="file" accept=".ttf,.otf,.woff,.woff2"

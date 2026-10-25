@@ -350,6 +350,15 @@ def create_app(boot) -> FastAPI:
                 ".woff": "font/woff", ".woff2": "font/woff2"}.get(f.suffix, "application/octet-stream")
         return FileResponse(f, media_type=mime)
 
+    @app.delete("/api/fonts/file/{name}")
+    async def fonts_delete(name: str):
+        fonts_dir = Path("run/fonts")
+        safe = name.replace("/", "_").replace("\\", "_")
+        f = fonts_dir / safe
+        if f.exists():
+            f.unlink()
+        return {"ok": True}
+
     @app.get("/api/music/stream")
     async def music_stream(id: str):
         from server.media.musicfree import MusicFree
