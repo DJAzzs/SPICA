@@ -624,3 +624,48 @@ html[data-theme="dark"] .diff-add { color: #6fbf8b; }
 .perm-detail code { display: block; margin-top: 8px; font-size: 11.5px;
   color: var(--ink-dim); background: var(--bg2); border-radius: 6px;
   padding: 10px 12px; word-break: break-all; line-height: 1.5; }
+
+/* ---------- 右侧节点导航轨 ---------- */
+.nav-rail { position: fixed; right: 12px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 11px; z-index: 8;
+  max-height: 72vh; overflow: visible; }
+.rail-dot { position: relative; width: 14px; height: 14px;
+  border: none; cursor: pointer; padding: 0; border-radius: 50%;
+  transition: all 450ms var(--ease); }
+
+/* 浅色：活页本穿孔（凹孔 → 悬停凸起） */
+html:not([data-theme="dark"]) .rail-dot {
+  background: var(--bg2); box-shadow: var(--sink-sm); }
+html:not([data-theme="dark"]) .rail-dot:hover {
+  background: var(--sand); box-shadow: var(--raise-sm);
+  transform: scale(1.25); }
+html:not([data-theme="dark"]) .rail-dot.on {
+  background: var(--mist);
+  box-shadow: var(--sink-sm),
+    0 0 0 2px color-mix(in srgb, var(--mist) 30%, transparent); }
+
+/* 深色：毛玻璃刻度线 */
+html[data-theme="dark"] .rail-dot {
+  width: 16px; height: 4px; border-radius: 3px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px); }
+html[data-theme="dark"] .rail-dot:hover {
+  width: 26px; background: rgba(255, 255, 255, 0.5); }
+html[data-theme="dark"] .rail-dot.on {
+  width: 22px; background: var(--mist);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--mist) 55%, transparent); }
+
+/* 悬停预览标签（左侧弹出） */
+.rail-tip { position: absolute; right: 24px; top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  white-space: nowrap; font-size: 11.5px; color: var(--ink-dim);
+  background: var(--panel); border: var(--glass-bd);
+  border-radius: 8px; padding: 6px 12px;
+  box-shadow: var(--raise-sm); backdrop-filter: blur(16px);
+  opacity: 0; pointer-events: none;
+  transition: all 350ms var(--ease); max-width: 300px;
+  overflow: hidden; text-overflow: ellipsis; }
+html[data-theme="light"] .rail-tip { background: var(--bg-raise); }
+.rail-dot:hover .rail-tip {
+  opacity: 1; transform: translateY(-50%) translateX(0); }

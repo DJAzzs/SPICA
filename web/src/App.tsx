@@ -6,6 +6,7 @@ import { MicIcon, PlusIcon, SendIcon, FileIcon } from "./icons";
 import ThemeToggle from "./ThemeToggle";
 import Backdrop from "./Backdrop";
 import MusicBar from "./MusicBar";
+import NavRail from "./NavRail";
 import ModelPicker from "./ModelPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
@@ -193,7 +194,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
             && isFirstOfTurn;
           if (m.role === "turn-done") return null;
           return (
-            <div key={i}>
+            <div key={i} id={`msg-${i}`} data-i={i}>
               {showRunning && (
                 <div className="turn-running">
                   <span className="pulse-dot" />
@@ -444,6 +445,7 @@ export default function App() {
   return (
     <div className="stage">
       <Backdrop />
+      <NavRail />
       <MusicBar />
       <header className="topbar">
         <div className="brand">
