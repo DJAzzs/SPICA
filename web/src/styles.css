@@ -1150,10 +1150,9 @@ html:not([data-theme="dark"]) .side-new-btn {
 html:not([data-theme="dark"]) .side-new-btn:active {
   box-shadow: inset 2px 2px 5px var(--nm-lo), inset -2px -2px 5px var(--nm-hi); }
 html[data-theme="dark"] .side-new-btn {
-  background: rgba(255,255,255,0.06); color: #fff;
-  border: 1px solid rgba(255,255,255,0.12); }
+  background: var(--sand); color: #1a1d22; border: none; }
 html[data-theme="dark"] .side-new-btn:hover {
-  background: rgba(255,255,255,0.1); }
+  filter: brightness(1.1); }
 
 /* 工作区标签 */
 .side-ws-header { display: flex; align-items: center;
