@@ -33,6 +33,7 @@ export interface State {
   execSince: number;      // 当前 turn 开始时间戳（计时）
   musicTrack: any | null;
   musicStopFlag: number;
+  pendingFiles: string[];   // 已上传待任务附带的文件
 }
 
 const initial: State = {
@@ -42,7 +43,7 @@ const initial: State = {
   rms: 0, wakeFlash: 0, farewell: false, review: [], diag: {},
   micOn: false, micError: "", msgs: [], localListen: false, toast: "",
   sessions: [], currentSession: null, turns: {}, execSince: 0,
-  musicTrack: null, musicStopFlag: 0,
+  musicTrack: null, musicStopFlag: 0, pendingFiles: [],
 };
 
 let state: State = initial;
@@ -188,7 +189,7 @@ function handle(e: SpicaEvent) {
         role: m.role, text: m.text, ts: m.ts || Date.now() })) });
       break;
     case "music_track": set({ musicTrack: e, musicStopFlag: 0 }); break;
-    case "music_stop": set({ musicStopFlag: Date.now() }); break;
+    case "music_stop": set({ musicTrack: null }); break;
     case "trigger_export": {
       const a = document.createElement("a");
       a.href = "/api/session/export";
@@ -236,3 +237,13 @@ function schedule() {
 
 /** 重置播放队列（打断/重连）。 */
 export function resetPlayback() { pendingChunks = []; playHead = 0; }
+
+export function addPendingFiles(names: string[]) {
+  set({ pendingFiles: [...new Set([...state.pendingFiles, ...names])] });
+}
+export function removePendingFile(name: string) {
+  set({ pendingFiles: state.pendingFiles.filter((n) => n !== name) });
+}
+export function clearPendingFiles() {
+  set({ pendingFiles: [] });
+}

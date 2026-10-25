@@ -534,3 +534,41 @@ html[data-theme="light"] .turn-head {
 .m-btn:hover { color: var(--accent); }
 .m-btn:active { box-shadow: var(--sink-sm); }
 .music-vol { width: 56px; accent-color: var(--mist); height: 2px; cursor: pointer; }
+
+/* ---------- 黑胶唱片封面（旋转动效） ---------- */
+.vinyl { width: 46px; height: 46px; flex: none; border-radius: 50%;
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 50%,
+      var(--bg) 0 26%, transparent 26.5%),
+    repeating-radial-gradient(circle at 50% 50%,
+      #14161a 0 1.5px, #1e2126 1.5px 3px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06);
+  animation: vinyl-spin 9s linear infinite; }
+.vinyl img { position: absolute; inset: 18%; width: 64%; height: 64%;
+  border-radius: 50%; object-fit: cover;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.4); }
+.vinyl::after { content: ""; position: absolute; left: 50%; top: 50%;
+  width: 4px; height: 4px; transform: translate(-50%, -50%);
+  border-radius: 50%; background: var(--bg);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.5); z-index: 2; }
+.vinyl.paused { animation-play-state: paused; }
+.vinyl-note { position: absolute; inset: 18%; display: flex;
+  align-items: center; justify-content: center; color: var(--mustard);
+  font-size: 14px; }
+@keyframes vinyl-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 上传文件 chips ---------- */
+.file-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 2px 10px; }
+.file-chip { display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; color: var(--ink-dim); padding: 5px 6px 5px 11px;
+  border-radius: 8px; background: var(--bg2);
+  box-shadow: var(--sink-sm);
+  animation: enter 500ms var(--ease); max-width: 220px; }
+.file-chip svg { flex: none; opacity: 0.7; }
+.file-chip span, .file-chip { overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.chip-x { border: none; background: none; color: var(--ink-faint);
+  cursor: pointer; font-size: 10px; padding: 2px 4px; border-radius: 4px;
+  transition: all 300ms var(--ease); flex: none; }
+.chip-x:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }

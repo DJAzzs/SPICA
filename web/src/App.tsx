@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState, set, toast as toastMsg, toggleTurn } from "./state";
+import { useSpica, send, resetPlayback, ensureAudio, setMic, setKbdOnly, getState, set, toast as toastMsg, toggleTurn, addPendingFiles, removePendingFile, clearPendingFiles } from "./state";
 import Wave from "./Wave";
 import Markdown from "./Markdown";
-import { MicIcon, PlusIcon, SendIcon } from "./icons";
+import { MicIcon, PlusIcon, SendIcon, FileIcon } from "./icons";
 import ThemeToggle from "./ThemeToggle";
 import Backdrop from "./Backdrop";
 import MusicBar from "./MusicBar";
@@ -27,6 +27,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const [dragOn, setDragOn] = useState(false);
   const [openThinking, setOpenThinking] = useState<Record<number, boolean>>({});
   const [now, setNow] = useState(Date.now());
+  const pendingFiles = useSpica((s) => s.pendingFiles);
 
   // 执行中每秒跳动（运行计时）
   useEffect(() => {
@@ -66,7 +67,19 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       toastMsg(`未知命令 /${cmd}，可用：/plan /compact /export /goal`);
       return;
     }
-    send({ t: "text_input", text });
+    // 附件提示：让 Agent 知道工作区里有哪些刚上传的文件
+    const files = pendingFiles;
+    const withFiles = files.length
+      ? `${text}\n（工作区 uploads/ 已有刚上传的文件：${files.join("、")}）` : text;
+    clearPendingFiles();
+    send({ t: "text_input", text: withFiles });
+  };
+
+  /** 删除已上传文件（chips 叉号） */
+  const removeFile = async (name: string) => {
+    removePendingFile(name);
+    fetch(`/api/files/uploaded?name=${encodeURIComponent(name)}`,
+      { method: "DELETE" }).catch(() => {});
   };
 
   /** 文件上传（按钮 + 拖拽共用） */
@@ -80,7 +93,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       let j: any = {};
       try { j = JSON.parse(text); } catch { /* 500 文本页 */ }
       if (!r.ok || j.error) toastMsg(`上传失败：${j.error || text.slice(0, 80) || r.status}`);
-      else toastMsg(`已上传 ${j.saved.length} 个文件`);
+      else { toastMsg(`已上传 ${j.saved.length} 个文件`); addPendingFiles(j.saved); }
     } catch (e: any) {
       toastMsg(`上传失败：${e?.message || e}`);
     }
@@ -187,6 +200,16 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         </div>
       ) : (
         <Wave />
+      )}
+      {pendingFiles.length > 0 && (
+        <div className="file-chips">
+          {pendingFiles.map((n) => (
+            <span className="file-chip" key={n}>
+              <FileIcon size={11} />{n}
+              <button className="chip-x" onClick={() => removeFile(n)}>✕</button>
+            </span>
+          ))}
+        </div>
       )}
       <div className="chat-input">
         <label className="icon-btn" title="上传文件到工作区（也可直接拖拽）">

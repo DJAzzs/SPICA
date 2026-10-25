@@ -84,10 +84,12 @@ export default function MusicBar() {
   return (
     <div className="music-bar">
       <audio ref={audioRef} preload="auto" />
-      {track.cover ? (
-        <img className="music-cover" src={`/api/music/cover?id=${encodeURIComponent(track.cover)}`}
-          alt="" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
-      ) : <div className="music-cover placeholder">♪</div>}
+      <div className={`vinyl ${playing ? "" : "paused"}`}>
+        {track.cover ? (
+          <img src={`/api/music/cover?id=${encodeURIComponent(track.cover)}`}
+            alt="" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+        ) : <span className="vinyl-note">♪</span>}
+      </div>
       <div className="music-info">
         <div className="music-title">
           {track.title}

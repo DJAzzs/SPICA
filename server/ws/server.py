@@ -224,6 +224,21 @@ def create_app(boot) -> FastAPI:
                      f"attachment; filename*=UTF-8''spica-{safe}.zip"})
 
     # ---------------- 音乐（代理流/封面，解决 CORS） ----------------
+    @app.delete("/api/files/uploaded")
+    async def delete_uploaded(name: str):
+        sem = state["sem"]
+        if not sem or not sem.session.get("cwd"):
+            return JSONResponse({"error": "无会话工作区"}, status_code=400)
+        import re as _re
+        safe = _re.sub(r"[^\w.\-\u4e00-\u9fff]+", "_", name or "")
+        f = (Path(sem.session["cwd"]) / "uploads" / safe).resolve()
+        try:
+            f.relative_to((Path(sem.session["cwd"]) / "uploads").resolve())
+        except ValueError:
+            return JSONResponse({"error": "路径越界"}, status_code=400)
+        f.unlink(missing_ok=True)
+        return {"deleted": safe}
+
     @app.get("/api/music/stream")
     async def music_stream(id: str):
         from server.media.musicfree import MusicFree
