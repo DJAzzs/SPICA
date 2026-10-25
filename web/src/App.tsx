@@ -8,6 +8,16 @@ import Backdrop from "./Backdrop";
 import MusicBar from "./MusicBar";
 import ModelPicker from "./ModelPicker";
 
+const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
+  { cmd: "plan",    hint: "只读规划，不改文件：/plan <目标>" },
+  { cmd: "compact", hint: "压缩上下文，保留摘要续命" },
+  { cmd: "export",  hint: "导出当前会话为 zip" },
+  { cmd: "goal",    hint: "长期目标多轮推进：/goal <目标> · /goal stop" },
+  { cmd: "music",   hint: "音乐：/music <歌名> · stop · next · taste" },
+  { cmd: "memory",  hint: "记忆：add <内容> · user <偏好> · list · remove" },
+  { cmd: "skills",  hint: "技能库：list · del <名称>" },
+];
+
 const ROLE_LABEL: Record<string, string> = {
   user: "用户", assistant: "SPICA", tool: "执行", system: "系统",
 };
@@ -28,6 +38,12 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const [openThinking, setOpenThinking] = useState<Record<number, boolean>>({});
   const [now, setNow] = useState(Date.now());
   const pendingFiles = useSpica((s) => s.pendingFiles);
+  const [cmdIdx, setCmdIdx] = useState(0);
+  const cmdMatches = input.startsWith("/")
+    ? SLASH_COMMANDS.filter((c) => ("/" + c.cmd).startsWith(input.toLowerCase())
+        || input.toLowerCase().startsWith("/" + c.cmd + " "))
+    : [];
+  const cmdOpen = cmdMatches.length > 0 && !input.includes(" ");
 
   // 执行中每秒跳动（运行计时）
   useEffect(() => {
@@ -128,7 +144,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       onDragLeave={() => setDragOn(false)}
       onDrop={(e) => { e.preventDefault(); setDragOn(false); upload(e.dataTransfer.files); }}>
       {dragOn && <div className="drop-hint">松开以上传到工作区 uploads/</div>}
-      {toast && <div className="chat-toast">{toast}</div>}
+      {toast && <div className={"chat-toast" + (toast.slice(0, 2) !== "正在" ? " timed" : "")}>{toast}</div>}
       <div className="chat-scroll" ref={scrollRef}>
         {msgs.length === 0 && (
           <div className="chat-empty">
@@ -201,6 +217,19 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       ) : (
         <Wave />
       )}
+      {cmdOpen && (
+        <div className="cmd-panel">
+          {cmdMatches.map((c, i) => (
+            <div key={c.cmd}
+              className={"cmd-item" + (i === cmdIdx ? " active" : "")}
+              onMouseEnter={() => setCmdIdx(i)}
+              onClick={() => setInput("/" + c.cmd + " ")}>
+              <span className="cmd-name">/{c.cmd}</span>
+              <span className="cmd-hint">{c.hint}</span>
+            </div>
+          ))}
+        </div>
+      )}
       {pendingFiles.length > 0 && (
         <div className="file-chips">
           {pendingFiles.map((n) => (
@@ -224,8 +253,22 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
           type="text"
           value={input}
           disabled={!connected}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          onChange={(e) => { setInput(e.target.value); setCmdIdx(0); }}
+          onKeyDown={(e) => {
+            if (cmdOpen) {
+              if (e.key === "ArrowDown") { e.preventDefault();
+                setCmdIdx((i) => (i + 1) % cmdMatches.length); return; }
+              if (e.key === "ArrowUp") { e.preventDefault();
+                setCmdIdx((i) => (i - 1 + cmdMatches.length) % cmdMatches.length); return; }
+              if (e.key === "Tab" || (e.key === "Enter" && !input.slice(1).includes(cmdMatches[cmdIdx].cmd))) {
+                e.preventDefault();
+                setInput("/" + cmdMatches[cmdIdx].cmd + " ");
+                return;
+              }
+              if (e.key === "Escape") { setInput(""); return; }
+            }
+            if (e.key === "Enter") submit();
+          }}
           placeholder={connected
             ? "输入任务，回车发送 · / 唤起命令"
             : "未连接服务 —— 请在终端运行 make up 后自动重连"}
