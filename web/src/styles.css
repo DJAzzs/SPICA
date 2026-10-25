@@ -1084,7 +1084,7 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
    侧边栏 v6：浮层（叠在对话区上，不挤偏；不与顶栏重叠）
    ================================================================ */
 .sidebar-inline {
-  position: absolute; top: 0; bottom: 0;
+  position: absolute; top: 8px; bottom: 8px;
   display: flex; flex-direction: column;
   z-index: 15;
   border-radius: 0 14px 14px 0;
@@ -1104,7 +1104,7 @@ html:not([data-theme="dark"]) .sidebar-inline {
 }
 /* 深色：毛玻璃（直接放本体，无 overflow 冲突） */
 html[data-theme="dark"] .sidebar-inline {
-  background: rgba(18,20,25,0.25);
+  background: rgba(18,20,25,0.12);
   border: none;
   border-right: 1px solid rgba(255,255,255,0.2);
   backdrop-filter: blur(16px) saturate(1.4);
