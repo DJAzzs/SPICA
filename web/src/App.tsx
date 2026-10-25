@@ -8,6 +8,7 @@ import Backdrop from "./Backdrop";
 import MusicBar from "./MusicBar";
 import NavRail from "./NavRail";
 import StatsBar from "./StatsBar";
+import FileChangeCard from "./FileChangeCard";
 import ModelPicker from "./ModelPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
@@ -213,11 +214,18 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
                 </div>
               )}
               {collapsed ? (
-                isFirstOfTurn && head && head.text && (
-                  <div className="chat-msg assistant">
-                    <div className="chat-role">{ROLE_LABEL.assistant}</div>
-                    <div className="chat-text"><Markdown text={head.text} /></div>
-                  </div>
+                isFirstOfTurn && head && (
+                  <>
+                    {head.text && (
+                      <div className="chat-msg assistant">
+                        <div className="chat-role">{ROLE_LABEL.assistant}</div>
+                        <div className="chat-text"><Markdown text={head.text} /></div>
+                      </div>
+                    )}
+                    {head.files && head.files.length > 0 && (
+                      <FileChangeCard files={head.files} />
+                    )}
+                  </>
                 )
               ) : m.role === "thinking" ? (
                 <div className={`chat-msg thinking ${m.thinking ? "live" : ""}`}>

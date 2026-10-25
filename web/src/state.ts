@@ -25,7 +25,8 @@ export interface State {
   micError: string;
   msgs: { role: string; text: string; ts: number; tid?: number;
           seconds?: number; thinking?: boolean; diff?: {a:number;r:number};
-          browsed?: number }[];
+          browsed?: number;
+          files?: { path: string; rel: boolean; a: number; r: number }[] }[];
   localListen: boolean;   // 手动聆听本地态（不等服务器往返）
   toast: string;          // 顶部轻提示
   sessions: any[];

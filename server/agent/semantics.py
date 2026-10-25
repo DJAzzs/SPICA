@@ -82,11 +82,13 @@ class Semantics:
         self._turn_web_count = 0
         self._last_tool = ""          # 最近工具调用摘要（权限解释用）
         # 运行统计（tokens/上下文/速度）
+        self._turn_files: dict[str, dict] = {}   # path -> {a, r}
         self._stats = {"total_in": 0, "total_out": 0, "ctx_win": 0,
                        "ctx_used": 0, "turns": 0, "steps": 0,
                        "last_speed": 0.0}
         self._step_started_at = 0.0
         # 运行统计（tokens/上下文/速度）
+        self._turn_files: dict[str, dict] = {}   # path -> {a, r}
         self._stats = {"total_in": 0, "total_out": 0, "ctx_win": 0,
                        "ctx_used": 0, "turns": 0, "steps": 0,
                        "last_speed": 0.0}
@@ -530,6 +532,21 @@ class Semantics:
         except Exception:
             pass
         return None
+
+    @staticmethod
+    def _tool_path(name: str, args) -> str:
+        """从工具参数提取文件路径（edit/write/file tools）。"""
+        try:
+            a = args if isinstance(args, dict) else {}
+            if not a and isinstance(args, str) and args.strip().startswith("{"):
+                import json as _j
+                a = _j.loads(args)
+            for k in ("file_path", "path", "filename", "filePath"):
+                if a.get(k):
+                    return str(a[k])
+        except Exception:
+            pass
+        return ""
 
     @staticmethod
     def _web_host(args) -> str:
@@ -1142,6 +1159,7 @@ class Semantics:
         self.current_brief = prompt[:40]
         self.turn_seq += 1
         self.turn_started_at = time.time()
+        self._turn_files = {}
         await self.broadcast({"t": "turn_start", "tid": self.turn_seq})
         self.narrator.speak("收到，开始。", prio=1, kind="confirm")
         self.transcript.append({"role": "task", "text": prompt,
@@ -1214,6 +1232,13 @@ class Semantics:
                     d = self._diff_meta(name, args)
                     if d:
                         ev["diff"] = d
+                        # 累计到 per-turn 文件变更表
+                        fpath = self._tool_path(name, args)
+                        if fpath:
+                            cur = self._turn_files.get(fpath, {"a": 0, "r": 0})
+                            cur["a"] += d.get("a", 0)
+                            cur["r"] += d.get("r", 0)
+                            self._turn_files[fpath] = cur
                     await self.broadcast(ev)
                     self._log("tool", summary)
         elif "reasoning" in typ or "thinking" in typ:
@@ -1278,9 +1303,20 @@ class Semantics:
         seconds = max(0, time.time() - self.turn_started_at)
         self.transcript.append({"role": "assistant", "text": summary,
                                 "ts": time.time()})
+        # 文件变更摘要（按总变更行数降序）
+        cwd = self.session.get("cwd", "")
+        files_sorted = sorted(
+            self._turn_files.items(),
+            key=lambda kv: -(kv[1]["a"] + kv[1]["r"]))
+        files = [{
+            "path": p.replace(cwd + "/", "") if cwd and p.startswith(cwd + "/") else p,
+            "rel": bool(cwd and p.startswith(cwd + "/")),
+            "a": v["a"], "r": v["r"],
+        } for p, v in files_sorted if v["a"] > 0 or v["r"] > 0]
         await self.broadcast({"t": "turn_done", "tid": self.turn_seq,
                               "summary": summary, "seconds": round(seconds),
-                              "browsed": self._turn_web_count})
+                              "browsed": self._turn_web_count,
+                              "files": files})
         self._turn_web_count = 0
         self._stats["turns"] += 1
         self._log("assistant", summary)
