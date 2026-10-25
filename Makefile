@@ -13,6 +13,10 @@ venv:
 
 deps: venv
 	$(PIP) install -r requirements.txt
+	@if [ ! -d runtime/dsh/node_modules/@deepseek-ai/dsh ]; then \
+		echo "⚠ DSH 运行时未捆绑，正在安装（可选，跳过则用系统 DSH）..."; \
+		$(MAKE) deps-dsh; \
+	fi
 
 deps-dsh:
 	@mkdir -p runtime/dsh

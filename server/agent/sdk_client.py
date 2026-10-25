@@ -26,12 +26,51 @@ PATCH = ROOT / "run" / "dsh-patch.yml"
 NotificationHandler = Callable[[str, dict], Awaitable[None]]
 
 
+def check_node() -> str | None:
+    """返回 node 路径，不可用返回 None。"""
+    import shutil
+    return shutil.which("node")
+
+
+def ensure_dsh_ready(settings: dict | None = None) -> tuple[bool, str]:
+    """P3：检查 DSH 运行环境，返回 (ok, message)。
+    优先级：用户设置 > 项目捆绑 > 系统 PATH > npx 缓存。"""
+    s = settings or load_settings()
+
+    # Node.js 必须存在
+    node = check_node()
+    if not node:
+        return False, ("Node.js 未安装。SPICA 需要 Node.js ≥ 18 来运行 DSH 运行时。\n"
+                       "安装方法：sudo apt install nodejs 或从 https://nodejs.org 下载")
+
+    # 1. 用户显式指定
+    if s.get("dsh_bin") and Path(s["dsh_bin"]).exists():
+        return True, "用户配置的 DSH"
+
+    # 2. 项目捆绑
+    bundled = ROOT / "runtime" / "dsh" / "node_modules" / "@deepseek-ai" / "dsh" / "lib" / "bin.js"
+    if bundled.exists():
+        return True, f"捆绑 DSH 运行时（{bundled.parent.parent.parent}）"
+
+    # 3. 系统 PATH
+    import shutil
+    if shutil.which("dsh"):
+        return True, "系统安装的 DSH"
+
+    # 4. npx 缓存
+    for p in DSH_BIN_CANDIDATES:
+        if p.exists():
+            return True, f"npx 缓存的 DSH（{p}）"
+
+    return False, ("DSH 运行时未找到。运行以下命令安装捆绑版：\n"
+                   "  cd /home/dja/桌面/SPICA && make deps-dsh")
+
+
 def dsh_command(settings: dict | None = None) -> list[str]:
     """DSH 可执行优先级：用户设置 > 项目捆绑 > 系统 PATH > npx 缓存。"""
     s = settings or load_settings()
     if s.get("dsh_bin"):
         return [s["dsh_bin"]]
-    # 项目捆绑的运行时（P1 剥离）
     bundled = ROOT / "runtime" / "dsh" / "node_modules" / "@deepseek-ai" / "dsh" / "lib" / "bin.js"
     if bundled.exists():
         return ["node", str(bundled)]
@@ -42,7 +81,7 @@ def dsh_command(settings: dict | None = None) -> list[str]:
         if p.exists():
             return ["node", str(p)]
     raise FileNotFoundError(
-        "dsh 不可达：请运行 make deps-dsh 或配置 dsh_bin")
+        "DSH 不可达。运行 make deps-dsh 安装捆绑版，或在设置中配置 dsh_bin")
 
 
 def zai_env(settings: dict | None = None) -> dict[str, str]:

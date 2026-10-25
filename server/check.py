@@ -80,6 +80,11 @@ def main() -> int:
     check("LLM 凭据 (zai-coding-cn)", bool(key),
           "环境变量或 ~/.dsh/.credentials.yaml" if key else "未找到，语音改写将不可用")
 
+    # DSH 运行时（P3 零依赖检查）
+    from server.agent.sdk_client import ensure_dsh_ready
+    dsh_ok, dsh_msg = ensure_dsh_ready()
+    check("DSH 运行时", dsh_ok, dsh_msg, fatal=False)
+
     # 端口
     port = int(settings.get("port", 8666))
     try:

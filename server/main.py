@@ -149,6 +149,10 @@ def main() -> None:
     except Exception:
         git_hash = "?"
     print(f"[spica] 版本：{git_hash}", flush=True)
+    from server.agent.sdk_client import ensure_dsh_ready
+    dsh_ok, dsh_msg = ensure_dsh_ready()
+    print(f"[spica] DSH 运行时：{'✓ ' + dsh_msg if dsh_ok else '✗ ' + dsh_msg}",
+          flush=True)
 
     app = create_app(boot)
     uvicorn.run(app, host=settings.get("host", "127.0.0.1"),
