@@ -10,6 +10,7 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+MODELS_ROOT = ROOT / "models"
 MODELS_DIR = ROOT / "models"
 RUN_DIR = ROOT / "run"
 ARCHIVES_DIR = ROOT / "archives"
@@ -109,7 +110,7 @@ DEFAULT_SETTINGS = {
         "complex":  {"model": "glm-5.3-flash", "reasoning_effort": "max"},
     },
     # TTS
-    "tts_model_path": "/home/dja/桌面/Models/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+    "tts_model_path": "",  # 空=自动探测 models/Qwen3-TTS*/ 或设置绝对路径
     "tts_voice_preset": "清朗助理",
     "tts_custom_description": "",
     "tts_language": "Chinese",

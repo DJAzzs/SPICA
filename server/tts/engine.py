@@ -25,6 +25,25 @@ class TTSEngine:
 
     def __init__(self, settings: dict | None = None):
         self.settings = settings or load_settings()
+        if not self.settings.get("tts_model_path"):
+            self._auto_detect_tts()
+
+    def _auto_detect_tts(self) -> None:
+        """自动探测本地 TTS 模型目录。"""
+        from server.config import MODELS_ROOT
+        # 1. 项目 models/ 下的 Qwen3-TTS 目录
+        if MODELS_ROOT.exists():
+            for d in MODELS_ROOT.iterdir():
+                if d.is_dir() and "Qwen3-TTS" in d.name and (d / "model.safetensors").exists():
+                    self.settings["tts_model_path"] = str(d)
+                    return
+        # 2. 用户家目录下的 Models/
+        home_models = Path.home() / "Models"
+        if home_models.exists():
+            for d in home_models.iterdir():
+                if d.is_dir() and "Qwen3-TTS" in d.name and (d / "model.safetensors").exists():
+                    self.settings["tts_model_path"] = str(d)
+                    return
 
     # ------------------------------------------------------------ 加载
     def _load(self):

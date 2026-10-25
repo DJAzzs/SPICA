@@ -15,3 +15,17 @@ __pycache__/
 *.egg-info/
 runtime/dsh/node_modules/
 runtime/dsh/package*.json
+# Runtime dependencies
+runtime/dsh/node_modules/
+runtime/dsh/package*.json
+runtime/musicfree/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

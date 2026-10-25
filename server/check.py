@@ -9,9 +9,20 @@ from pathlib import Path
 
 from server.config import MODELS_DIR, ROOT, load_settings
 
-DSH_NPX_BIN = Path(
-    "/home/dja/.npm/_npx/b86ed90107c62dab/node_modules/.bin/dsh"
-)
+def _find_npx_dsh():
+    import subprocess
+    try:
+        cache = subprocess.run(["npm", "config", "get", "cache"],
+                               capture_output=True, text=True, timeout=5)
+        npm_cache = Path(cache.stdout.strip()) / "_npx"
+        if npm_cache.exists():
+            for d in npm_cache.iterdir():
+                bin_js = d / "node_modules" / "@deepseek-ai" / "dsh" / "lib" / "bin.js"
+                if bin_js.exists():
+                    return bin_js
+    except Exception:
+        pass
+    return None
 CRED_FILE = Path.home() / ".dsh" / ".credentials.yaml"
 
 RESULTS: list[tuple[str, bool, str]] = []
@@ -66,8 +77,16 @@ def main() -> int:
     check("Qwen3-TTS 模型目录", tts_path.exists() and (tts_path / "model.safetensors").exists())
 
     # dsh
-    dsh = shutil.which("dsh") or (str(DSH_NPX_BIN) if DSH_NPX_BIN.exists() else "")
-    check("dsh 可执行", bool(dsh), dsh)
+    dsh = shutil.which("dsh") or ""
+    if not dsh:
+        bundled = ROOT / "runtime" / "dsh" / "node_modules" / "@deepseek-ai" / "dsh" / "lib" / "bin.js"
+        if bundled.exists():
+            dsh = str(bundled)
+        else:
+            p = _find_npx_dsh()
+            if p:
+                dsh = str(p)
+    check("DSH runtime", bool(dsh), dsh)
 
     # LLM 凭据（zai-coding-cn，与 DSH 同源）
     key = ""

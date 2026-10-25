@@ -19,8 +19,23 @@ from server import lifecycle
 from server.config import ROOT, load_settings
 
 DSH_BIN_CANDIDATES = [
-    Path("/home/dja/.npm/_npx/b86ed90107c62dab/node_modules/.bin/dsh"),
 ]
+
+def _find_npx_dsh() -> Path | None:
+    """扫描 npx 缓存查找 DSH（跨用户通用）。"""
+    import subprocess
+    try:
+        cache = subprocess.run(["npm", "config", "get", "cache"],
+                               capture_output=True, text=True, timeout=5)
+        npm_cache = Path(cache.stdout.strip()) / "_npx"
+        if npm_cache.exists():
+            for d in npm_cache.iterdir():
+                bin_js = d / "node_modules" / "@deepseek-ai" / "dsh" / "lib" / "bin.js"
+                if bin_js.exists():
+                    return bin_js
+    except Exception:
+        pass
+    return None
 PATCH = ROOT / "run" / "dsh-patch.yml"
 
 NotificationHandler = Callable[[str, dict], Awaitable[None]]
@@ -63,7 +78,7 @@ def ensure_dsh_ready(settings: dict | None = None) -> tuple[bool, str]:
             return True, f"npx 缓存的 DSH（{p}）"
 
     return False, ("DSH 运行时未找到。运行以下命令安装捆绑版：\n"
-                   "  cd /home/dja/桌面/SPICA && make deps-dsh")
+                   "  Run: make deps-dsh")
 
 
 def dsh_command(settings: dict | None = None) -> list[str]:
@@ -77,11 +92,11 @@ def dsh_command(settings: dict | None = None) -> list[str]:
     import shutil
     if shutil.which("dsh"):
         return ["dsh"]
-    for p in DSH_BIN_CANDIDATES:
-        if p.exists():
-            return ["node", str(p)]
+    p = _find_npx_dsh()
+    if p:
+        return ["node", str(p)]
     raise FileNotFoundError(
-        "DSH 不可达。运行 make deps-dsh 安装捆绑版，或在设置中配置 dsh_bin")
+        "DSH runtime not found. Run: make deps-dsh  (or set dsh_bin in settings)")
 
 
 def zai_env(settings: dict | None = None) -> dict[str, str]:
