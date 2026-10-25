@@ -12,6 +12,7 @@ import FileChangeCard from "./FileChangeCard";
 import Sidebar from "./Sidebar";
 import NewSessionModal from "./NewSessionModal";
 import ModelPicker from "./ModelPicker";
+import PermPicker from "./PermPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
   { cmd: "plan",    hint: "只读规划，不改文件：/plan <目标>" },
@@ -587,6 +588,7 @@ export default function App() {
           <div className="tools">
             <ThemeToggle />
             <ModelPicker />
+          <PermPicker />
             {ttsSpeaking ? <span>播报中</span> : null}
             <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />
             <a href="#/diagnose">诊断</a>

@@ -1536,3 +1536,4 @@ html[data-theme="dark"] .theme-icon-scroll {
 .todo-item.completed .todo-status { color: var(--mist); }
 .todo-item.in_progress .todo-status { color: var(--mustard); }
 .todo-text { color: var(--ink-dim); }
+.model-current.perm { min-width: 100px; gap: 5px; }
