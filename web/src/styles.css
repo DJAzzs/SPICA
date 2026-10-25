@@ -1099,12 +1099,15 @@ html:not([data-theme="dark"]) .sidebar-inline {
   box-shadow: 8px 0 32px rgba(166,156,138,0.25),
     -3px -3px 12px var(--nm-hi), 3px 3px 12px var(--nm-lo);
 }
-/* 深色：液态玻璃 */
+/* 深色：毛玻璃（半透 + 重模糊 + 边缘光） */
 html[data-theme="dark"] .sidebar-inline {
-  background: rgba(21,23,28,0.92);
-  border: 1px solid rgba(255,255,255,0.12);
-  backdrop-filter: blur(28px) saturate(1.5);
-  box-shadow: 12px 0 40px rgba(0,0,0,0.4);
+  background: rgba(18,20,25,0.55);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-right: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(36px) saturate(1.8) brightness(1.05);
+  box-shadow: 12px 0 48px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset -1px 0 0 rgba(255,255,255,0.08);
 }
 @keyframes side-in {
   from { opacity: 0; transform: translateX(-16px); }
@@ -1287,9 +1290,11 @@ html:not([data-theme="dark"]) .side-tab:active {
   box-shadow: inset 2px 2px 5px var(--nm-lo), inset -2px -2px 5px var(--nm-hi); }
 /* 深色：液态玻璃 */
 html[data-theme="dark"] .side-tab {
-  background: rgba(255,255,255,0.08); color: var(--ink-dim);
-  border: 1px solid rgba(255,255,255,0.15);
-  backdrop-filter: blur(16px) saturate(1.4); }
+  background: rgba(18,20,25,0.55); color: var(--ink-dim);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(36px) saturate(1.8) brightness(1.05);
+  box-shadow: 4px 0 20px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.1); }
 html[data-theme="dark"] .side-tab:hover {
   background: rgba(255,255,255,0.12); color: var(--mist); }
 
