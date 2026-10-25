@@ -33,7 +33,7 @@ export default function Sidebar({ open }: { open: boolean }) {
 
   // 同步宽度到 CSS 变量（side-tab 按钮跟随）
   useEffect(() => {
-    document.documentElement.style.setProperty("--side-w", `${width + 12}px`);
+    document.documentElement.style.setProperty("--side-w", `${width + 16}px`);
   }, [width, open]);
   const dragRef = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
