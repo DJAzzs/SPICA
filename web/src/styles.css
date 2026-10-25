@@ -1283,7 +1283,7 @@ html[data-theme="light"] .side-item:hover { background: var(--bg2); }
     border-radius 800ms var(--ease);
   border-radius: 0 12px 12px 0; }
 .side-tab.open {
-  left: var(--side-w, 280px);
+  left: calc(var(--side-w, 280px) - 12px);
   transform: translateY(-50%) rotate(180deg);
   border-radius: 12px 0 0 12px; }
 
