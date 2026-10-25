@@ -1087,11 +1087,12 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
   position: absolute; top: 8px; bottom: 8px;
   display: flex; flex-direction: column;
   z-index: 20;
-  border-radius: var(--radius-sm);
+  border-radius: 0 14px 14px 0;
   padding: 0 10px 6px;
   width: 280px; max-width: 420px;
-  left: calc(-1 * var(--side-w, 280px) - 40px);
-  transition: left 800ms var(--ease);
+  left: calc(-1 * var(--side-w, 280px) - 60px);
+  visibility: hidden;
+  transition: left 800ms var(--ease), visibility 0s 800ms;
   box-shadow: 8px 0 32px rgba(0,0,0,0.15);
 }
 /* 浅色：新拟物凸起面板 */
@@ -1101,26 +1102,18 @@ html:not([data-theme="dark"]) .sidebar-inline {
   box-shadow: 8px 0 32px rgba(166,156,138,0.25),
     -3px -3px 12px var(--nm-hi), 3px 3px 12px var(--nm-lo);
 }
-/* 深色：毛玻璃（伪元素方案，绕开 Firefox overflow 限制） */
+/* 深色：毛玻璃（直接放本体，无 overflow 冲突） */
 html[data-theme="dark"] .sidebar-inline {
-  background: none; border: none; box-shadow: none; }
-html[data-theme="dark"] .sidebar-inline::before {
-  content: ""; position: absolute; inset: 0;
   background: rgba(18,20,25,0.15);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-right: 1px solid rgba(255,255,255,0.22);
+  border: none;
+  border-right: 1px solid rgba(255,255,255,0.2);
   backdrop-filter: blur(36px) saturate(1.8) brightness(1.1);
-  -moz-backdrop-filter: blur(36px) saturate(1.8) brightness(1.1);
   box-shadow: 12px 0 48px rgba(0,0,0,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.12),
-    inset -1px 0 0 rgba(255,255,255,0.08);
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0; }
-html[data-theme="dark"] .sidebar-inline > * {
-  position: relative; z-index: 1; }
+    inset 0 1px 0 rgba(255,255,255,0.12); }
 
-.sidebar-inline.open { left: 12px; }
+.sidebar-inline.open { left: 0;
+  visibility: visible;
+  transition: left 800ms var(--ease); }
 
 /* 拖拽手柄 */
 .side-drag { position: absolute; right: -3px; top: 0; bottom: 0;
