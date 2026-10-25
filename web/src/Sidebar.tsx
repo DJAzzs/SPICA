@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSpica, send } from "./state";
 import { FolderIcon } from "./icons";
+import DirBrowser from "./DirBrowser";
 
 /** 相对时间 */
 function relTime(ts: number): string {
@@ -26,6 +27,7 @@ export default function Sidebar({ open }: { open: boolean }) {
   const [newCwd, setNewCwd] = useState("");
   const [newPerm, setNewPerm] = useState("workspace-write");
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [browsing, setBrowsing] = useState(false);
   const [width, setWidth] = useState(() =>
     parseInt(localStorage.getItem("spica-side-w") || String(DEFAULT_W)));
   const dragRef = useRef(false);
@@ -110,8 +112,13 @@ export default function Sidebar({ open }: { open: boolean }) {
       </button>
       {creating && (
         <div className="side-create">
-          <input type="text" placeholder="工作区路径"
-            value={newCwd} onChange={e => setNewCwd(e.target.value)} />
+          <button className="side-browse-btn" onClick={() => setBrowsing(true)}>
+            📁 {newCwd || "选择工作区目录…"}
+          </button>
+          {browsing && <DirBrowser
+            initial={newCwd || "/"}
+            onPick={p => setNewCwd(p)}
+            onClose={() => setBrowsing(false)} />}
           <select value={newPerm} onChange={e => setNewPerm(e.target.value)}>
             <option value="read-only">只读</option>
             <option value="workspace-write">工作区写入</option>

@@ -41,6 +41,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const [dragOn, setDragOn] = useState(false);
   const [openThinking, setOpenThinking] = useState<Record<number, boolean>>({});
   const [now, setNow] = useState(Date.now());
+  const imgThumbs = useRef<Record<string, string>>({}).current;
   const [atBottom, setAtBottom] = useState(true);
   const pendingFiles = useSpica((s) => s.pendingFiles);
   const permissionReq = useSpica((s) => s.permissionReq);
@@ -128,7 +129,19 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       let j: any = {};
       try { j = JSON.parse(text); } catch { /* 500 文本页 */ }
       if (!r.ok || j.error) toastMsg(`上传失败：${j.error || text.slice(0, 80) || r.status}`);
-      else addPendingFiles(j.saved);
+      else {
+        addPendingFiles(j.saved);
+        // 图片生成缩略图 URL
+        j.saved.forEach((name: string) => {
+          if (/\.(png|jpe?g|gif|webp|svg|ico|bmp)$/i.test(name)) {
+            const file = Array.from(files as File[]).find(f => f.name === name);
+            if (file) {
+              const url = URL.createObjectURL(file);
+              imgThumbs[name] = url;
+            }
+          }
+        });
+      }
     } catch (e: any) {
       toastMsg(`上传失败：${e?.message || e}`);
     }
@@ -331,12 +344,22 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       )}
       {pendingFiles.length > 0 && (
         <div className="file-chips">
-          {pendingFiles.map((n) => (
-            <span className="file-chip" key={n}>
-              <FileIcon size={11} />{n}
-              <button className="chip-x" onClick={() => removeFile(n)}>✕</button>
-            </span>
-          ))}
+          {pendingFiles.map((n) => {
+            const isImg = /\.(png|jpe?g|gif|webp|svg|ico|bmp)$/i.test(n);
+            const thumb = imgThumbs[n];
+            return (
+              <span className="file-chip" key={n}>
+                {isImg && thumb
+                  ? <img src={thumb} alt="" className="chip-thumb" />
+                  : <FileIcon size={11} />}
+                {n}
+                <button className="chip-x" onClick={() => {
+                  if (imgThumbs[n]) URL.revokeObjectURL(imgThumbs[n]);
+                  removeFile(n);
+                }}>✕</button>
+              </span>
+            );
+          })}
         </div>
       )}
       <div className="chat-input">

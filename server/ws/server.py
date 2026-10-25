@@ -235,6 +235,25 @@ def create_app(boot) -> FastAPI:
                      f"attachment; filename*=UTF-8''spica-{safe}.zip"})
 
     # ---------------- 音乐（代理流/封面，解决 CORS） ----------------
+    @app.get("/api/files/browse")
+    async def files_browse(path: str = "/"):
+        """浏览任意目录（工作区选择器用）。"""
+        p = Path(path).resolve()
+        if not p.exists() or not p.is_dir():
+            return {"path": str(p), "dirs": [], "files": []}
+        dirs, files = [], []
+        try:
+            for c in sorted(p.iterdir()):
+                if c.is_dir() and not c.name.startswith("."):
+                    dirs.append(c.name)
+                elif c.is_file() and not c.name.startswith("."):
+                    sz = c.stat().st_size
+                    files.append({"name": c.name, "size": sz})
+        except PermissionError:
+            pass
+        return {"path": str(p), "parent": str(p.parent),
+                "dirs": dirs[:80], "files": files[:50]}
+
     @app.delete("/api/files/uploaded")
     async def delete_uploaded(name: str):
         sem = state["sem"]
