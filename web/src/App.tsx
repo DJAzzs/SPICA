@@ -509,10 +509,12 @@ export default function App() {
         )}
       </header>
 
-      <Sidebar open={sidebarOpen} />
-      <div className={sidebarOpen ? "main-col with-side" : "main-col"}>
-        <Chat st={st} partial={partial} kbdOnly={kbdOnly}
-          connected={connected} onEnableVoice={activate} />
+      <div className={sidebarOpen ? "stage-body with-side" : "stage-body"}>
+        <Sidebar open={sidebarOpen} />
+        <div className="main-col">
+          <Chat st={st} partial={partial} kbdOnly={kbdOnly}
+            connected={connected} onEnableVoice={activate} />
+        </div>
       </div>
 
       <div className={`state-dot ${wakeFlash && Date.now() - wakeFlash < 1500 ? "wake" : ""} ${st === "confirm_shutdown" ? "confirm" : ""}`} />

@@ -193,9 +193,6 @@ export default function Settings() {
               localStorage.setItem("spica-theme", t);
             }}>亮 / 暗切换</button>
             <button className="btn" onClick={() => {
-              document.documentElement.dataset.demo = "1";
-            }}>进入演示模式（Esc Esc 退出）</button>
-            <button className="btn" onClick={() => {
               send({ t: "settings_patch", patch: { wizard_done: false } });
               location.hash = "#/wizard";
             }}>重新运行向导</button>
