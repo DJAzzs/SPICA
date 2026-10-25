@@ -1083,13 +1083,14 @@ html[data-theme="light"] .db-item:hover { background: var(--bg2); }
    侧边栏 v6：浮层（叠在对话区上，不挤偏；不与顶栏重叠）
    ================================================================ */
 .sidebar-inline {
-  position: absolute; left: 12px; top: 8px; bottom: 8px;
+  position: absolute; top: 8px; bottom: 8px;
   display: flex; flex-direction: column;
   overflow: hidden; z-index: 20;
   border-radius: var(--radius-sm);
   padding: 0 10px 6px;
   width: 280px; max-width: 420px;
-  transform: translateX(-110%);
+  left: -320px;
+  transition: left 800ms var(--ease);
   box-shadow: 8px 0 32px rgba(0,0,0,0.15);
 }
 /* 浅色：新拟物凸起面板 */
@@ -1110,16 +1111,7 @@ html[data-theme="dark"] .sidebar-inline {
     inset -1px 0 0 rgba(255,255,255,0.08);
 }
 
-.sidebar-inline.open {
-  animation: side-open 800ms var(--ease) forwards; }
-.sidebar-inline:not(.open) {
-  animation: side-close 800ms var(--ease) forwards; }
-@keyframes side-open {
-  from { transform: translateX(-110%); }
-  to { transform: none; } }
-@keyframes side-close {
-  from { transform: none; }
-  to { transform: translateX(-110%); } }
+.sidebar-inline.open { left: 12px; }
 
 /* 拖拽手柄 */
 .side-drag { position: absolute; right: -3px; top: 0; bottom: 0;
