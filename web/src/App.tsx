@@ -76,11 +76,11 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
         send({ t: "slash", cmd: "export", arg: "" });   // 服务端播报+触发下载
         return;
       }
-      if (["plan", "compact", "goal"].includes(cmd)) {
+      if (["plan", "compact", "goal", "music", "memory", "skills"].includes(cmd)) {
         send({ t: "slash", cmd, arg: m[2].trim() });
         return;
       }
-      toastMsg(`未知命令 /${cmd}，可用：/plan /compact /export /goal`);
+      toastMsg(`未知命令 /${cmd}，可用：/plan /compact /export /goal /music /memory /skills`);
       return;
     }
     // 附件提示：让 Agent 知道工作区里有哪些刚上传的文件

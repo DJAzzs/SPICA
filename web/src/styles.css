@@ -580,7 +580,7 @@ html[data-theme="light"] .turn-head {
 .chip-x:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 
 /* ---------- 斜杠命令面板 ---------- */
-.cmd-panel { position: absolute; left: 0; right: 0; bottom: calc(100% - 4px);
+.cmd-panel { position: absolute; left: 0; right: 0; bottom: 104px;
   z-index: 30; padding: 6px;
   background: var(--panel); border: var(--glass-bd);
   border-radius: var(--radius-sm); box-shadow: var(--raise);
