@@ -309,6 +309,47 @@ def create_app(boot) -> FastAPI:
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=400)
 
+    # ---------------- 字体管理 ----------------
+    @app.post("/api/fonts/upload")
+    async def fonts_upload(file: UploadFile = File(...)):
+        """上传字体文件（.ttf/.otf/.woff2）。"""
+        allowed = {".ttf", ".otf", ".woff", ".woff2"}
+        ext = "." + (file.filename or "").rsplit(".", 1)[-1].lower()
+        if ext not in allowed:
+            return JSONResponse({"error": f"不支持的格式 {ext}，仅支持 TTF/OTF/WOFF/WOFF2"},
+                                status_code=400)
+        fonts_dir = Path("run/fonts")
+        fonts_dir.mkdir(parents=True, exist_ok=True)
+        safe_name = (file.filename or "font" + ext).replace("/", "_").replace("\\", "_")
+        dest = fonts_dir / safe_name
+        content = await file.read()
+        if len(content) > 100 * 1024 * 1024:  # 100MB limit
+            return JSONResponse({"error": "字体文件过大（>100MB）"}, status_code=400)
+        dest.write_bytes(content)
+        return {"ok": True, "name": safe_name, "size": len(content)}
+
+    @app.get("/api/fonts/list")
+    async def fonts_list():
+        fonts_dir = Path("run/fonts")
+        if not fonts_dir.exists():
+            return {"fonts": []}
+        fonts = []
+        for f in fonts_dir.iterdir():
+            if f.suffix.lower() in {".ttf", ".otf", ".woff", ".woff2"}:
+                fonts.append({"name": f.name, "size": f.stat().st_size})
+        return {"fonts": fonts}
+
+    @app.get("/api/fonts/file/{name}")
+    async def fonts_file(name: str):
+        fonts_dir = Path("run/fonts")
+        safe = name.replace("/", "_").replace("\\", "_")
+        f = fonts_dir / safe
+        if not f.exists():
+            return Response(status_code=404)
+        mime = {".ttf": "font/ttf", ".otf": "font/otf",
+                ".woff": "font/woff", ".woff2": "font/woff2"}.get(f.suffix, "application/octet-stream")
+        return FileResponse(f, media_type=mime)
+
     @app.get("/api/music/stream")
     async def music_stream(id: str):
         from server.media.musicfree import MusicFree
