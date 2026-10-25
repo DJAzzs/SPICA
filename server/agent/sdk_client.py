@@ -27,16 +27,22 @@ NotificationHandler = Callable[[str, dict], Awaitable[None]]
 
 
 def dsh_command(settings: dict | None = None) -> list[str]:
+    """DSH 可执行优先级：用户设置 > 项目捆绑 > 系统 PATH > npx 缓存。"""
     s = settings or load_settings()
     if s.get("dsh_bin"):
         return [s["dsh_bin"]]
+    # 项目捆绑的运行时（P1 剥离）
+    bundled = ROOT / "runtime" / "dsh" / "node_modules" / "@deepseek-ai" / "dsh" / "lib" / "bin.js"
+    if bundled.exists():
+        return ["node", str(bundled)]
     import shutil
     if shutil.which("dsh"):
         return ["dsh"]
     for p in DSH_BIN_CANDIDATES:
         if p.exists():
             return ["node", str(p)]
-    raise FileNotFoundError("dsh 不可达：安装 @deepseek-ai/dsh 或配置 dsh_bin")
+    raise FileNotFoundError(
+        "dsh 不可达：请运行 make deps-dsh 或配置 dsh_bin")
 
 
 def zai_env(settings: dict | None = None) -> dict[str, str]:

@@ -4,7 +4,7 @@ PIP  := .venv/bin/pip
 export PIP_INDEX_URL := https://pypi.tuna.tsinghua.edu.cn/simple
 export PIP_CACHE_DIR := $(CURDIR)/.cache/pip
 
-.PHONY: deps venv up up-fg stop log status killall check test models tts-smoke
+.PHONY: deps venv deps-dsh up up-fg stop log status killall check test models tts-smoke
 
 venv:
 	python3.12 -m venv .venv
@@ -13,6 +13,13 @@ venv:
 
 deps: venv
 	$(PIP) install -r requirements.txt
+
+deps-dsh:
+	@mkdir -p runtime/dsh
+	@cd runtime/dsh && npm install @deepseek-ai/dsh \
+		--registry=https://registry.npmmirror.com \
+		--cache ../../.cache/npm --no-audit --no-fund
+	@echo "DSH runtime bundled → runtime/dsh/"
 
 # 启动本地服务（后台守护：日志 run/server.log，pid run/server.pid）
 up:

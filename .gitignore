@@ -13,3 +13,5 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 *.egg-info/
+runtime/dsh/node_modules/
+runtime/dsh/package*.json

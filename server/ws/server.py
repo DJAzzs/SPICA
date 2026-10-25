@@ -81,6 +81,15 @@ def create_app(boot) -> FastAPI:
         app.mount("/assets", StaticFiles(directory=WEB_DIST / "assets"),
                   name="assets")
 
+    # favicon
+    @app.get("/favicon.svg")
+    async def favicon():
+        f = WEB_DIST / "favicon.svg"
+        if f.exists():
+            return FileResponse(f, media_type="image/svg+xml")
+        return Response(status_code=404)
+
+
     @app.get("/api/settings")
     async def get_settings():
         return _safe_settings()

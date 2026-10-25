@@ -153,11 +153,12 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
       <div className="chat-scroll" ref={scrollRef}>
         {msgs.length === 0 && (
           <div className="chat-empty">
-            <svg className="spica-star" width="28" height="28" viewBox="0 0 64 64"
+            <svg className="spica-star" width="32" height="32" viewBox="0 0 64 64"
   style={{ marginBottom: 12 }}>
-  <path d="M32 8 L36 26 L56 32 L36 38 L32 56 L28 38 L8 32 L28 26 Z"
-    fill="currentColor" opacity="0.9"/>
-  <circle cx="32" cy="32" r="4" fill="var(--sand)"/>
+  <path d="M32 6 C42 18 46 26 46 32 C46 38 42 46 32 58 C22 46 18 38 18 32 C18 26 22 18 32 6 Z"
+    fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 14 C38 22 41 27 41 32 C41 37 38 42 32 50 C26 42 23 37 23 32 C23 27 26 22 32 14 Z"
+    fill="var(--sand)" opacity="0.85"/>
 </svg>
 <div className="chat-empty-title">和 SPICA 聊聊</div>
             <div className="chat-empty-line">
@@ -484,10 +485,11 @@ export default function App() {
               <path d="M4 4h4v4H4zM10 4h4v4h-4zM16 4h4v4h-4zM4 10h4v4H4zM10 10h4v4h-4zM16 10h4v4h-4zM4 16h4v4H4zM10 16h4v4h-4zM16 16h4v4h-4z" />
             </svg>
           </button>
-          <svg className="spica-star" width="20" height="20" viewBox="0 0 64 64">
-            <path d="M32 8 L36 26 L56 32 L36 38 L32 56 L28 38 L8 32 L28 26 Z"
-              fill="currentColor" opacity="0.9"/>
-            <circle cx="32" cy="32" r="4" fill="var(--sand)"/>
+          <svg className="spica-star" width="22" height="22" viewBox="0 0 64 64">
+            <path d="M32 6 C42 18 46 26 46 32 C46 38 42 46 32 58 C22 46 18 38 18 32 C18 26 22 18 32 6 Z"
+              fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M32 14 C38 22 41 27 41 32 C41 37 38 42 32 50 C26 42 23 37 23 32 C23 27 26 22 32 14 Z"
+              fill="var(--sand)" opacity="0.85"/>
           </svg>
           <span className="name">SPICA</span>
           <span className="sub">
