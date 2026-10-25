@@ -46,6 +46,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const [atBottom, setAtBottom] = useState(true);
   const pendingFiles = useSpica((s) => s.pendingFiles);
   const permissionReq = useSpica((s) => s.permissionReq);
+  const todos = useSpica((s) => s.todos);
   const [cmdIdx, setCmdIdx] = useState(0);
   const cmdMatches = input.startsWith("/")
     ? SLASH_COMMANDS.filter((c) => ("/" + c.cmd).startsWith(input.toLowerCase())
@@ -195,6 +196,19 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
             <div className="chat-empty-line dim">
               支持命令：/plan 只读规划 · /compact 压缩上下文 · /goal 长期目标 · /export 导出
             </div>
+          </div>
+        )}
+        {todos.length > 0 && (
+          <div className="todo-card">
+            <div className="todo-title">📋 任务清单</div>
+            {todos.map((td, i) => (
+              <div key={i} className={"todo-item " + td.status}>
+                <span className="todo-status">
+                  {td.status === "completed" ? "✓" : td.status === "in_progress" ? "●" : "○"}
+                </span>
+                <span className="todo-text">{td.content}</span>
+              </div>
+            ))}
           </div>
         )}
         {permissionReq && (

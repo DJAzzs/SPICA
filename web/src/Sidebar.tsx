@@ -71,12 +71,14 @@ export default function Sidebar({ open }: { open: boolean }) {
   const groups = useMemo(() => {
     const map = new Map<string, any[]>();
     (sessions || []).forEach((s: any) => {
-      const cwd = s.cwd || "默认";
+      const cwd = s.cwd || "/home";
       if (!map.has(cwd)) map.set(cwd, []);
       map.get(cwd)!.push(s);
     });
     return [...map.entries()].map(([cwd, ss]) => ({
-      cwd, name: cwd.split("/").pop() || cwd, sessions: ss,
+      cwd,
+      name: cwd.split("/").filter(Boolean).pop() || cwd || "工作区",
+      sessions: ss,
     })).sort((a, b) =>
       a.cwd === current?.cwd ? -1 : b.cwd === current?.cwd ? 1 : 0);
   }, [sessions, current]);

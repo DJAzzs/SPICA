@@ -8,9 +8,7 @@ function resolve(mode: ThemeMode): "light" | "dark" {
   return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-/** 应用主题并广播（单一事实源：document.dataset.theme + 事件刷新）。
- *  切换期间挂 theme-anim 类：全局所有元素的颜色/阴影统一 800ms 过渡，
- *  消除"分层切换"感（各组件原本过渡时长不一）。 */
+/** 应用主题并广播（单一事实源：document.dataset.theme + 事件刷新）。 */
 let _animTimer: any = null;
 export function applyTheme(mode: ThemeMode) {
   localStorage.setItem("spica-theme-mode", mode);
@@ -22,9 +20,8 @@ export function applyTheme(mode: ThemeMode) {
   dispatchEvent(new Event("spica-theme"));
 }
 
-/** 三态主题开关：默认跟随系统；点击滑块锁定深/浅；AUTO 交还系统。 */
+/** 三态主题开关：图标上下滚动换页式切换动效。 */
 export default function ThemeToggle() {
-  // 以 spica-theme 事件驱动重渲染（applyTheme / 系统切换都会触发）
   const [, setTick] = useState(0);
   useEffect(() => {
     const on = () => setTick((t) => t + 1);
@@ -32,7 +29,7 @@ export default function ThemeToggle() {
     const mq = matchMedia("(prefers-color-scheme: dark)");
     const onSys = () => {
       const m = (localStorage.getItem("spica-theme-mode") as ThemeMode) || "auto";
-      if (m === "auto") applyTheme("auto");   // 广播刷新（幂等）
+      if (m === "auto") applyTheme("auto");
     };
     mq.addEventListener("change", onSys);
     return () => {
@@ -51,7 +48,11 @@ export default function ThemeToggle() {
         onClick={() => applyTheme(isDark ? "light" : "dark")}
         title={isDark ? "切换到浅色" : "切换到深色"} aria-label="主题切换">
         <span className={`theme-knob ${isDark ? "dark" : ""}`}>
-          {isDark ? <MoonIcon /> : <SunIcon />}
+          {/* 图标滚动容器：sun 在上，moon 在下，切换时 translateY */}
+          <span className="theme-icon-scroll">
+            <span className="theme-icon-page"><SunIcon /></span>
+            <span className="theme-icon-page"><MoonIcon /></span>
+          </span>
         </span>
       </button>
       <button className={`theme-auto ${mode === "auto" ? "on" : ""}`}

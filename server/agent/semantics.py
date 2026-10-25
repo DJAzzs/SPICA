@@ -982,6 +982,10 @@ class Semantics:
         if not events and meta.get("dsh_session_id"):
             from server.dsh_sessions import read_dsh_history
             events = read_dsh_history(meta["dsh_session_id"])
+
+        # DSH 会话：继承统计（读取原会话 usage）
+        if meta.get("dsh_session_id"):
+            self._inherit_dsh_stats(meta["dsh_session_id"])
         self.transcript = [
             {"role": e.get("role", ""), "text": e.get("text", ""),
              "ts": e.get("ts", 0)}
@@ -1309,6 +1313,23 @@ class Semantics:
                 host = self._web_host(args)
                 summary = f"浏览网页{('：' + host) if host else ''}"
                 self._turn_web_count += 1
+            elif name == "todo_write":
+                # Todo List 实时同步到前端
+                try:
+                    import json as _json
+                    if isinstance(args, str):
+                        td = _json.loads(args)
+                    else:
+                        td = args
+                    todos = td.get("todos") or td.get("todos") or []
+                    if todos:
+                        self._bg(self.broadcast({"t": "todo",
+                            "todos": todos}), "todo")
+                        summary = f"📋 更新任务清单（{len(todos)} 项）"
+                    else:
+                        summary = "📋 任务清单"
+                except Exception:
+                    summary = "📋 任务清单"
             else:
                 summary = self.narrator.tool_summary(name, args)
             ev = {"t": "msg", "role": "tool", "text": summary,
@@ -1403,6 +1424,47 @@ class Semantics:
                 await self._goal_next_round()
 
     # ================================================== 语义命令
+
+    def _inherit_dsh_stats(self, dsh_id: str) -> None:
+        """从 DSH 会话文件继承 token/context 统计。"""
+        import subprocess as _sp
+        from pathlib import Path as _P
+        dsh_dir = _P.home() / ".dsh" / "sessions"
+        for ws in dsh_dir.iterdir() if dsh_dir.exists() else []:
+            zstd = ws / dsh_id / "session.v4.jsonl.zstd"
+            if not zstd.exists():
+                continue
+            try:
+                out = _sp.run(["zstdcat", "-q", str(zstd)],
+                              capture_output=True, text=True, timeout=10)
+                total_in = total_out = ctx_used = steps = turns = 0
+                ctx_win = 0
+                for line in out.stdout.splitlines():
+                    try:
+                        e = json.loads(line)
+                    except Exception:
+                        continue
+                    d = e.get("data") or {}
+                    if e.get("type") == "step/end":
+                        u = d.get("usage") or {}
+                        total_in += u.get("inputTokens", 0)
+                        total_out += u.get("outputTokens", 0)
+                        ctx_used = u.get("totalTokens", ctx_used)
+                        steps += 1
+                    elif e.get("type") == "turn/end":
+                        turns += 1
+                    elif e.get("type") == "request/context":
+                        ctx_win = d.get("contextWindow", ctx_win)
+                if total_in + total_out > 0:
+                    self._stats.update({
+                        "total_in": total_in, "total_out": total_out,
+                        "ctx_used": ctx_used, "ctx_win": ctx_win,
+                        "turns": turns, "steps": steps})
+                    self._bg(self._broadcast_stats(), "inherit-stats")
+            except Exception:
+                pass
+            break
+
     async def _auto_compact(self) -> None:
         """Context >=90% auto-compact (waits for current task to finish)."""
         try:

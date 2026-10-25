@@ -1502,3 +1502,37 @@ html[data-theme="dark"] .word-chip {
 html[data-theme="dark"] .word-chip.add {
   background: none; border: 1px dashed rgba(255,255,255,0.2);
   box-shadow: none; backdrop-filter: none; }
+
+/* 设置页与对话面板同宽 */
+.page { max-width: 1100px; margin: 0 auto; width: 94%; }
+
+/* ---------- 主题滑块图标：上下滚动换页 ---------- */
+.theme-icon-scroll { display: flex; flex-direction: column;
+  height: 19px; overflow: hidden;
+  transition: transform 800ms var(--ease); }
+html:not([data-theme="dark"]) .theme-icon-scroll {
+  transform: translateY(0); }
+html[data-theme="dark"] .theme-icon-scroll {
+  transform: translateY(-19px); }
+.theme-icon-page { height: 19px; display: flex;
+  align-items: center; justify-content: center; flex: none; }
+
+/* ---------- Todo List 卡片 ---------- */
+.todo-card { margin: 12px 0; padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--mist) 25%, transparent);
+  background: color-mix(in srgb, var(--mist) 4%, transparent);
+  animation: enter 500ms var(--ease); }
+.todo-title { font-size: 12px; font-weight: 500; color: var(--mist);
+  letter-spacing: 0.1em; margin-bottom: 8px; }
+.todo-item { display: flex; align-items: center; gap: 10px;
+  padding: 4px 0; font-size: 13px; }
+.todo-item.completed .todo-text { text-decoration: line-through;
+  color: var(--ink-faint); }
+.todo-item.in_progress .todo-text { color: var(--mist); font-weight: 500; }
+.todo-status { width: 18px; height: 18px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--ink-faint); }
+.todo-item.completed .todo-status { color: var(--mist); }
+.todo-item.in_progress .todo-status { color: var(--mustard); }
+.todo-text { color: var(--ink-dim); }

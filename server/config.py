@@ -154,8 +154,6 @@ DEFAULT_SETTINGS = {
     "persona": "",
     # 身份覆盖（非空=完全替换内置 SPICA 身份；persona 仍追加）
     "identity_override": "",
-    "custom_font": "",
-    "custom_font_size": 0,
     # 长期目标
     "goal_max_rounds": 12,
     # 语音命令触发（关键词组：文本归一化后含组内全部关键词即命中）

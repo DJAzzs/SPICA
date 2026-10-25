@@ -39,6 +39,7 @@ export interface State {
   permissionReq: { reason: string; tid: number;
     perm_type?: string; action_desc?: string; detail?: string } | null;
   stats: any | null;
+  todos: { content: string; status: string }[];
 }
 
 const initial: State = {
@@ -49,7 +50,7 @@ const initial: State = {
   micOn: false, micError: "", msgs: [], localListen: false, toast: "",
   sessions: [], currentSession: null, turns: {}, execSince: 0,
   musicTrack: null, musicStopFlag: 0, pendingFiles: [], permissionReq: null,
-  stats: null,
+  stats: null, todos: [],
 };
 
 let state: State = initial;
@@ -207,6 +208,7 @@ function handle(e: SpicaEvent) {
       a.click();
       break;
     }
+    case "todo": set({ todos: e.todos || [] }); break;
     case "stats": set({ stats: { ...e, model: state.route?.model
       || state.currentSession?.model_override || "auto" } }); break;
     case "error": toast(`出错了：${e.message || ""}`); break;
