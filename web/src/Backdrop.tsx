@@ -110,5 +110,7 @@ export default function Backdrop() {
     };
   }, []);
 
+  const isDark = document.documentElement.dataset.theme === "dark";
+  if (!isDark) return null;
   return <canvas ref={ref} className="backdrop-canvas" />;
 }

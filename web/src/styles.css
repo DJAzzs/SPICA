@@ -991,3 +991,5 @@ html[data-theme="light"] .scroll-bottom {
 @keyframes scroll-btn-in {
   from { opacity: 0; transform: translateY(8px) scale(0.9); }
   to { opacity: 1; transform: translateY(0) scale(1); } }
+
+html:not([data-theme="dark"]) .backdrop-canvas { display: none !important; }
