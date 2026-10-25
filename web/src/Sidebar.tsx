@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSpica, send } from "./state";
 import { FolderIcon } from "./icons";
 
-/** 相对时间：x分钟/x小时/x天/x月 */
+/** 相对时间 */
 function relTime(ts: number): string {
   if (!ts) return "";
   const diff = (Date.now() / 1000 - ts);
@@ -13,7 +13,9 @@ function relTime(ts: number): string {
   return `${Math.floor(diff / 2592000)}个月`;
 }
 
-/** 侧边栏：按工作区分组的会话树（内嵌布局），支持删除 + 相对时间。 */
+const MIN_W = 200, MAX_W = 420, DEFAULT_W = 280;
+
+/** 侧边栏：按工作区分组，可拖拽调宽。 */
 export default function Sidebar({ open }: { open: boolean }) {
   const sessions = useSpica((s) => s.sessions);
   const current = useSpica((s) => s.currentSession);
@@ -24,6 +26,40 @@ export default function Sidebar({ open }: { open: boolean }) {
   const [newCwd, setNewCwd] = useState("");
   const [newPerm, setNewPerm] = useState("workspace-write");
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [width, setWidth] = useState(() =>
+    parseInt(localStorage.getItem("spica-side-w") || String(DEFAULT_W)));
+  const dragRef = useRef(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // 拖拽调宽
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      const w = Math.max(MIN_W, Math.min(MAX_W, e.clientX));
+      setWidth(w);
+    };
+    const onUp = () => {
+      if (dragRef.current) {
+        dragRef.current = false;
+        localStorage.setItem("spica-side-w", String(width));
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  }, [width]);
+
+  const startDrag = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
 
   const groups = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -50,11 +86,6 @@ export default function Sidebar({ open }: { open: boolean }) {
     setConfirmDel(null);
     send({ t: "session_delete", id });
   };
-  const deleteWorkspace = (cwd: string, ids: string[]) => {
-    setConfirmDel(null);
-    ids.forEach(id => send({ t: "session_delete", id }));
-  };
-
   const createSession = () => {
     send({ t: "session_new" });
     setCreating(false); setNewCwd("");
@@ -63,13 +94,17 @@ export default function Sidebar({ open }: { open: boolean }) {
   if (!open) return null;
 
   return (
-    <div className="sidebar-inline">
+    <div ref={sidebarRef} className="sidebar-inline" style={{ width }}>
+      {/* 拖拽手柄 */}
+      <div className="side-drag" onMouseDown={startDrag} />
+
+      {/* 固定头部 */}
       <button className="side-new-btn" onClick={() => setCreating(!creating)}>
         ＋ 新会话
       </button>
       {creating && (
         <div className="side-create">
-          <input type="text" placeholder="工作区路径（默认 workspace）"
+          <input type="text" placeholder="工作区路径"
             value={newCwd} onChange={e => setNewCwd(e.target.value)} />
           <select value={newPerm} onChange={e => setNewPerm(e.target.value)}>
             <option value="read-only">只读</option>
@@ -84,7 +119,7 @@ export default function Sidebar({ open }: { open: boolean }) {
         <div className="side-ws-actions">
           <button className="side-icon-btn" title="搜索"
             onClick={() => setSearchOpen(!searchOpen)}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
             </svg>
@@ -95,69 +130,75 @@ export default function Sidebar({ open }: { open: boolean }) {
         <input type="text" className="side-search" placeholder="搜会话…"
           value={search} onChange={e => setSearch(e.target.value)} autoFocus />
       )}
-      <div className="side-groups">
-        {filtered.map(g => (
-          <div key={g.cwd} className="side-group">
-            <div className="side-group-head-row">
-              <button className="side-group-head"
-                onClick={() => setCollapsed({ ...collapsed,
-                  [g.cwd]: !collapsed[g.cwd] })}>
-                <span className={`turn-caret ${collapsed[g.cwd] ? "" : "open"}`}>▸</span>
-                <FolderIcon size={12} />
-                <span className="side-group-name" title={g.cwd}>{g.name}</span>
-                <span className="side-group-count">{g.sessions.length}</span>
-              </button>
-              <button className="side-group-del" title="删除此工作区全部会话"
-                onClick={() => setConfirmDel(`ws:${g.cwd}`)}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                </svg>
-              </button>
+
+      {/* 可滚动的会话列表 */}
+      <div className="side-scroll">
+        <div className="side-groups">
+          {filtered.map(g => (
+            <div key={g.cwd} className="side-group">
+              <div className="side-group-head-row">
+                <button className="side-group-head"
+                  onClick={() => setCollapsed({ ...collapsed,
+                    [g.cwd]: !collapsed[g.cwd] })}>
+                  <span className={`turn-caret ${collapsed[g.cwd] ? "" : "open"}`}>▸</span>
+                  <FolderIcon size={14} />
+                  <span className="side-group-name" title={g.cwd}>{g.name}</span>
+                  <span className="side-group-count">{g.sessions.length}</span>
+                </button>
+                <button className="side-group-del" title="删除全部"
+                  onClick={() => setConfirmDel(`ws:${g.cwd}`)}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  </svg>
+                </button>
+              </div>
+
+              {confirmDel === `ws:${g.cwd}` && (
+                <div className="side-confirm">
+                  <span>删除 {g.sessions.length} 个会话？</span>
+                  <button className="side-confirm-yes" onClick={() => {
+                    setConfirmDel(null);
+                    g.sessions.forEach((s: any) => send({ t: "session_delete", id: s.id }));
+                  }}>删除</button>
+                  <button className="side-confirm-no" onClick={() => setConfirmDel(null)}>取消</button>
+                </div>
+              )}
+
+              {!collapsed[g.cwd] && (
+                <div className="side-group-items">
+                  {g.sessions.map((s: any) => (
+                    <div key={s.id}
+                      className={`side-item ${current?.id === s.id ? "on" : ""}`}
+                      onClick={() => openSession(s.id)}>
+                      <span className="side-item-title">{s.title || "未命名"}</span>
+                      <span className="side-item-meta">
+                        <span className="side-item-time">{relTime(s.updated)}</span>
+                        {s.source === "dsh" && <em>DSH</em>}
+                      </span>
+                      <button className="side-item-del"
+                        onClick={(e) => { e.stopPropagation(); setConfirmDel(s.id); }}>
+                        ✕
+                      </button>
+                      {confirmDel === s.id && (
+                        <div className="side-confirm" onClick={e => e.stopPropagation()}>
+                          <span>删除？</span>
+                          <button className="side-confirm-yes"
+                            onClick={() => deleteSession(s.id)}>是</button>
+                          <button className="side-confirm-no"
+                            onClick={() => setConfirmDel(null)}>否</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-
-            {/* 确认删除工作区 */}
-            {confirmDel === `ws:${g.cwd}` && (
-              <div className="side-confirm">
-                <span>删除 {g.sessions.length} 个会话？</span>
-                <button className="side-confirm-yes" onClick={() =>
-                  deleteWorkspace(g.cwd, g.sessions.map((s: any) => s.id))}>删除</button>
-                <button className="side-confirm-no" onClick={() => setConfirmDel(null)}>取消</button>
-              </div>
-            )}
-
-            {!collapsed[g.cwd] && (
-              <div className="side-group-items">
-                {g.sessions.map((s: any) => (
-                  <div key={s.id}
-                    className={`side-item ${current?.id === s.id ? "on" : ""}`}
-                    onClick={() => openSession(s.id)}>
-                    <span className="side-item-title">{s.title || "未命名"}</span>
-                    <span className="side-item-meta">
-                      <span className="side-item-time">{relTime(s.updated)}</span>
-                      {s.source === "dsh" && <em>DSH</em>}
-                    </span>
-                    <button className="side-item-del"
-                      onClick={(e) => { e.stopPropagation(); setConfirmDel(s.id); }}>
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                {/* 确认删除会话 */}
-                {g.sessions.map((s: any) => confirmDel === s.id && (
-                  <div key={`c-${s.id}`} className="side-confirm">
-                    <span>删除「{(s.title || "未命名").slice(0, 14)}」？</span>
-                    <button className="side-confirm-yes" onClick={() => deleteSession(s.id)}>删除</button>
-                    <button className="side-confirm-no" onClick={() => setConfirmDel(null)}>取消</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-        {!filtered.length && (
-          <div className="side-empty">{search ? "无匹配" : "暂无会话"}</div>
-        )}
+          ))}
+          {!filtered.length && (
+            <div className="side-empty">{search ? "无匹配" : "暂无会话"}</div>
+          )}
+        </div>
       </div>
     </div>
   );
