@@ -228,6 +228,10 @@ class Semantics:
                 await self.broadcast({"t": "music_ctrl", "action": "resume"})
             elif sub == "next":
                 await self.broadcast({"t": "music_ctrl", "action": "next"})
+            elif sub == "taste":
+                from server.media.taste import MusicTaste
+                await self.broadcast({"t": "msg", "role": "system",
+                    "text": "〔音乐偏好〕" + MusicTaste().summary()})
             else:
                 await self.music_play(q)
         elif cmd == "memory":
@@ -408,27 +412,62 @@ class Semantics:
 
     # ================================================== 音乐（MusicFree/OpenSubsonic）
     async def music_play(self, query: str, source: str = "manual") -> None:
-        """搜索并播放：有词按词搜，无词随机轻音乐/热门。"""
+        """搜索并播放：描述/歌名→远程搜（空则 LLM 具体化）；无词→偏好加权推荐。"""
         from server.media.musicfree import MusicFree
+        from server.media.taste import MusicTaste
         ok, info = await MusicFree.ping()
         if not ok:
             await self.broadcast({"t": "msg", "role": "system",
                 "text": f"音乐服务未连接（{info[:60]}）。请在设置中配置 MusicFree 服务器地址与 API Key。"})
             self.narrator.confirm("音乐服务没有连上，请先在设置里配置。")
             return
-        keyword = (query or "").strip() or random.choice(
-            ["轻音乐", "流行 热门", "纯音乐 工作", "钢琴曲"])
-        track = await MusicFree.pick(keyword)
+        taste = MusicTaste()
+        query = (query or "").strip()
+        explored = False
+        if query:
+            keyword = query
+            track = await MusicFree.pick(keyword)
+            if not track and self.llm is not None:
+                # 描述性查询（“英文摇滚”）搜不到 → LLM 翻译成具体歌名
+                track = await self._describe_to_track(query)
+        else:
+            keyword, explored = taste.suggest()
+            track = await MusicFree.pick(keyword)
         if not track:
             await self.broadcast({"t": "msg", "role": "system",
                                   "text": f"没有找到「{keyword}」相关的歌。"})
             return
+        taste.record(keyword, track.get("title", ""), track.get("artist", ""))
         await self.broadcast({"t": "music_track", **track})
         await self.broadcast({"t": "msg", "role": "system",
-            "text": f"♪ 开始播放：{track['title']} — {track['artist']}"})
+            "text": f"♪ 开始播放：{track['title']} — {track['artist']}"
+                    + (f"（{keyword}）" if query or explored else "")})
         self._log("system", f"播放音乐：{track['title']} — {track['artist']}")
         if source == "voice":
             self.narrator.confirm(f"好，来听{track['title']}。")
+
+    async def _describe_to_track(self, desc: str):
+        """风格描述 → LMB 具体歌名 → 逐一尝试。"""
+        from server.media.musicfree import MusicFree
+        try:
+            out = await self.llm.chat(
+                [{"role": "system",
+                  "content": "把音乐风格描述翻译成 3 个具体的『歌手 歌名』候选"
+                                 "（真实存在的歌，贴合描述），JSON 数组，只输出数组。"},
+                 {"role": "user", "content": desc[:60]}],
+                max_tokens=150, temperature=0.6,
+                thinking="disabled", timeout=10.0)
+            m = re.search(r"\[[\s\S]*\]", out or "")
+            if not m:
+                return None
+            import json as _json
+            for name in _json.loads(m.group(0))[:3]:
+                track = await MusicFree.pick(str(name))
+                if track:
+                    return track
+        except Exception:
+            pass
+        return None
 
     async def music_stop(self, quiet: bool = False) -> None:
         await self.broadcast({"t": "music_stop"})
@@ -492,6 +531,10 @@ class Semantics:
                 await self.broadcast({"t": "music_ctrl", "action": "resume"})
             elif sub == "next":
                 await self.broadcast({"t": "music_ctrl", "action": "next"})
+            elif sub == "taste":
+                from server.media.taste import MusicTaste
+                await self.broadcast({"t": "msg", "role": "system",
+                    "text": "〔音乐偏好〕" + MusicTaste().summary()})
             else:
                 await self.music_play(q)
         elif cmd == "memory":
