@@ -277,17 +277,7 @@ class VoicePipeline:
             pass
         now = time.time()
 
-        # 结束词优先（说"拜拜"不该先触发唤醒）
-        fw = self.matcher.match_anywhere(text, self.farewell_words, "farewell")
-        if fw and not self._gated():
-            score, ok = (1.0, True)
-            if self.settings.get("speaker_gate_enabled", True) and self.speaker.enrolled():
-                score, ok = self.speaker.verify(seg.samples)
-            if ok:
-                self.cb.on_farewell(fw.phrase)
-                return
-
-        # DORMANT：唤醒兜底（双引擎文本冗余：SenseVoice 优先，流式排空终稿次之）
+        # DORMANT：唤醒优先（前缀匹配，不会误触结束词——"嘿"≠"拜拜"）
         if self.st.mode == "DORMANT":
             stream_text = self.stream_asr.drain()
             picked = None
@@ -308,6 +298,16 @@ class VoicePipeline:
                 self._after_utterance()
                 return
             self._pending = (text, stream_text, time.time())
+
+        # 结束词（唤醒没命中才检查；任意位置匹配）
+        fw = self.matcher.match_anywhere(text, self.farewell_words, "farewell")
+        if fw and not self._gated():
+            score, ok = (1.0, True)
+            if self.settings.get("speaker_gate_enabled", True) and self.speaker.enrolled():
+                score, ok = self.speaker.verify(seg.samples)
+            if ok:
+                self.cb.on_farewell(fw.phrase)
+                return
 
         # 语义指令（暂停/继续/确认/取消）
         for name, entries in self.commands.items():

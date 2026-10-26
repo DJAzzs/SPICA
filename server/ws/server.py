@@ -422,7 +422,7 @@ def create_app(boot) -> FastAPI:
                 await sem.slash(str(data.get("cmd", "")),
                                 str(data.get("arg", "")))
             elif t == "session_new":
-                await sem.session_new()
+                await sem.session_new(data.get("cwd", ""), data.get("perm", ""))
             elif t == "session_open":
                 await sem.session_open(str(data.get("id", "")))
             elif t == "session_delete":

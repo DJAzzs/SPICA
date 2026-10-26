@@ -649,3 +649,58 @@
 2026-10-25 21:49:11.877 INFO updating album statistics
 2026-10-25 21:49:11.881 INFO album statistics updated
 2026-10-25 21:49:11.884 INFO incremental scan completed
+2026-10-25 22:19:11.847 INFO starting scheduled incremental scan
+2026-10-25 22:19:11.859 INFO starting incremental scan since=2026-10-25T13:49:11Z
+2026-10-25 22:19:11.862 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-25 22:19:11.865 INFO updating album statistics
+2026-10-25 22:19:11.868 INFO album statistics updated
+2026-10-25 22:19:11.871 INFO incremental scan completed
+2026-10-26 12:12:37.125 INFO Music Free server starting version=1.2.5
+2026-10-26 12:12:37.128 INFO process temp directory tmpdir=/var/tmp
+2026-10-26 12:12:37.352 INFO chromaprint enabled (embedded wasm) algorithm=2 ffmpeg=ffmpeg wasm_memory_limit_mb=256
+2026-10-26 12:12:37.361 INFO sqlite optimized journal_mode=WAL busy_timeout_ms=5000 synchronous=NORMAL max_open_conns=1
+2026-10-26 12:12:37.364 INFO database connected type=sqlite
+2026-10-26 12:12:37.376 INFO duplicate album merge completed
+2026-10-26 12:12:37.379 INFO database schema migrated
+2026-10-26 12:12:37.383 INFO builtin tag cleaning rules synced path=/app/config/tag_cleaning_builtin_rules.json
+2026-10-26 12:12:37.386 INFO applied database config overrides ma_enabled=false ma_server_url=
+2026-10-26 12:12:37.388 INFO starting initial library scan
+2026-10-26 12:12:37.391 INFO incremental scan timer started interval_minutes=30
+2026-10-26 12:12:37.391 INFO starting full library scan
+2026-10-26 12:12:37.391 INFO cleanup timer started interval_hours=24
+2026-10-26 12:12:37.392 INFO server-sdk sync timer started interval=30m0s
+2026-10-26 12:12:37.392 INFO server-sdk playlist sync timer started interval=8h0m0s
+2026-10-26 12:12:37.392 INFO plugins discovered at startup (lazy register) count=2
+2026-10-26 12:12:37.405 INFO cover service initialized cover_path=/app/data/covers
+2026-10-26 12:12:37.398 INFO full library scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 12:12:37.408 INFO playlist sync timer started interval=6h0m0s
+2026-10-26 12:12:37.409 INFO cast: device discovery started scanInterval=30s
+2026-10-26 12:12:37.410 INFO updating album statistics
+2026-10-26 12:12:37.416 INFO embedded web UI enabled web_root=/app/dist
+2026-10-26 12:12:37.419 INFO album statistics updated
+2026-10-26 12:12:37.420 INFO HTTP server listening addr=0.0.0.0:14533
+2026-10-26 12:12:37.424 INFO security reminder msg=Change the default admin password after first login if using configured defaults
+2026-10-26 12:12:37.429 INFO initial library scan completed
+2026-10-26 12:42:37.410 INFO starting scheduled incremental scan
+2026-10-26 12:42:37.423 INFO starting incremental scan since=2026-10-26T04:12:37Z
+2026-10-26 12:42:37.425 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 12:42:37.428 INFO updating album statistics
+2026-10-26 12:42:37.433 INFO album statistics updated
+2026-10-26 12:42:37.435 INFO incremental scan completed
+2026-10-26 13:04:27.896 INFO | 200 |     613.510µs |      172.17.0.1 | GET     /rest/ping?u=admin&t=2d7e52eb3ad55a36979aa3f174e177d0&s=1JNYErIc&f=json
+2026-10-26 13:04:36.693 INFO | 200 |        8.788s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=8c889ac5e34f29f4e6246882f1accce2&s=IfHcsoVX&f=json
+2026-10-26 13:04:36.705 INFO remote download runtime plugin resolved requestPlugin=mf-plugin-gomusicdl runtimePlugin=mf-plugin-gomusicdl pluginDir=/app/data/plugins/mf-plugin-gomusicdl wasmPath=/app/data/plugins/mf-plugin-gomusicdl/plugin.wasm wasmModTime=2026-10-25T02:58:43Z
+2026-10-26 13:04:36.794 INFO | 200 |      89.648ms |      172.17.0.1 | POST    /rest/api/v1/remote-download?u=admin&t=843a5100cd5006364590c695f59aaeb5&s=sXIyuCrW&f=json
+2026-10-26 13:04:36.807 INFO | 200 |     854.820µs |      172.17.0.1 | GET     /rest/search3?u=admin&t=7600c4835278f95cd0063a6cd44190c0&s=6bzPTTI4&query=%E5%93%84%E5%A9%B4%E5%84%BF%E5%85%A5%E7%9D%A1%E9%9F%B3%E4%B9%90&songCount=5&albumCount=0&artistCount=0&f=json
+2026-10-26 13:04:42.407 INFO | 200 |        2.206s |      172.17.0.1 | POST    /rest/api/v1/remote-search?u=admin&t=13672a651a613bee4da96653479577d3&s=d1mfs7Am&f=json
+2026-10-26 13:04:42.428 INFO remote download runtime plugin resolved requestPlugin=mf-plugin-gomusicdl runtimePlugin=mf-plugin-gomusicdl pluginDir=/app/data/plugins/mf-plugin-gomusicdl wasmPath=/app/data/plugins/mf-plugin-gomusicdl/plugin.wasm wasmModTime=2026-10-25T02:58:43Z
+2026-10-26 13:04:42.511 INFO | 200 |      83.318ms |      172.17.0.1 | POST    /rest/api/v1/remote-download?u=admin&t=f4de099606b73d723c4162f849092f2b&s=mGg7KfW4&f=json
+2026-10-26 13:04:42.523 INFO | 200 |       1.398ms |      172.17.0.1 | GET     /rest/search3?u=admin&t=736b12b279b6fe8c2c9743d7fe3ac7ef&s=7Tm7Xnr1&query=%E6%99%B4%E5%A4%A9&songCount=5&albumCount=0&artistCount=0&f=json
+2026-10-26 13:04:42.675 INFO | 200 |      13.999ms |      172.17.0.1 | GET     /rest/stream?u=admin&t=d8053c1b1d31aadd7996ba269c715e6a&s=uV19rlwL&id=592a5da0-d519-4fea-8d22-faf5f5ab0ef5&format=raw
+2026-10-26 13:04:42.708 INFO | 200 |      47.639ms |      172.17.0.1 | GET     /rest/getCoverArt?u=admin&t=85fd85d1701f57ae57f9033dbebc811a&s=9exRAzoV&id=so-592a5da0-d519-4fea-8d22-faf5f5ab0ef5
+2026-10-26 13:12:37.410 INFO starting scheduled incremental scan
+2026-10-26 13:12:37.422 INFO starting incremental scan since=2026-10-26T04:42:37Z
+2026-10-26 13:12:37.426 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 13:12:37.428 INFO updating album statistics
+2026-10-26 13:12:37.432 INFO album statistics updated
+2026-10-26 13:12:37.434 INFO incremental scan completed

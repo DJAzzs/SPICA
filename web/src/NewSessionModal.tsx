@@ -9,10 +9,7 @@ export default function NewSessionModal({ onClose }: { onClose: () => void }) {
   const [perm, setPerm] = useState("workspace-write");
 
   const create = () => {
-    send({ t: "session_new" });
-    if (cwd.trim()) {
-      send({ t: "session_update", patch: { cwd: cwd.trim(), perm } });
-    }
+    send({ t: "session_new", cwd: cwd.trim(), perm });
     onClose();
   };
 

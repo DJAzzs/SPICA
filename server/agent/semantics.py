@@ -981,7 +981,7 @@ class Semantics:
         await self.broadcast({"t": "sessions", "list": merged,
                               "current": self.session.get("id", "")})
 
-    async def session_new(self) -> None:
+    async def session_new(self, cwd: str = "", perm: str = "") -> None:
         if self.state == "exec":
             await self.broadcast({"t": "msg", "role": "system",
                                   "text": "任务执行中，结束后再切换会话。"})
@@ -993,6 +993,9 @@ class Semantics:
         self.sdk.reset_identity("")
         self._need_resume = False
         self.session = self.store.create()
+        if cwd:
+            self.session = self.store.update(self.session["id"],
+                {"cwd": cwd, **({"perm": perm} if perm else {})})
         # 彻底重置执行状态：旧会话的暂停/插话/目标不得泄漏到新会话
         if self.state not in ("shutdown",):
             self.state = "idle"

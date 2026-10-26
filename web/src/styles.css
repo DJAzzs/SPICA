@@ -680,7 +680,8 @@ html[data-theme="light"] .rail-tip { background: var(--bg-raise); }
   opacity: 1; transform: translateY(-50%) translateX(0); }
 
 /* ---------- 底部运行统计栏（IDE 风格极细） ---------- */
-.stats-bar { flex: none; display: flex; align-items: center; gap: 14px;
+.stats-bar { flex: none; display: flex; align-items: center;
+  justify-content: center; gap: 14px;
   padding: 6px 4px 0; font-size: 10.5px; color: var(--ink-faint);
   letter-spacing: 0.04em; font-variant-numeric: tabular-nums;
   user-select: none; position: relative; height: 22px;
