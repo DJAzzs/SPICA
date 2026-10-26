@@ -1587,3 +1587,39 @@ html[data-theme="light"] .topbar-toggle {
 
 /* 模式选择器 */
 .model-current .mode-icon { margin-right: 4px; }
+
+/* ---------- 验证徽章 ---------- */
+.verify-badge { display: inline-flex; align-items: center; gap: 8px;
+  margin: 6px 0; padding: 8px 14px; border-radius: 10px;
+  font-size: 12px; animation: enter 500ms var(--ease); }
+.verify-badge.pass { background: color-mix(in srgb, #4d9e6a 8%, transparent);
+  border: 1px solid color-mix(in srgb, #4d9e6a 25%, transparent); }
+.verify-badge.warn { background: color-mix(in srgb, var(--mustard) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mustard) 30%, transparent); }
+.verify-badge.fail { background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+.vb-icon { font-size: 14px; font-weight: 600; }
+.verify-badge.pass .vb-icon { color: #4d9e6a; }
+.verify-badge.warn .vb-icon { color: var(--mustard); }
+.verify-badge.fail .vb-icon { color: var(--accent); }
+.vb-text { color: var(--ink-dim); }
+.vb-layers { color: var(--ink-faint); font-size: 10px; letter-spacing: 0.05em; }
+.vb-time { color: var(--ink-faint); font-size: 10px; font-variant-numeric: tabular-nums; }
+
+.vb-detail { flex: none; }
+.vb-detail summary { cursor: pointer; color: var(--ink-faint);
+  font-size: 11px; user-select: none; }
+.vb-detail[open] { position: relative; }
+.vb-check { display: flex; align-items: baseline; gap: 8px;
+  padding: 4px 0; font-size: 11.5px; border-bottom: 1px solid var(--hairline); }
+.vb-check:last-child { border-bottom: none; }
+.vb-check.ok .vb-check-status { color: #4d9e6a; }
+.vb-check.bad .vb-check-status { color: var(--accent); }
+.vb-check-layer { color: var(--ink-faint); font-size: 10px; min-width: 20px; }
+.vb-check-type { color: var(--ink-dim); min-width: 80px; }
+.vb-check-detail { color: var(--ink-faint); font-size: 11px; flex: 1; }
+.vb-issues { margin-top: 4px; }
+.vb-issue { font-size: 11px; padding: 2px 0; color: var(--ink-dim); }
+.vb-issue.sev-high { color: var(--accent); }
+.vb-issue.sev-medium { color: var(--mustard); }
+.vb-issue.sev-low { color: var(--ink-faint); }

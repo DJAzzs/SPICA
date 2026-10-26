@@ -9,6 +9,7 @@ import MusicBar from "./MusicBar";
 import NavRail from "./NavRail";
 import StatsBar from "./StatsBar";
 import FileChangeCard from "./FileChangeCard";
+import VerifyBadge from "./VerifyBadge";
 import Sidebar from "./Sidebar";
 import NewSessionModal from "./NewSessionModal";
 import ModelPicker from "./ModelPicker";
@@ -51,6 +52,7 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
   const pendingFiles = useSpica((s) => s.pendingFiles);
   const permissionReq = useSpica((s) => s.permissionReq);
   const todos = useSpica((s) => s.todos);
+  const verifyReports = useSpica((s) => s.verifyReports);
   const [cmdIdx, setCmdIdx] = useState(0);
   const cmdMatches = input.startsWith("/")
     ? SLASH_COMMANDS.filter((c) => ("/" + c.cmd).startsWith(input.toLowerCase())
@@ -282,6 +284,9 @@ function Chat({ st, partial, kbdOnly, connected, onEnableVoice }: {
                     )}
                     {head.files && head.files.length > 0 && (
                       <FileChangeCard files={head.files} />
+                    )}
+                    {verifyReports[tid!] && (
+                      <VerifyBadge report={verifyReports[tid!]} />
                     )}
                   </>
                 )

@@ -1587,6 +1587,23 @@ class Semantics:
         if typ == "turn/end":
             self._turn_task = asyncio.create_task(self._turn_done())
 
+
+    def _recent_tool_outputs(self) -> list[dict]:
+        """本轮的工具输出（用于验证）。"""
+        return self.store.events(self.session.get("id", ""))[-30:] \
+            if self.session.get("id") else []
+
+    async def _run_verify(self, task: str, summary: str, ctx: dict) -> None:
+        """缜密验证管线。"""
+        try:
+            from server.verify import run_verification
+            report = await run_verification(self, task, summary, ctx)
+            if report:
+                report["tid"] = self.turn_seq
+                await self.broadcast(report)
+        except Exception as e:
+            pass
+
     async def _turn_done(self) -> None:
         self._plan_mode = False   # 计划模式仅单轮生效
         summary = self.last_assistant_text[:200] or "任务执行完毕。"
@@ -1609,6 +1626,16 @@ class Semantics:
                               "files": files})
         self._turn_web_count = 0
         self._stats["turns"] += 1
+
+        # 缜密验证：turn_done 后异步执行（不阻塞下一任务）
+        turn_context = {
+            "created_files": [f["path"] for f in files if f.get("a", 0) > 0],
+            "modified_files": [f["path"] for f in files],
+            "tool_outputs": [e.get("text", "") for e in self._recent_tool_outputs()],
+            "actions": [e.get("text", "") for e in self._recent_tool_outputs()],
+        }
+        task_text = (self.transcript[-1] or {}).get("text", "") if self.transcript else ""
+        self._bg(self._run_verify(task_text, summary, turn_context), "verify")
         self._log("assistant", summary)
         # 任务结束不再语音播报（完成态由界面呈现）
         await self._set_state("idle")

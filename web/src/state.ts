@@ -40,6 +40,7 @@ export interface State {
     perm_type?: string; action_desc?: string; detail?: string } | null;
   stats: any | null;
   todos: { content: string; status: string }[];
+  verifyReports: Record<number, any>;  // tid -> report
 }
 
 const initial: State = {
@@ -50,7 +51,7 @@ const initial: State = {
   micOn: false, micError: "", msgs: [], localListen: false, toast: "",
   sessions: [], currentSession: null, turns: {}, execSince: 0,
   musicTrack: null, musicStopFlag: 0, pendingFiles: [], permissionReq: null,
-  stats: null, todos: [],
+  stats: null, todos: [], verifyReports: {},
 };
 
 let state: State = initial;
@@ -208,6 +209,8 @@ function handle(e: SpicaEvent) {
       a.click();
       break;
     }
+    case "verify_report":
+      set({ verifyReports: { ...state.verifyReports, [e.tid]: e } }); break;
     case "todo": set({ todos: e.todos || [] }); break;
     case "stats": set({ stats: { ...e, model: state.route?.model
       || state.currentSession?.model_override || "auto" } }); break;
