@@ -1623,3 +1623,20 @@ html[data-theme="light"] .topbar-toggle {
 .vb-issue.sev-high { color: var(--accent); }
 .vb-issue.sev-medium { color: var(--mustard); }
 .vb-issue.sev-low { color: var(--ink-faint); }
+
+/* ---------- 会话重命名 ---------- */
+.side-item-actions { display: flex; gap: 2px; flex: none;
+  opacity: 0; transition: opacity 250ms var(--ease); }
+.side-item:hover .side-item-actions { opacity: 1; }
+.side-item-rename { width: 20px; height: 20px; border: none;
+  background: none; color: var(--ink-faint); font-size: 11px;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; border-radius: 5px;
+  transition: all 250ms var(--ease); }
+.side-item-rename:hover { color: var(--mist);
+  background: color-mix(in srgb, var(--mist) 10%, transparent); }
+
+.side-rename-input { width: 90%; font: inherit; font-size: 13px;
+  padding: 4px 8px; border-radius: 6px;
+  border: 1px solid var(--mist); background: var(--bg2);
+  color: var(--ink); outline: none; }

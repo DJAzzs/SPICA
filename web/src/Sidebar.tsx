@@ -27,6 +27,8 @@ export default function Sidebar({ open }: { open: boolean }) {
   const [newCwd, setNewCwd] = useState("");
   const [newPerm, setNewPerm] = useState("workspace-write");
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renameVal, setRenameVal] = useState("");
   const [browsing, setBrowsing] = useState(false);
   const [width, setWidth] = useState(() =>
     parseInt(localStorage.getItem("spica-side-w4") || String(DEFAULT_W)));
@@ -186,10 +188,41 @@ export default function Sidebar({ open }: { open: boolean }) {
                         <span className="side-item-time">{relTime(s.updated)}</span>
                         {s.source === "dsh" && <em>DSH</em>}
                       </span>
-                      <button className="side-item-del"
-                        onClick={(e) => { e.stopPropagation(); setConfirmDel(s.id); }}>
-                        ✕
-                      </button>
+                      {renaming === s.id ? (
+                        <input className="side-rename-input"
+                          value={renameVal}
+                          onChange={(e) => setRenameVal(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              send({ t: "session_update", id: s.id,
+                                patch: { title: renameVal.trim() || s.title } });
+                              setRenaming(null);
+                            }
+                            if (e.key === "Escape") setRenaming(null);
+                          }}
+                          onBlur={() => {
+                            if (renameVal.trim() && renameVal !== s.title) {
+                              send({ t: "session_update", id: s.id,
+                                patch: { title: renameVal.trim() } });
+                            }
+                            setRenaming(null);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus />
+                      ) : (
+                        <span className="side-item-actions">
+                          <button className="side-item-rename" title="重命名"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRenaming(s.id);
+                              setRenameVal(s.title || "");
+                            }}>✎</button>
+                          <button className="side-item-del" title="删除"
+                            onClick={(e) => { e.stopPropagation(); setConfirmDel(s.id); }}>
+                            ✕
+                          </button>
+                        </span>
+                      )}
                       {confirmDel === s.id && (
                         <div className="side-confirm" onClick={e => e.stopPropagation()}>
                           <span>删除？</span>
