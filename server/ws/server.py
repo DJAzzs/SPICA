@@ -309,6 +309,24 @@ def create_app(boot) -> FastAPI:
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=400)
 
+    # ---------------- 音乐历史 ----------------
+    @app.get("/api/music/history")
+    async def music_history():
+        from server.media.history import list_history
+        return {"list": list_history()}
+
+    @app.delete("/api/music/history/{index}")
+    async def music_history_delete(index: int):
+        from server.media.history import delete_entry
+        ok = delete_entry(index)
+        return {"ok": ok}
+
+    @app.delete("/api/music/history")
+    async def music_history_clear():
+        from server.media.history import clear_all
+        count = clear_all()
+        return {"cleared": count}
+
     @app.get("/api/music/stream")
     async def music_stream(id: str):
         from server.media.musicfree import MusicFree

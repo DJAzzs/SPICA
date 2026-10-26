@@ -17,6 +17,8 @@ import ModePicker from "./ModePicker";
 import ThoroughToggle from "./ThoroughToggle";
 import MultiAgentToggle from "./MultiAgentToggle";
 import MultiAgentPanel from "./MultiAgentPanel";
+import BackgroundTasks from "./BackgroundTasks";
+import MusicHistory from "./MusicHistory";
 import PermPicker from "./PermPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
@@ -595,8 +597,10 @@ export default function App() {
         </div>
         {!demo && (
           <div className="tools">
-            <ThemeToggle />
-            <ModePicker />
+            <MusicHistory />
+          <ThemeToggle />
+            <BackgroundTasks />
+          <ModePicker />
           <ModelPicker />
           <ThoroughToggle />
           <MultiAgentToggle />

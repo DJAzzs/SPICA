@@ -42,6 +42,8 @@ export interface State {
   todos: { content: string; status: string }[];
   verifyReports: Record<number, any>;  // tid -> report
   maProgress: any | null;
+  bgTasks: any | null;
+  webCards: {host: string; url: string; tid: number}[];
 }
 
 const initial: State = {
@@ -53,6 +55,7 @@ const initial: State = {
   sessions: [], currentSession: null, turns: {}, execSince: 0,
   musicTrack: null, musicStopFlag: 0, pendingFiles: [], permissionReq: null,
   stats: null, todos: [], verifyReports: {}, maProgress: null,
+  bgTasks: null, webCards: [],
 };
 
 let state: State = initial;
@@ -210,6 +213,10 @@ function handle(e: SpicaEvent) {
       a.click();
       break;
     }
+    case "bg_tasks": set({ bgTasks: e }); break;
+    case "web_card":
+      set({ webCards: [...state.webCards, {host: e.host, url: e.url, tid: e.tid}] });
+      break;
     case "ma_progress": set({ maProgress: e }); break;
     case "ma_result": set({ maProgress: null }); break;
     case "verify_report":

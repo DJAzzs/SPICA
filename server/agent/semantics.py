@@ -821,6 +821,9 @@ class Semantics:
         taste.record(keyword, track.get("title", ""), track.get("artist", ""))
         await self.broadcast({"t": "music_track", **track})
         self._log("system", f"播放音乐：{track['title']} — {track['artist']}")
+        # 记录播放历史
+        from server.media.history import record as _rec
+        _rec(track.get('title', ''), track.get('artist', ''), keyword)
         if source == "voice":
             self.narrator.confirm(f"好，来听{track['title']}。")
 
@@ -1517,6 +1520,10 @@ class Semantics:
                         host = self._web_host(args)
                         summary = f"浏览网页{('：' + host) if host else ''}"
                         self._turn_web_count += 1
+                        # 广播网页卡事件
+                        await self.broadcast({"t": "web_card",
+                            "host": host, "url": str(args)[:200],
+                            "tid": self.turn_seq})
                     else:
                         summary = self.narrator.tool_summary(name, args)
                     ev = {"t": "msg", "role": "tool", "text": summary,
