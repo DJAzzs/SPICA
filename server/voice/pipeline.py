@@ -115,11 +115,9 @@ class VoicePipeline:
         self.st.followup_until = time.time() + seconds
 
     def standby(self) -> None:
-        """立即回 DORMANT（取消聆听），清空全部 ASR 累积缓存。
-        3 秒冷却防残留语音误触唤醒。"""
+        """立即回 DORMANT（取消聆听），清空全部 ASR 累积缓存。"""
         self.st.mode = "DORMANT"
         self.st.followup_until = 0.0
-        self.st.wake_hit_until = time.time() + 3.0  # 3秒冷却
         self.enroll_cancel = True
         self.stream_asr.reset()
         self._pending = None
