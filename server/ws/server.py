@@ -309,6 +309,20 @@ def create_app(boot) -> FastAPI:
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=400)
 
+    @app.get("/api/tts/ref.wav")
+    async def tts_ref():
+        f = Path("run/voice_ref.wav")
+        if f.exists():
+            return FileResponse(f, media_type="audio/wav")
+        return Response(status_code=404)
+
+    @app.get("/api/tts/clone_test.wav")
+    async def tts_clone():
+        f = Path("run/clone_test.wav")
+        if f.exists():
+            return FileResponse(f, media_type="audio/wav")
+        return Response(status_code=404)
+
     @app.get("/api/music/stream")
     async def music_stream(id: str):
         from server.media.musicfree import MusicFree
