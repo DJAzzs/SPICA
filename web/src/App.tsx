@@ -12,6 +12,9 @@ import FileChangeCard from "./FileChangeCard";
 import Sidebar from "./Sidebar";
 import NewSessionModal from "./NewSessionModal";
 import ModelPicker from "./ModelPicker";
+import ModePicker from "./ModePicker";
+import ThoroughToggle from "./ThoroughToggle";
+import MultiAgentToggle from "./MultiAgentToggle";
 import PermPicker from "./PermPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
@@ -587,7 +590,10 @@ export default function App() {
         {!demo && (
           <div className="tools">
             <ThemeToggle />
-            <ModelPicker />
+            <ModePicker />
+          <ModelPicker />
+          <ThoroughToggle />
+          <MultiAgentToggle />
           <PermPicker />
             {ttsSpeaking ? <span>播报中</span> : null}
             <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />

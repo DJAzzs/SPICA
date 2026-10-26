@@ -710,3 +710,45 @@
 2026-10-26 13:42:37.428 INFO updating album statistics
 2026-10-26 13:42:37.432 INFO album statistics updated
 2026-10-26 13:42:37.435 INFO incremental scan completed
+2026-10-26 14:12:37.391 INFO starting scheduled incremental scan
+2026-10-26 14:12:37.403 INFO starting incremental scan since=2026-10-26T05:42:37Z
+2026-10-26 14:12:37.407 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 14:12:37.409 INFO updating album statistics
+2026-10-26 14:12:37.413 INFO album statistics updated
+2026-10-26 14:12:37.415 INFO incremental scan completed
+2026-10-26 14:42:37.410 INFO starting scheduled incremental scan
+2026-10-26 14:42:37.423 INFO starting incremental scan since=2026-10-26T06:12:37Z
+2026-10-26 14:42:37.425 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 14:42:37.428 INFO updating album statistics
+2026-10-26 14:42:37.432 INFO album statistics updated
+2026-10-26 14:42:37.434 INFO incremental scan completed
+2026-10-26 15:12:37.410 INFO starting scheduled incremental scan
+2026-10-26 15:12:37.422 INFO starting incremental scan since=2026-10-26T06:42:37Z
+2026-10-26 15:12:37.426 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 15:12:37.428 INFO updating album statistics
+2026-10-26 15:12:37.432 INFO album statistics updated
+2026-10-26 15:12:37.434 INFO incremental scan completed
+2026-10-26 15:42:37.410 INFO starting scheduled incremental scan
+2026-10-26 15:42:37.423 INFO starting incremental scan since=2026-10-26T07:12:37Z
+2026-10-26 15:42:37.426 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 15:42:37.429 INFO updating album statistics
+2026-10-26 15:42:37.432 INFO album statistics updated
+2026-10-26 15:42:37.435 INFO incremental scan completed
+2026-10-26 16:12:37.410 INFO starting scheduled incremental scan
+2026-10-26 16:12:37.423 INFO starting incremental scan since=2026-10-26T07:42:37Z
+2026-10-26 16:12:37.426 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 16:12:37.429 INFO updating album statistics
+2026-10-26 16:12:37.432 INFO album statistics updated
+2026-10-26 16:12:37.435 INFO incremental scan completed
+2026-10-26 16:42:37.410 INFO starting scheduled incremental scan
+2026-10-26 16:42:37.422 INFO starting incremental scan since=2026-10-26T08:12:37Z
+2026-10-26 16:42:37.425 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 16:42:37.428 INFO updating album statistics
+2026-10-26 16:42:37.432 INFO album statistics updated
+2026-10-26 16:42:37.435 INFO incremental scan completed
+2026-10-26 17:12:37.410 INFO starting scheduled incremental scan
+2026-10-26 17:12:37.422 INFO starting incremental scan since=2026-10-26T08:42:37Z
+2026-10-26 17:12:37.425 INFO incremental scan completed files_processed=0 added=0 updated=0 skipped=8
+2026-10-26 17:12:37.427 INFO updating album statistics
+2026-10-26 17:12:37.432 INFO album statistics updated
+2026-10-26 17:12:37.434 INFO incremental scan completed

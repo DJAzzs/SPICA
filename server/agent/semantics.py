@@ -88,6 +88,8 @@ class Semantics:
                        "last_speed": 0.0}
         self._step_started_at = 0.0
         self._compacting = False
+        self._saved_cwd = None       # 定制模式退出时恢复用
+        self._saved_perm = None
         self._ctx_breakdown: dict = {}
         # 运行统计（tokens/上下文/速度）
         self._turn_files: dict[str, dict] = {}   # path -> {a, r}
@@ -96,6 +98,8 @@ class Semantics:
                        "last_speed": 0.0}
         self._step_started_at = 0.0
         self._compacting = False
+        self._saved_cwd = None       # 定制模式退出时恢复用
+        self._saved_perm = None
         self._ctx_breakdown: dict = {}
         # 长期目标 {active, text, round, max_rounds}
         self.goal: dict = {"active": False, "text": "", "round": 0,
@@ -468,6 +472,44 @@ class Semantics:
                 or load_settings().get("llm_model_rewrite")
                 or "glm-5.3-flash")
 
+
+    def _get_mode(self) -> str:
+        return (self.session or {}).get("mode", "standard")
+
+    def _is_thorough(self) -> bool:
+        return bool((self.session or {}).get("thorough"))
+
+    async def _switch_mode(self, mode: str) -> None:
+        """切换模式（含定制模式的进出逻辑）。"""
+        old = self._get_mode()
+        if mode == old:
+            return
+        # 退出定制模式：恢复工作区
+        if old == "custom":
+            if self._saved_cwd:
+                self.store.update(self.session["id"], {"cwd": self._saved_cwd})
+                self.session["cwd"] = self._saved_cwd
+            if self._saved_perm:
+                self.store.update(self.session["id"], {"perm": self._saved_perm})
+                self.session["perm"] = self._saved_perm
+        # 进入定制模式：切换到 SPICA 源码
+        if mode == "custom":
+            from server.config import ROOT
+            from server.agent.modes import CustomPipeline
+            CustomPipeline.SPICA_ROOT = ROOT
+            self._saved_cwd = self.session.get("cwd")
+            self._saved_perm = self.session.get("perm")
+            self.store.update(self.session["id"], {"cwd": str(ROOT), "perm": "workspace-write"})
+            self.session["cwd"] = str(ROOT)
+            self.session["perm"] = "workspace-write"
+        self.store.update(self.session["id"], {"mode": mode})
+        self.session["mode"] = mode
+        await self.broadcast({"t": "session", "meta": self.session})
+        from server.agent.modes import MODES
+        m = MODES.get(mode, {})
+        await self.broadcast({"t": "msg", "role": "system",
+            "text": f"{m.get('icon', '')} 已切换到{m.get('label', mode)}模式"})
+
     @staticmethod
     def _time_context() -> str:
         """当前时间（含星期、时段），注入 prompt 让 Agent 有时间观念。"""
@@ -512,12 +554,20 @@ class Semantics:
         '{"intent": "export"} —— 导出会话\n'
         '{"intent": "compact"} —— 压缩上下文\n'
         '{"intent": "memory_add", "content": "要记住的内容"} —— 记住某事\n'
+        '{"intent": "mode_switch", "mode": "minimal|standard|coding|custom"} —— 切换模式\n'
+        '{"intent": "thorough_on"} —— 开启缜密模式\n'
+        '{"intent": "thorough_off"} —— 关闭缜密模式\n'
+        '{"intent": "multi_agent_on"} —— 开启多智能体\n'
+        '{"intent": "multi_agent_off"} —— 关闭多智能体\n'
         "示例：\n"
         '"放一首周杰伦的晴天" → {"intent": "music_play", "query": "周杰伦 晴天"}\n'
         '"来点BGM" → {"intent": "music_play", "query": ""}\n'
         '"等一下先别跑" → {"intent": "pause"}\n'
         '"你好呀" → {"intent": "chat"}\n'
-        '"帮我看下这个代码" → {"intent": "task"}'
+        '"帮我看下这个代码" → {"intent": "task"}\n'
+        '"切到编程模式" → {"intent": "mode_switch", "mode": "coding"}\n'
+        '"开缜密" → {"intent": "thorough_on"}\n'
+        '"打开多智能体" → {"intent": "multi_agent_on"}'
     )
 
     async def _classify_intent(self, text: str) -> dict:
@@ -1221,6 +1271,33 @@ class Semantics:
         if intent["intent"] == "compact":
             await self._do_compact()
             return
+        if intent["intent"] == "mode_switch" and intent.get("mode"):
+            await self._switch_mode(intent["mode"])
+            return
+        if intent["intent"] == "thorough_on":
+            self.store.update(self.session["id"], {"thorough": True})
+            self.session["thorough"] = True
+            await self.broadcast({"t": "session", "meta": self.session})
+            await self.broadcast({"t": "msg", "role": "system", "text": "◎ 缜密模式已开启"})
+            return
+        if intent["intent"] == "thorough_off":
+            self.store.update(self.session["id"], {"thorough": False})
+            self.session["thorough"] = False
+            await self.broadcast({"t": "session", "meta": self.session})
+            await self.broadcast({"t": "msg", "role": "system", "text": "○ 缜密模式已关闭"})
+            return
+        if intent["intent"] == "multi_agent_on":
+            self.store.update(self.session["id"], {"multi_agent": True})
+            self.session["multi_agent"] = True
+            await self.broadcast({"t": "session", "meta": self.session})
+            await self.broadcast({"t": "msg", "role": "system", "text": "👥 多智能体已开启"})
+            return
+        if intent["intent"] == "multi_agent_off":
+            self.store.update(self.session["id"], {"multi_agent": False})
+            self.session["multi_agent"] = False
+            await self.broadcast({"t": "session", "meta": self.session})
+            await self.broadcast({"t": "msg", "role": "system", "text": "👥 多智能体已关闭"})
+            return
         if intent["intent"] == "memory_add" and intent.get("content"):
             ok, msg = self.memory_store.add("memory", intent["content"], source="text")
             if ok:
@@ -1341,8 +1418,30 @@ class Semantics:
         if self._plan_mode:
             suffix = self.PLAN_SUFFIX
         prompt_out = prompt
-        # 身份+人设前缀（含动态驱动模型）
-        prompt_out = f"{self._identity_prompt(route.get('model'))}\n\n{prompt_out}"
+        # 按模式注入上下文
+        mode = self._get_mode()
+        if mode == "minimal":
+            from server.agent.modes import MinimalPipeline
+            # 极简：不注入身份/记忆/技能，只发任务文本
+            pass
+        elif mode == "custom":
+            from server.agent.modes import CustomPipeline
+            prompt_out = (CustomPipeline.CODE_MAP + "\n"
+                         + self._identity_prompt(route.get("model")) + "\n\n"
+                         + "（你正在修改 SPICA 自身的源码。.git/ run/ node_modules/ 为只读。"
+                         + "核心文件修改前说明原因。修改后需通过构建验证。）\n\n"
+                         + prompt_out)
+        elif mode == "coding":
+            from server.agent.modes import CodingPipeline
+            proj = CodingPipeline.analyze_project(self.session.get("cwd", ""))
+            map_prompt = CodingPipeline.project_map_prompt(proj)
+            prompt_out = (map_prompt
+                         + self._identity_prompt(route.get("model")) + "\n\n"
+                         + "（编程模式：先分析项目结构再动手，每步修改后自查语法，"
+                         + "有测试则运行，不过不标完成。）\n\n"
+                         + prompt_out)
+        else:
+            prompt_out = f"{self._identity_prompt(route.get('model'))}\n\n{prompt_out}"
         # 自进化记忆快照（冻结注入，有界）
         mem_snap = "\n".join(x for x in (
             self.memory_store.render("memory"),
@@ -1588,6 +1687,8 @@ class Semantics:
             await self._do_compact()
         finally:
             self._compacting = False
+        self._saved_cwd = None       # 定制模式退出时恢复用
+        self._saved_perm = None
         self._ctx_breakdown: dict = {}
 
     async def _command(self, name: str, text: str) -> None:

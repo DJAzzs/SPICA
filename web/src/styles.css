@@ -1539,3 +1539,51 @@ html[data-theme="dark"] .theme-icon-scroll {
 .model-current.perm { min-width: 100px; gap: 5px; }
 
 .stat-item { white-space: nowrap !important; }
+
+/* ---------- 顶栏开关（缜密/多智能体） ---------- */
+.topbar-toggle { display: inline-flex; align-items: center; gap: 6px;
+  border: var(--glass-bd); background: var(--panel);
+  border-radius: 14px; cursor: pointer; padding: 3px 10px 3px 8px;
+  font: inherit; font-size: 11.5px; color: var(--ink-dim);
+  box-shadow: var(--sink-sm); backdrop-filter: var(--blur);
+  transition: all 300ms var(--ease); }
+html[data-theme="light"] .topbar-toggle {
+  border: 1px solid var(--nm-lo); }
+.topbar-toggle:hover { color: var(--ink); }
+.toggle-icon { font-size: 12px; opacity: 0.7; }
+.toggle-label { letter-spacing: 0.04em; }
+.topbar-toggle.on .toggle-icon { opacity: 1; }
+.topbar-toggle.on .toggle-label { color: var(--mist); font-weight: 500; }
+
+.toggle-track { width: 28px; height: 16px; border-radius: 8px;
+  background: var(--bg3); position: relative;
+  transition: background 400ms var(--ease); flex: none; }
+.toggle-track.on { background: var(--mist); }
+.toggle-knob { position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 400ms var(--ease); }
+.toggle-knob.on { transform: translateX(12px); }
+
+/* ---------- Effort 滑块 ---------- */
+.effort-slider { display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px 10px; }
+.effort-slider input[type="range"] {
+  flex: 1; height: 4px; -webkit-appearance: none;
+  background: var(--bg3); border-radius: 2px; outline: none; }
+.effort-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--mist);
+  cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  transition: transform 200ms var(--ease); }
+.effort-slider input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2); }
+.effort-slider input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--mist); border: none; cursor: pointer; }
+.effort-value { font-size: 12px; color: var(--mist);
+  min-width: 50px; text-align: right;
+  font-variant-numeric: tabular-nums; }
+
+/* 模式选择器 */
+.model-current .mode-icon { margin-right: 4px; }
