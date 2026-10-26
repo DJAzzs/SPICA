@@ -110,9 +110,16 @@ class TTSEngine:
             return data, sr
 
         model = self._load()
-        wavs, sr = model.generate_voice_design(
-            text=text, instruct=voice, language=lang, non_streaming_mode=True
-        )
+        if getattr(self, "_use_clone", False) and self.VOICE_REF_FILE.exists():
+            wavs, sr = model.generate_voice_clone(
+                text=text, language=lang,
+                ref_audio=str(self.VOICE_REF_FILE),
+                ref_text=self.VOICE_REF_TEXT,
+                non_streaming_mode=True)
+        else:
+            wavs, sr = model.generate_voice_design(
+                text=text, instruct=voice, language=lang,
+                non_streaming_mode=True)
         audio = np.asarray(wavs[0], dtype=np.float32)
         audio = np.clip(audio, -1.0, 1.0)
         pcm = (audio * 32767).astype(np.int16)
