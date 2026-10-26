@@ -189,6 +189,9 @@ class Semantics:
             if mode:
                 await self.grant_permission(mode)
                 return
+        # 立即广播用户消息（不等意图分类——那要 200-500ms）
+        await self.broadcast({"t": "msg", "role": "user", "text": text,
+                              "tid": self.turn_seq})
         intent = await self._classify_intent(text)
         if intent["intent"] == "chat":
             self._log("user", text)
@@ -1191,15 +1194,16 @@ class Semantics:
                                   "tid": self.turn_seq})
             await self._goal_start(text)
             return
+        # 立即广播用户消息（不等意图分类——那要 200-500ms）
+        await self.broadcast({"t": "msg", "role": "user", "text": text,
+                              "tid": self.turn_seq})
         intent = await self._classify_intent(text)
         if intent["intent"] == "chat":
             self._log("user", text)
-            await self.broadcast({"t": "msg", "role": "user", "text": text})
             await self._chat_reply(text)
             return
         if intent["intent"] == "music_play":
             self._log("user", text)
-            await self.broadcast({"t": "msg", "role": "user", "text": text})
             await self.music_play(intent.get("query", text)[:40])
             return
         if intent["intent"] == "music_stop":

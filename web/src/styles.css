@@ -146,8 +146,7 @@ html[data-theme="dark"] .chat-msg:hover {
 .chat-msg.user { border-left: none; border-right: 3px solid var(--sand);
   border-radius: 3px 10px 10px 3px; width: 100%; }
 .chat-msg.user .chat-role { color: var(--sand); justify-content: flex-end; }
-.chat-msg.user .chat-text { text-align: left; }
-.chat-msg.user .chat-role { color: var(--sand); }
+.chat-msg.user .chat-text { text-align: right; }
 .chat-msg.assistant { border-left-color: var(--mist); }
 .chat-msg.assistant .chat-role { color: var(--mist); }
 .chat-msg.tool { border-left-color: var(--mustard); }
@@ -870,7 +869,7 @@ html[data-theme="light"] .tree-item:hover { background: var(--bg2); }
   border-radius: 10px 3px 3px 10px; margin-left: auto;
   width: auto; text-align: right; }
 .chat-msg.user .chat-role { justify-content: flex-end; }
-.chat-msg.user .chat-text { text-align: left; }
+.chat-msg.user .chat-text { text-align: right; }
 
 /* ---------- 代码块复制按钮 ---------- */
 .md pre { position: relative; cursor: pointer; }
