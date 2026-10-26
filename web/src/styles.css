@@ -1542,15 +1542,8 @@ html[data-theme="light"] .topbar-toggle {
 .topbar-toggle.on .toggle-icon { opacity: 1; }
 .topbar-toggle.on .toggle-label { color: var(--mist); font-weight: 500; }
 
-.toggle-track { width: 28px; height: 16px; border-radius: 8px;
-  background: var(--bg3); position: relative;
-  transition: background 400ms var(--ease); flex: none; }
-.toggle-track.on { background: var(--mist); }
-.toggle-knob { position: absolute; top: 2px; left: 2px;
-  width: 12px; height: 12px; border-radius: 50%;
-  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  transition: transform 400ms var(--ease); }
-.toggle-knob.on { transform: translateX(12px); }
+
+
 
 /* ---------- Effort 滑块 ---------- */
 .effort-slider { display: flex; align-items: center; gap: 10px;
@@ -1688,3 +1681,53 @@ html[data-theme="light"] .ma-preset:hover { background: var(--bg2); }
 @keyframes ma-btn-in {
   from { opacity: 0; transform: translateX(12px); }
   to { opacity: 1; transform: translateX(0); } }
+
+/* ---------- 开关（新拟物/毛玻璃） ---------- */
+.toggle-track { width: 32px; height: 18px; border-radius: 9px;
+  position: relative; flex: none;
+  transition: all 500ms var(--ease); }
+
+/* 浅色：新拟物凹陷轨道 + 凸起圆钮 */
+html:not([data-theme="dark"]) .toggle-track {
+  background: var(--bg2);
+  box-shadow: inset 2px 2px 4px var(--nm-lo),
+    inset -1px -1px 3px var(--nm-hi); }
+html:not([data-theme="dark"]) .toggle-track.on {
+  background: color-mix(in srgb, var(--mist) 20%, var(--bg2));
+  box-shadow: inset 2px 2px 4px var(--nm-lo),
+    inset -1px -1px 3px var(--nm-hi),
+    0 0 6px color-mix(in srgb, var(--mist) 20%, transparent); }
+
+/* 深色：毛玻璃轨道 */
+html[data-theme="dark"] .toggle-track {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px); }
+html[data-theme="dark"] .toggle-track.on {
+  background: color-mix(in srgb, var(--mist) 25%, transparent);
+  border-color: color-mix(in srgb, var(--mist) 40%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--mist) 25%, transparent); }
+
+.toggle-knob { position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  transition: transform 500ms var(--ease), all 500ms var(--ease); }
+
+/* 浅色圆钮：新拟物凸起 */
+html:not([data-theme="dark"]) .toggle-knob {
+  background: var(--bg-raise);
+  box-shadow: 2px 2px 4px var(--nm-lo), -1px -1px 3px var(--nm-hi); }
+html:not([data-theme="dark"]) .toggle-knob.on {
+  background: var(--mist);
+  box-shadow: 1px 2px 4px var(--nm-lo); }
+
+/* 深色圆钮：毛玻璃球 */
+html[data-theme="dark"] .toggle-knob {
+  background: rgba(255,255,255,0.3);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3),
+    inset 0 1px 2px rgba(255,255,255,0.3); }
+html[data-theme="dark"] .toggle-knob.on {
+  background: var(--mist);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--mist) 50%, transparent),
+    inset 0 1px 2px rgba(255,255,255,0.3); }
+
+.toggle-knob.on { transform: translateX(14px); }
