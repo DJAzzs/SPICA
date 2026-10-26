@@ -1676,11 +1676,11 @@ html[data-theme="light"] .ma-preset:hover { background: var(--bg2); }
 
 .side-item-actions { flex: 0 0 auto; margin-left: auto; }
 
-/* 多智能体按钮滑入出现 */
-.ma-panel-trigger { animation: ma-btn-in 400ms var(--ease); }
-@keyframes ma-btn-in {
-  from { opacity: 0; transform: translateX(12px); }
-  to { opacity: 1; transform: translateX(0); } }
+/* 多智能体按钮缓慢展开 */
+.ma-panel-trigger { animation: ma-btn-expand 800ms var(--ease); }
+@keyframes ma-btn-expand {
+  from { max-width: 0; opacity: 0; padding: 0 0; overflow: hidden; }
+  to { max-width: 200px; opacity: 1; padding: 3px 10px; } }
 
 /* ---------- 开关（新拟物/毛玻璃） ---------- */
 .toggle-track { width: 32px; height: 18px; border-radius: 9px;
