@@ -196,7 +196,7 @@ function handle(e: SpicaEvent) {
       set({ sessions: e.list || [], currentSession:
         (e.list || []).find((s: any) => s.id === e.current) || null });
       break;
-    case "session": set({ currentSession: e.meta }); break;
+    case "session": set({ currentSession: e.meta, webCards: [], verifyReports: {}, todos: [], maProgress: null }); break;
     case "history":
       set({ msgs: (e.msgs || []).map((m: any) => ({
         role: m.role, text: m.text, ts: m.ts || Date.now() })) });
@@ -215,7 +215,7 @@ function handle(e: SpicaEvent) {
     }
     case "bg_tasks": set({ bgTasks: e }); break;
     case "web_card":
-      set({ webCards: [...state.webCards, {host: e.host, url: e.url, tid: e.tid}] });
+      set({ webCards: [...state.webCards.slice(-49), {host: e.host, url: e.url, tid: e.tid}] });
       break;
     case "ma_progress": set({ maProgress: e }); break;
     case "ma_result": set({ maProgress: null }); break;

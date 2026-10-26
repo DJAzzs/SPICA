@@ -167,9 +167,9 @@ class Semantics:
         self.narrator.speak(self.packs.wake_phrase(), prio=0, kind="wake")
 
     async def _partial(self, text: str) -> None:
-        await self.broadcast({"t": "partial", "text": text})
         if self.enroll_mode:
-            return  # 注册朗读不进改写预热（省 LLM 调用）
+            return  # 注册模式：不显示 partial 不预热
+        await self.broadcast({"t": "partial", "text": text})
         # 边说边改（预热）
         def on_draft(res):
             asyncio.create_task(self.broadcast(
@@ -1035,6 +1035,11 @@ class Semantics:
                               "current": self.session.get("id", "")})
 
     async def session_new(self, cwd: str = "", perm: str = "") -> None:
+        # 防抖：500ms 内不重复创建
+        now = time.time()
+        if now - getattr(self, '_last_new_at', 0) < 0.5:
+            return
+        self._last_new_at = now
         if self.state == "exec":
             await self.broadcast({"t": "msg", "role": "system",
                                   "text": "任务执行中，结束后再切换会话。"})

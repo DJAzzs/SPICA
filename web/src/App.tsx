@@ -10,6 +10,7 @@ import NavRail from "./NavRail";
 import StatsBar from "./StatsBar";
 import FileChangeCard from "./FileChangeCard";
 import VerifyBadge from "./VerifyBadge";
+import { WebCardItem } from "./WebCard";
 import Sidebar from "./Sidebar";
 import NewSessionModal from "./NewSessionModal";
 import ModelPicker from "./ModelPicker";
