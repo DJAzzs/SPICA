@@ -182,45 +182,53 @@ export default function Sidebar({ open }: { open: boolean }) {
                   {g.sessions.map((s: any) => (
                     <div key={s.id}
                       className={`side-item ${current?.id === s.id ? "on" : ""}`}
-                      onClick={() => openSession(s.id)}>
-                      <span className="side-item-title">{s.title || "未命名"}</span>
-                      <span className="side-item-meta">
-                        <span className="side-item-time">{relTime(s.updated)}</span>
-                        {s.source === "dsh" && <em>DSH</em>}
-                      </span>
+                      onClick={() => renaming !== s.id && openSession(s.id)}>
                       {renaming === s.id ? (
                         <input className="side-rename-input"
                           value={renameVal}
                           onChange={(e) => setRenameVal(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                              send({ t: "session_update", id: s.id,
-                                patch: { title: renameVal.trim() || s.title } });
+                              const title = renameVal.trim();
+                              if (title) {
+                                send({ t: "session_update", id: s.id,
+                                  patch: { title } });
+                              }
                               setRenaming(null);
                             }
                             if (e.key === "Escape") setRenaming(null);
                           }}
                           onBlur={() => {
-                            if (renameVal.trim() && renameVal !== s.title) {
+                            const title = renameVal.trim();
+                            if (title && title !== s.title) {
                               send({ t: "session_update", id: s.id,
-                                patch: { title: renameVal.trim() } });
+                                patch: { title } });
                             }
                             setRenaming(null);
                           }}
                           onClick={(e) => e.stopPropagation()}
                           autoFocus />
                       ) : (
-                        <span className="side-item-actions">
-                          <button className="side-item-rename" title="重命名"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRenaming(s.id);
-                              setRenameVal(s.title || "");
-                            }}>✎</button>
-                          <button className="side-item-del" title="删除"
-                            onClick={(e) => { e.stopPropagation(); setConfirmDel(s.id); }}>
-                            ✕
-                          </button>
+                        <>
+                          <span className="side-item-title">{s.title || "未命名"}</span>
+                          <span className="side-item-actions">
+                            <button className="side-item-rename" title="重命名"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRenaming(s.id);
+                                setRenameVal(s.title || "");
+                              }}>✎</button>
+                            <button className="side-item-del" title="删除"
+                              onClick={(e) => { e.stopPropagation(); setConfirmDel(s.id); }}>
+                              ✕
+                            </button>
+                          </span>
+                        </>
+                      )}
+                      {renaming !== s.id && (
+                        <span className="side-item-meta">
+                          <span className="side-item-time">{relTime(s.updated)}</span>
+                          {s.source === "dsh" && <em>DSH</em>}
                         </span>
                       )}
                       {confirmDel === s.id && (
