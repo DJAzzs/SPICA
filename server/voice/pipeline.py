@@ -115,14 +115,16 @@ class VoicePipeline:
         self.st.followup_until = time.time() + seconds
 
     def standby(self) -> None:
-        """立即回 DORMANT（取消聆听），清空全部 ASR 累积缓存。"""
+        """立即回 DORMANT（取消聆听），清空全部 ASR 累积缓存。
+        3 秒冷却防残留语音误触唤醒。"""
         self.st.mode = "DORMANT"
         self.st.followup_until = 0.0
+        self.st.wake_hit_until = time.time() + 3.0  # 3秒冷却
         self.enroll_cancel = True
-        self.stream_asr.reset()      # 流式 ASR 缓冲
-        self._pending = None          # 待定段
-        self.partial_buf = ""         # partial 文本
-        self.cb.on_partial("")       # 通知前端清空气泡
+        self.stream_asr.reset()
+        self._pending = None
+        self.partial_buf = ""
+        self.cb.on_partial("")
 
     # ------------------------------------------------------------ 声纹窗
     def _push_ring(self, chunk_i16: np.ndarray) -> None:
