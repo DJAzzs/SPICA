@@ -1766,6 +1766,10 @@ class Semantics:
 
     # ================================================== 结束词
     async def _farewell(self, phrase: str) -> None:
+        if self.state == "listen":
+            # 麦克风活跃：结束词 = 关闭麦克风（不关机）
+            await self.cancel_listen()
+            return
         if self.state == "exec" and self.sdk.proc:
             self.narrator.confirm("任务还在执行，确定要结束吗？")
             await self._set_state("confirm_shutdown")
