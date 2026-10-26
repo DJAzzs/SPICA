@@ -17,6 +17,7 @@ export default function MultiAgentPanel() {
   const current = useSpica((s) => s.currentSession);
   const [selected, setSelected] = useState("investigation");
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const enabled = !!current?.multi_agent;
 
   if (!enabled) return null;
@@ -25,14 +26,14 @@ export default function MultiAgentPanel() {
 
   return (
     <div className="ma-panel-trigger">
-      <button className="ma-trigger-btn" onClick={() => setOpen(!open)}
+      <button className="ma-trigger-btn" onClick={() => { if (open) { setClosing(true); setTimeout(() => { setOpen(false); setClosing(false); }, 250); } else setOpen(true); }}
         title="多智能体配置">
         {preset?.label || "多智能体"}
         <span className="turn-caret">{open ? "▾" : "▸"}</span>
       </button>
 
-      {open && (
-        <div className="ma-panel">
+      {(open || closing) && (
+        <div className={`ma-panel ${closing ? "closing" : ""}`}>
           <div className="ma-title">选择预设方案</div>
           {PRESETS.map(p => (
             <div key={p.key}
@@ -56,7 +57,8 @@ export default function MultiAgentPanel() {
           <button className="ma-launch" onClick={() => {
             send({ t: "session_update", id: current?.id,
               patch: { ma_preset: selected } });
-            setOpen(false);
+            setClosing(true);
+            setTimeout(() => { setOpen(false); setClosing(false); }, 250);
           }}>
             应用方案
           </button>
