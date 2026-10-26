@@ -1209,16 +1209,19 @@ html[data-theme="light"] .side-group-head:hover { background: var(--bg2); }
   font-variant-numeric: tabular-nums; flex: none; }
 
 /* 会话条目 */
-.side-item { position: relative; padding: 7px 10px; border-radius: 8px;
-  cursor: pointer; transition: background 250ms var(--ease); text-align: left; }
+.side-item { position: relative; padding: 6px 8px; border-radius: 8px;
+  cursor: pointer; transition: background 250ms var(--ease);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
 html[data-theme="dark"] .side-item:hover { background: rgba(255,255,255,0.05); }
 html[data-theme="light"] .side-item:hover { background: var(--bg2); }
 .side-item.on { background: color-mix(in srgb, var(--mist) 10%, transparent); }
-.side-item-title { font-size: 14.5px; color: var(--ink); display: block;
+.side-item-title { font-size: 14.5px; color: var(--ink);
+  flex: 1 1 auto; min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  text-align: left; padding-right: 20px; }
+  text-align: left; }
 .side-item-meta { font-size: 11px; color: var(--ink-faint);
-  text-align: left; display: flex; gap: 6px; align-items: center; }
+  flex-basis: 100%; text-align: left;
+  display: flex; gap: 6px; align-items: center; }
 .side-item-time { font-size: 11px; font-variant-numeric: tabular-nums; }
 .side-item-meta em { font-style: normal; font-size: 9.5px;
   color: var(--lilac); letter-spacing: 0.05em; }
@@ -1677,3 +1680,5 @@ html[data-theme="light"] .ma-preset:hover { background: var(--bg2); }
   border-radius: 4px; padding: 0; line-height: 1; }
 .side-item-rename:hover { color: var(--mist); }
 .side-item-del:hover { color: var(--accent); }
+
+.side-item-actions { flex: 0 0 auto; margin-left: auto; }
