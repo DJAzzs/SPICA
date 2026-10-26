@@ -65,10 +65,12 @@ function SpeakerGateToggle() {
   );
 }
 
-/** 词列 chips：只展示主词，变体后台自动生成。 */
+/** 词列 chips：点击编辑，变体后台自动重新生成。 */
 function WordChips({ initial, field }: { initial: any[]; field: string }) {
   const [adding, setAdding] = useState(false);
   const [newWord, setNewWord] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editVal, setEditVal] = useState("");
 
   const addWord = () => {
     const w = newWord.trim();
@@ -84,22 +86,47 @@ function WordChips({ initial, field }: { initial: any[]; field: string }) {
     send({ t: "settings_patch", patch: { [field]: words } });
   };
 
-  const toggleWord = (phrase: string) => {
-    const words = (initial || []).map((w: any) =>
-      w.phrase === phrase ? { ...w, enabled: !w.enabled } : w);
+  const saveEdit = (oldPhrase: string) => {
+    const w = editVal.trim();
+    setEditing(null);
+    if (!w || w === oldPhrase) return;
+    const words = (initial || []).map((item: any) =>
+      item.phrase === oldPhrase
+        ? { ...item, phrase: w, variants: [] }  // 清空变体，服务端自动重新生成
+        : item);
     send({ t: "settings_patch", patch: { [field]: words } });
   };
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {(initial || []).map((w: any) => (
-        <span key={w.phrase}
-          className={"word-chip" + (w.enabled === false ? " off" : "")}>
-          <span className="word-text" onClick={() => toggleWord(w.phrase)}>
-            {w.phrase}
+        editing === w.phrase ? (
+          <span key={w.phrase} className="word-chip adding">
+            <input type="text" value={editVal}
+              onChange={e => setEditVal(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter") saveEdit(w.phrase);
+                if (e.key === "Escape") setEditing(null);
+              }}
+              onBlur={() => saveEdit(w.phrase)}
+              autoFocus
+              style={{ width: 100, border: "none", background: "none",
+                outline: "none", color: "var(--ink)", font: "inherit",
+                fontSize: "12px" }} />
+            <button className="chip-x"
+              onClick={() => saveEdit(w.phrase)}
+              style={{ color: "var(--mist)" }}>✓</button>
           </span>
-          <button className="chip-x" onClick={() => removeWord(w.phrase)}>✕</button>
-        </span>
+        ) : (
+          <span key={w.phrase}
+            className={"word-chip" + (w.enabled === false ? " off" : "")}>
+            <span className="word-text"
+              onClick={() => { setEditing(w.phrase); setEditVal(w.phrase); }}>
+              {w.phrase}
+            </span>
+            <button className="chip-x" onClick={() => removeWord(w.phrase)}>✕</button>
+          </span>
+        )
       ))}
       {adding ? (
         <span className="word-chip adding">
