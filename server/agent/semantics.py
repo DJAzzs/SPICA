@@ -180,22 +180,19 @@ class Semantics:
             pass
 
     async def _final(self, text: str) -> None:
+        if self.enroll_mode:
+            return  # 注册模式只收音频，不写 transcript 不广播
         self.transcript.append({"role": "user", "text": text,
                                 "ts": time.time()})
+        self._log("user", text)
         await self.broadcast({"t": "final", "text": text})
         await self.broadcast({"t": "msg", "role": "user", "text": text,
-                                  "tid": self.turn_seq})
-        self._log("user", text)
-        if self.enroll_mode:
-            return  # 注册模式只收音频
+                              "tid": self.turn_seq})
         if self._perm_request:
             mode = self._try_perm_voice(text)
             if mode:
                 await self.grant_permission(mode)
                 return
-        # 立即广播用户消息（不等意图分类——那要 200-500ms）
-        await self.broadcast({"t": "msg", "role": "user", "text": text,
-                              "tid": self.turn_seq})
         intent = await self._classify_intent(text)
         if intent["intent"] == "chat":
             self._log("user", text)
