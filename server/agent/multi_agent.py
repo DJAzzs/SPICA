@@ -23,8 +23,9 @@ class AgentConfig:
     """单个 Agent 的配置。"""
     name: str          # 显示名
     model: str         # 使用的模型
-    role: str          # 角色 prompt（"你是一个搜索者…"）
+    role: str          # 角色 prompt
     temperature: float = 0.5
+    use_dsh: bool = False  # 是否需要 DSH 会话（工具能力）
 
 
 # ============================================================
@@ -39,7 +40,8 @@ PRESETS: dict[str, dict] = {
             AgentConfig(
                 name="搜索者", model="glm-5.3-flash",
                 role="你是一个信息搜索专家。负责从多个角度收集与任务相关的原始信息，"
-                     "提供事实和数据，不做主观判断。"),
+                     "提供事实和数据，不做主观判断。",
+                use_dsh=True),  # 搜索者需要工具
             AgentConfig(
                 name="汇总者", model="glm-5.3",
                 role="你是一个信息综合专家。负责整合多个来源的信息，"
@@ -57,11 +59,13 @@ PRESETS: dict[str, dict] = {
             AgentConfig(
                 name="编码者", model="glm-5.3",
                 role="你是一个资深开发者。负责分析和编写代码解决方案，"
-                     "注重代码质量和可维护性。"),
+                     "注重代码质量和可维护性。",
+                use_dsh=True),  # 编码者需要工具
             AgentConfig(
                 name="测试者", model="glm-5.3-flash",
                 role="你是一个测试工程师。负责为代码设计测试用例，"
-                     "找出边界情况和潜在 bug。"),
+                     "找出边界情况和潜在 bug。",
+                use_dsh=True),  # 测试者需要工具
             AgentConfig(
                 name="审查者", model="glm-5.3",
                 role="你是一个代码审查专家。负责从架构、安全、性能角度审查代码，"
@@ -74,7 +78,8 @@ PRESETS: dict[str, dict] = {
         "agents": [
             AgentConfig(
                 name="数据者", model="glm-5.3-flash",
-                role="你是一个数据收集专家。负责整理任务相关的数据、事实和背景信息。"),
+                role="你是一个数据收集专家。负责整理任务相关的数据、事实和背景信息。",
+                use_dsh=True),  # 数据者可能需要工具
             AgentConfig(
                 name="分析者", model="glm-5.3",
                 role="你是一个深度分析专家。负责从数据中提取洞察，"
@@ -140,27 +145,39 @@ class MultiAgentExecutor:
             "preset": preset_key})
 
         async def run_agent(agent: AgentConfig, idx: int) -> dict:
-            """单个 Agent 执行任务。"""
+            """单个 Agent 执行任务——按 use_dsh 路由到 DSH 或 llm.chat。"""
+            import re as _re
+            prompt = f"（你的角色：{agent.role}）\n\n任务：{task}"
+            
             try:
-                prompt = f"（你的角色：{agent.role}）\n\n任务：{task}"
-                response = await self.llm.chat(
-                    [{"role": "user", "content": prompt}],
-                    model=agent.model,
-                    max_tokens=800,
-                    temperature=agent.temperature,
-                    thinking="disabled",
-                    timeout=30.0)
+                if agent.use_dsh:
+                    # DSH 会话：有工具能力（搜索/写码/操作文件）
+                    output = await self._run_dsh_agent(agent, prompt)
+                    engine = "DSH"
+                else:
+                    # llm.chat：纯推理（快+便宜）
+                    response = await self.llm.chat(
+                        [{"role": "user", "content": prompt}],
+                        model=agent.model,
+                        max_tokens=800,
+                        temperature=agent.temperature,
+                        thinking="disabled",
+                        timeout=30.0)
+                    output = (response or "").strip()[:1000]
+                    engine = "LLM"
 
                 result = {
                     "agent": agent.name,
                     "model": agent.model,
-                    "output": (response or "").strip()[:1000],
+                    "engine": engine,
+                    "output": output,
                     "status": "done",
                 }
             except Exception as e:
                 result = {
                     "agent": agent.name,
                     "model": agent.model,
+                    "engine": "DSH" if agent.use_dsh else "LLM",
                     "output": f"执行失败: {e}",
                     "status": "error",
                 }
@@ -171,8 +188,11 @@ class MultiAgentExecutor:
                 "total": len(parallel_agents),
                 "done": len(results),
                 "agent": agent.name,
+                "engine": result.get("engine", ""),
                 "status": result["status"]})
             return result
+
+        # 占位——_run_dsh_agent 在下面定义
 
         # 并行执行前 N-1 个 Agent
         tasks = [run_agent(a, i) for i, a in enumerate(parallel_agents)]
@@ -221,6 +241,45 @@ class MultiAgentExecutor:
             "phase": "done", "elapsed": round(elapsed, 1)})
 
         return report
+
+    async def _run_dsh_agent(self, agent: AgentConfig,
+                              prompt: str) -> str:
+        """DSH headless 一次性执行——有工具能力的 Agent。"""
+        from server.agent.sdk_client import dsh_command
+        from server.config import load_settings
+        
+        cmd = dsh_command(load_settings()) + [
+            "--profile", "headless", prompt, "--json"]
+        
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd="/home/dja/桌面/SPICA/workspace")
+        
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                proc.communicate(), timeout=120)
+        except asyncio.TimeoutError:
+            proc.kill()
+            return "（DSH 执行超时 120s）"
+        
+        # 解析 JSON 行找 final
+        output = ""
+        for line in (stdout.decode("utf-8", errors="replace").split("\n")):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                import json as _json
+                d = _json.loads(line)
+                if d.get("type") == "final":
+                    output = d.get("text", "")
+                    break
+            except Exception:
+                continue
+        
+        return output[:1000] if output else "（DSH 执行完成）"
 
     def _generate_report(self, task: str, results: list[dict],
                          elapsed: float) -> dict:
