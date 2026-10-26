@@ -309,6 +309,11 @@ def create_app(boot) -> FastAPI:
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=400)
 
+    @app.get("/api/tts/test")
+    async def tts_test():
+        from fastapi.responses import HTMLResponse
+        return HTMLResponse("""<!DOCTYPE html><html><head><meta charset="utf-8"><title>TTS Test</title><style>body{font-family:system-ui;max-width:600px;margin:40px auto;padding:0 20px;background:#1a1d22;color:#ddd}h2{color:#a8c3c0}audio{width:100%;margin:8px 0 24px}p{color:#888;font-size:14px}</style></head><body><h2>TTS Voice Test</h2><p>1. Reference (VoiceDesign)</p><audio controls src="/api/tts/ref.wav"></audio><p>2. Clone test (Base model)</p><audio controls src="/api/tts/clone_test.wav"></audio></body></html>""")
+
     @app.get("/api/tts/ref.wav")
     async def tts_ref():
         f = Path("run/voice_ref.wav")
