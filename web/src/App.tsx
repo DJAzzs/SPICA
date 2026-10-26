@@ -16,6 +16,7 @@ import ModelPicker from "./ModelPicker";
 import ModePicker from "./ModePicker";
 import ThoroughToggle from "./ThoroughToggle";
 import MultiAgentToggle from "./MultiAgentToggle";
+import MultiAgentPanel from "./MultiAgentPanel";
 import PermPicker from "./PermPicker";
 
 const SLASH_COMMANDS: { cmd: string; hint: string }[] = [
@@ -599,6 +600,7 @@ export default function App() {
           <ModelPicker />
           <ThoroughToggle />
           <MultiAgentToggle />
+          <MultiAgentPanel />
           <PermPicker />
             {ttsSpeaking ? <span>播报中</span> : null}
             <span className={`conn ${connected ? "ok" : ""}`} title={connected ? "已连接" : "重连中"} />

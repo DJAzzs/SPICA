@@ -1366,6 +1366,17 @@ class Semantics:
 
         await self._start_task(prompt)
 
+
+    async def _run_multi_agent(self, task: str, preset: str) -> None:
+        """多智能体任务执行。"""
+        from server.agent.multi_agent import run_multi_agent
+        try:
+            await run_multi_agent(self, task, preset)
+        except Exception as e:
+            await self.broadcast({"t": "msg", "role": "system",
+                "text": f"多智能体执行失败: {e}"})
+        await self._set_state("idle")
+
     async def _start_task(self, prompt: str) -> None:
         if not self.session.get("id"):
             self.session = self.store.create()
@@ -1418,6 +1429,12 @@ class Semantics:
         if self._plan_mode:
             suffix = self.PLAN_SUFFIX
         prompt_out = prompt
+        # 多智能体模式：不走单 DSH，走并行 Agent
+        if (self.session or {}).get("multi_agent"):
+            preset = (self.session or {}).get("ma_preset", "investigation")
+            self._bg(self._run_multi_agent(prompt, preset), "multi-agent")
+            return
+
         # 按模式注入上下文
         mode = self._get_mode()
         if mode == "minimal":

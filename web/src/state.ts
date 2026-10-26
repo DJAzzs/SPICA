@@ -41,6 +41,7 @@ export interface State {
   stats: any | null;
   todos: { content: string; status: string }[];
   verifyReports: Record<number, any>;  // tid -> report
+  maProgress: any | null;
 }
 
 const initial: State = {
@@ -51,7 +52,7 @@ const initial: State = {
   micOn: false, micError: "", msgs: [], localListen: false, toast: "",
   sessions: [], currentSession: null, turns: {}, execSince: 0,
   musicTrack: null, musicStopFlag: 0, pendingFiles: [], permissionReq: null,
-  stats: null, todos: [], verifyReports: {},
+  stats: null, todos: [], verifyReports: {}, maProgress: null,
 };
 
 let state: State = initial;
@@ -209,6 +210,8 @@ function handle(e: SpicaEvent) {
       a.click();
       break;
     }
+    case "ma_progress": set({ maProgress: e }); break;
+    case "ma_result": set({ maProgress: null }); break;
     case "verify_report":
       set({ verifyReports: { ...state.verifyReports, [e.tid]: e } }); break;
     case "todo": set({ todos: e.todos || [] }); break;
