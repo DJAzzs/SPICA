@@ -1417,6 +1417,13 @@ class Semantics:
         self.turn_seq += 1
         self.turn_started_at = time.time()
         self._turn_files = {}
+        # 耗时预估（基于历史统计）
+        from server.agent.duration import get_estimate_text
+        est = get_estimate_text(prompt)
+        if est:
+            await self.broadcast({"t": "msg", "role": "system",
+                "text": f"⏱ 预计 {est}", "tid": self.turn_seq})
+
         await self.broadcast({"t": "turn_start", "tid": self.turn_seq})
         self.narrator.speak("收到，开始。", prio=1, kind="confirm")
         self.transcript.append({"role": "task", "text": prompt,
@@ -1643,6 +1650,16 @@ class Semantics:
                               "files": files})
         self._turn_web_count = 0
         self._stats["turns"] += 1
+
+        # 记录实际耗时（供下次预估）
+        from server.agent.duration import record
+        task_text = ""
+        for e in reversed(self.transcript):
+            if e.get("role") == "user":
+                task_text = e.get("text", "")
+                break
+        if task_text:
+            record(task_text, seconds)
 
         # 缜密验证：turn_done 后异步执行（不阻塞下一任务）
         turn_context = {
